@@ -1,6 +1,8 @@
 ---
 import ExperienceItem from "../components/ExperienceItem.astro";
 import Layout from "../layouts/Layout.astro";
+import { Github, Linkedin, FileText, Mail } from "lucide-astro";
+
 export interface Experience {
   title: string;
   employer: string;
@@ -30,198 +32,214 @@ const experiences: Experience[] = [
     <div class="h-full w-full" id="container"></div>
     <div class="absolute top-0 left-0 w-full h-full text-white">
       <div class="mx-auto w-full max-w-[1200px] px-6 mt-8 pt-8 text-left">
-        <div class="backdrop-blur-2xl font-bold border-1 border-gray-700">
-          <h1 class="text-white text-4xl p-4 pb-0">Renzo Damian</h1>
-          <h2 class="p-4 pt-0">Software Engineer</h2>
-        </div>
+        <div
+          class="backdrop-blur-2xl font-bold border-1 border-gray-700 flex flex-col md:flex-row md:justify-between md:items-end p-4 gap-4"
+        >
+          <div>
+            <h1 class="text-4xl">Renzo Damian</h1>
+            <h2>Software Engineer</h2>
+          </div>
+          <div>
+            <ul class="flex gap-4 md:pb-1">
+              <li>
+                <a
+                  href="https://github.com/renzodamgo"
+                  aria-label="GitHub profile"><Github /></a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://linkedin.com/in/renzo-damian"
+                  aria-label="LinkedIn profile"><Linkedin /></a
+                >
+              </li>
+              <li>
+                <a href="/resume.pdf" aria-label="Download resume"
+                  ><FileText /></a
+                >
+              </li>
+              <li>
+                <a href="mailto:redamiangomez1@sheffield.ac.uk" aria-label="Contact me"
+                  ><Mail /></a
+                >
+              </li>
+            </ul>
+      </div>
+    </div>
 
-        <div class="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 grid gap-4 mt-4">
-          <div
-            id="About Me"
-            class="backdrop-blur-2xl p-4 border-1 border-gray-700"
-          >
-            <h3 class="font-bold pb-2 text-lg">About Me</h3>
-            <div class="space-y-4">
-              <p class="">
-                I'm a software engineer with a passion for creating innovative
-                solutions. I love exploring new technologies and pushing the
-                boundaries of what's possible.
-              </p>
-              <p>
-                In my free time, I enjoy working on personal projects,
-                contributing to open-source, and learning new programming
-                languages.
-              </p>
-            </div>
-          </div>
-          <div
-            id="Experience"
-            class="backdrop-blur-2xl p-4 border-1 border-gray-700"
-          >
-            <h3 class="font-bold pb-2 text-lg">Experience</h3>
-            <div class="space-y-4">
-              {
-                experiences.map((experience) => (
-                  <ExperienceItem
-                    title={experience.title}
-                    employer={experience.employer}
-                    date={experience.date}
-                  />
-                ))
-              }
-            </div>
-          </div>
-          <div
-            id="Projects"
-            class="backdrop-blur-2xl p-4 border-1 border-gray-700"
-          >
-            <h3 class="font-bold text-lg">Projects</h3>
-          </div>
-          <div id="Blog" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
-            <h3 class="font-bold text-lg">Blog</h3>
-          </div>
+    <div class="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 grid gap-4 mt-4">
+      <div id="About Me" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
+        <h3 class="font-bold pb-2 text-lg">About Me</h3>
+        <div class="space-y-4">
+          <p class="">
+            I'm a software engineer with a passion for creating innovative
+            solutions. I love exploring new technologies and pushing the
+            boundaries of what's possible.
+          </p>
+          <p>
+            In my free time, I enjoy working on personal projects, contributing
+            to open-source, and learning new programming languages.
+          </p>
         </div>
+      </div>
+      <div
+        id="Experience"
+        class="backdrop-blur-2xl p-4 border-1 border-gray-700"
+      >
+        <h3 class="font-bold pb-2 text-lg">Experience</h3>
+        <div class="space-y-4">
+          {
+            experiences.map((experience) => (
+              <ExperienceItem
+                title={experience.title}
+                employer={experience.employer}
+                date={experience.date}
+              />
+            ))
+          }
+        </div>
+      </div>
+      <div id="Projects" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
+        <h3 class="font-bold text-lg">Projects</h3>
+      </div>
+      <div id="Blog" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
+        <h3 class="font-bold text-lg">Blog</h3>
       </div>
     </div>
   </main>
-
-  <script>
-    import * as THREE from "three";
-    import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-    interface SketchOptions {
-      domElement: HTMLElement;
-    }
-
-    export default class Sketch {
-      private container: HTMLElement;
-      private width: number;
-      private height: number;
-      private camera: THREE.OrthographicCamera;
-      private scene: THREE.Scene;
-      private renderer: THREE.WebGLRenderer;
-      private controls: OrbitControls;
-      private time: number;
-      private geometry!: THREE.BoxGeometry;
-      private material!: THREE.MeshNormalMaterial;
-      private mesh!: THREE.Mesh;
-      private speedX: number = 0.0008;
-      private speedY: number = 0.0008;
-      private boundaryX: number = 0;
-      private boundaryY: number = 0;
-      private aspectRatio: number = 1;
-
-      constructor(options: SketchOptions) {
-        this.container = options.domElement;
-
-        // Get window dimensions
-        this.width = window.innerWidth;
-        this.height = window.innerHeight;
-        this.aspectRatio = this.width / this.height;
-
-        const frustumSize = 1;
-        this.camera = new THREE.OrthographicCamera(
-          (frustumSize * this.aspectRatio) / -2,
-          (frustumSize * this.aspectRatio) / 2,
-          frustumSize / 2,
-          frustumSize / -2,
-          0.01,
-          10
-        );
-        this.camera.position.z = 1;
-
-        this.scene = new THREE.Scene();
-
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-
-        this.renderer.setSize(this.width, this.height);
-
-        this.renderer.domElement.style.width = "100%";
-        this.renderer.domElement.style.height = "100%";
-        this.renderer.domElement.style.display = "block";
-
-        this.container.appendChild(this.renderer.domElement);
-        this.controls = new OrbitControls(
-          this.camera,
-          this.renderer.domElement
-        );
-
-        this.controls.enabled = false;
-
-        this.time = 0;
-        this.resize();
-        this.addObjects();
-        this.render();
-
-        this.setupResize();
-      }
-
-      private resize(): void {
-        this.width = window.innerWidth;
-        this.height = window.innerHeight;
-        this.aspectRatio = this.width / this.height;
-
-        const frustumSize = 1;
-        this.camera.left = (frustumSize * this.aspectRatio) / -2;
-        this.camera.right = (frustumSize * this.aspectRatio) / 2;
-        this.camera.top = frustumSize / 2;
-        this.camera.bottom = frustumSize / -2;
-
-        this.renderer.setSize(this.width, this.height);
-        this.camera.updateProjectionMatrix();
-
-        this.boundaryX = (frustumSize * this.aspectRatio) / 2 - 0.13;
-        this.boundaryY = frustumSize / 2 - 0.15;
-      }
-
-      private setupResize(): void {
-        window.addEventListener("resize", this.resize.bind(this));
-      }
-
-      private addObjects(): void {
-        this.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        this.material = new THREE.MeshNormalMaterial();
-
-        this.mesh = new THREE.Mesh(this.geometry, this.material);
-        // Start at a random position
-        this.mesh.position.x = (Math.random() - 0.5) * this.boundaryX * 1.8;
-        this.mesh.position.y = (Math.random() - 0.5) * this.boundaryY * 1.8;
-        this.scene.add(this.mesh);
-      }
-
-      private render(): void {
-        this.time += 1;
-
-        // Update rotation
-        this.mesh.rotation.x += 0.003;
-        this.mesh.rotation.y += 0.003;
-
-        // Update position
-        this.mesh.position.x += this.speedX;
-        this.mesh.position.y += this.speedY;
-
-        // Check for collisions with screen edges
-        // For X-axis
-        if (Math.abs(this.mesh.position.x) > this.boundaryX) {
-          this.speedX *= -1; // Reverse direction
-          this.mesh.position.x =
-            Math.sign(this.mesh.position.x) * this.boundaryX;
-        }
-
-        // For Y-axis
-        if (Math.abs(this.mesh.position.y) > this.boundaryY) {
-          this.speedY *= -1; // Reverse direction
-          this.mesh.position.y =
-            Math.sign(this.mesh.position.y) * this.boundaryY;
-        }
-
-        this.renderer.render(this.scene, this.camera);
-        requestAnimationFrame(this.render.bind(this));
-      }
-    }
-
-    new Sketch({
-      domElement: document.getElementById("container") as HTMLElement,
-    });
-  </script>
 </Layout>
+
+<script>
+  import * as THREE from "three";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+  interface SketchOptions {
+    domElement: HTMLElement;
+  }
+
+  export default class Sketch {
+    private container: HTMLElement;
+    private width: number;
+    private height: number;
+    private camera: THREE.OrthographicCamera;
+    private scene: THREE.Scene;
+    private renderer: THREE.WebGLRenderer;
+    private controls: OrbitControls;
+    private time: number;
+    private geometry!: THREE.BoxGeometry;
+    private material!: THREE.MeshNormalMaterial;
+    private mesh!: THREE.Mesh;
+    private speedX: number = 0.0008;
+    private speedY: number = 0.0008;
+    private boundaryX: number = 0;
+    private boundaryY: number = 0;
+    private aspectRatio: number = 1;
+
+    constructor(options: SketchOptions) {
+      this.container = options.domElement;
+
+      // Get window dimensions
+      this.width = window.innerWidth;
+      this.height = window.innerHeight;
+      this.aspectRatio = this.width / this.height;
+
+      const frustumSize = 1;
+      this.camera = new THREE.OrthographicCamera(
+        (frustumSize * this.aspectRatio) / -2,
+        (frustumSize * this.aspectRatio) / 2,
+        frustumSize / 2,
+        frustumSize / -2,
+        0.01,
+        10
+      );
+      this.camera.position.z = 1;
+
+      this.scene = new THREE.Scene();
+
+      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+
+      this.renderer.setSize(this.width, this.height);
+
+      this.renderer.domElement.style.width = "100%";
+      this.renderer.domElement.style.height = "100%";
+      this.renderer.domElement.style.display = "block";
+
+      this.container.appendChild(this.renderer.domElement);
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
+      this.controls.enabled = false;
+
+      this.time = 0;
+      this.resize();
+      this.addObjects();
+      this.render();
+
+      this.setupResize();
+    }
+
+    private resize(): void {
+      this.width = window.innerWidth;
+      this.height = window.innerHeight;
+      this.aspectRatio = this.width / this.height;
+
+      const frustumSize = 1;
+      this.camera.left = (frustumSize * this.aspectRatio) / -2;
+      this.camera.right = (frustumSize * this.aspectRatio) / 2;
+      this.camera.top = frustumSize / 2;
+      this.camera.bottom = frustumSize / -2;
+
+      this.renderer.setSize(this.width, this.height);
+      this.camera.updateProjectionMatrix();
+
+      this.boundaryX = (frustumSize * this.aspectRatio) / 2 - 0.13;
+      this.boundaryY = frustumSize / 2 - 0.15;
+    }
+
+    private setupResize(): void {
+      window.addEventListener("resize", this.resize.bind(this));
+    }
+
+    private addObjects(): void {
+      this.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+      this.material = new THREE.MeshNormalMaterial();
+
+      this.mesh = new THREE.Mesh(this.geometry, this.material);
+      // Start at a random position
+      this.mesh.position.x = (Math.random() - 0.5) * this.boundaryX * 1.8;
+      this.mesh.position.y = (Math.random() - 0.5) * this.boundaryY * 1.8;
+      this.scene.add(this.mesh);
+    }
+
+    private render(): void {
+      this.time += 1;
+
+      // Update rotation
+      this.mesh.rotation.x += 0.003;
+      this.mesh.rotation.y += 0.003;
+
+      // Update position
+      this.mesh.position.x += this.speedX;
+      this.mesh.position.y += this.speedY;
+
+      // Check for collisions with screen edges
+      // For X-axis
+      if (Math.abs(this.mesh.position.x) > this.boundaryX) {
+        this.speedX *= -1; // Reverse direction
+        this.mesh.position.x = Math.sign(this.mesh.position.x) * this.boundaryX;
+      }
+
+      // For Y-axis
+      if (Math.abs(this.mesh.position.y) > this.boundaryY) {
+        this.speedY *= -1; // Reverse direction
+        this.mesh.position.y = Math.sign(this.mesh.position.y) * this.boundaryY;
+      }
+
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(this.render.bind(this));
+    }
+  }
+
+  new Sketch({
+    domElement: document.getElementById("container") as HTMLElement,
+  });
+</script>
