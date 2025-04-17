@@ -1,5 +1,6 @@
 ---
 import ExperienceItem from "../components/ExperienceItem.astro";
+import ProjectItem from "../components/ProjectItem.astro";
 import Layout from "../layouts/Layout.astro";
 import { Github, Linkedin, FileText, Mail } from "lucide-astro";
 
@@ -8,6 +9,13 @@ export interface Experience {
   employer: string;
   date: string;
 }
+
+export interface Project {
+  title: string;
+  description: string;
+  github_link: string;
+}
+
 const experiences: Experience[] = [
   {
     title: "Software Team Lead ",
@@ -23,6 +31,21 @@ const experiences: Experience[] = [
     title: "Frontend Developer",
     employer: "Rebels 247",
     date: "Nov 2021 — Feb 2022",
+  },
+];
+
+const projects: Project[] = [
+  {
+    title: "Scarab: Self-Driving Mars Rover",
+    description:
+      "Designed and implemented the autonomous navigation pipeline for the Marsworks Scarab rover using ROS2, RTAB-Map SLAM, and Nav2. ",
+    github_link: "https://github.com/SheffMarsworks/marsworks_scarab_ws",
+  },
+  {
+    title: "WRO 2024: Autonomous Driving Robot",
+    description:
+      "Ackermann robot designed to autonomously complete a circuit and evade obstacles using computer vision, 2D Lidar, and PID control with analog sensors. ",
+    github_link: "https://github.com/marieblasi/wro2024-robotek",
   },
 ];
 ---
@@ -45,14 +68,16 @@ const experiences: Experience[] = [
                 <a
                   href="https://github.com/renzodamgo"
                   aria-label="GitHub profile"
-                  target="_blank"><Github /></a
+                  target="_blank"
+                  rel="noopener noreferrer"><Github /></a
                 >
               </li>
               <li>
                 <a
                   href="https://linkedin.com/in/renzo-damian"
                   aria-label="LinkedIn profile"
-                  target="_blank"><Linkedin /></a
+                  target="_blank"
+                  rel="noopener noreferrer"><Linkedin /></a
                 >
               </li>
               <li>
@@ -115,10 +140,21 @@ const experiences: Experience[] = [
             class="backdrop-blur-2xl p-4 border-1 border-gray-700"
           >
             <h3 class="font-bold text-lg">Projects</h3>
+            <div class="space-y-4">
+              {
+                projects.map((experience) => (
+                  <ProjectItem
+                    title={experience.title}
+                    description={experience.description}
+                    github_link={experience.github_link}
+                  />
+                ))
+              }
+            </div>
           </div>
-          <div id="Blog" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
+          <!-- <div id="Blog" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
             <h3 class="font-bold text-lg">Blog</h3>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
