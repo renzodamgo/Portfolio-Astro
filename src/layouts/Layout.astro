@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Analytics from '@vercel/analytics/astro'
 ---
 
 <!doctype html>
@@ -20,6 +21,7 @@ import "../styles/global.css";
     <link rel="manifest" href="/site.webmanifest" />
   </head>
   <body>
+		<Analytics />
     <slot />
   </body>
 </html>
