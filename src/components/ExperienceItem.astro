@@ -1,0 +1,18 @@
+---
+// Define the props with TypeScript
+export interface Props {
+  title: string;
+  employer: string;
+  date: string;
+}
+
+const { title, employer, date } = Astro.props;
+---
+
+<div>
+  <h5 class="font-bold">{title}</h5>
+  <div class="flex justify-between italic text-sm">
+    <h4 class="italic">{employer}</h4>
+    <p class="">{date}</p>
+  </div>
+</div>
