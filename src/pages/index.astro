@@ -53,8 +53,12 @@ const projects: Project[] = [
 <Layout title="Three.js Canvas">
   <main class="h-screen w-screen overflow-hidden">
     <div class="h-full w-full" id="container"></div>
-    <div class="absolute top-0 left-0 w-full h-full text-white">
-      <div class="mx-auto w-full max-w-[1200px] px-6 mt-8 pt-8 text-left">
+    <div
+      class="absolute top-0 left-0 w-full h-full text-white md:items-center md:flex md:flex-col md:justify-center"
+    >
+      <div
+        class="mx-auto w-full max-w-[1200px] px-6 py-8 md:py-0 md:my-0 text-left"
+      >
         <div
           class="backdrop-blur-2xl font-bold border-1 border-gray-700 flex flex-col md:flex-row md:justify-between md:items-end p-4 gap-4"
         >
@@ -120,8 +124,8 @@ const projects: Project[] = [
                     rel="noopener noreferrer"
                     href="https://marsworks.sites.sheffield.ac.uk/">Marsworks</a
                   ></span
-                >, where I guide the development of autonomous navigation and mapping
-                in preparation for the <span>
+                >, where I guide the development of autonomous navigation and
+                mapping in preparation for the <span>
                   <a
                     target="_blank"
                     class="underline"
