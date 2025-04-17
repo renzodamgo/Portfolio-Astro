@@ -19,7 +19,7 @@ import Layout from "../layouts/Layout.astro";
     private container: HTMLElement;
     private width: number;
     private height: number;
-    private camera: THREE.PerspectiveCamera;
+    private camera: THREE.OrthographicCamera;
     private scene: THREE.Scene;
     private renderer: THREE.WebGLRenderer;
     private controls: OrbitControls;
@@ -27,17 +27,26 @@ import Layout from "../layouts/Layout.astro";
     private geometry!: THREE.BoxGeometry;
     private material!: THREE.MeshNormalMaterial;
     private mesh!: THREE.Mesh;
+    private speedX: number = 0.0008;
+    private speedY: number = 0.0008;
+    private boundaryX: number = 0; 
+    private boundaryY: number = 0;
+    private aspectRatio: number = 1;
 
     constructor(options: SketchOptions) {
       this.container = options.domElement;
       
-      // Get actual window dimensions
+      // Get window dimensions
       this.width = window.innerWidth;
       this.height = window.innerHeight;
-
-      this.camera = new THREE.PerspectiveCamera(
-        70,
-        this.width / this.height,
+      this.aspectRatio = this.width / this.height;
+      
+      const frustumSize = 1;
+      this.camera = new THREE.OrthographicCamera(
+        frustumSize * this.aspectRatio / -2,
+        frustumSize * this.aspectRatio / 2,
+        frustumSize / 2,
+        frustumSize / -2,
         0.01,
         10
       );
@@ -48,16 +57,18 @@ import Layout from "../layouts/Layout.astro";
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setPixelRatio(window.devicePixelRatio);
       
-      // Set renderer size to window dimensions
+ 
       this.renderer.setSize(this.width, this.height);
       
-      // Make the canvas element fill its container
+
       this.renderer.domElement.style.width = '100%';
       this.renderer.domElement.style.height = '100%';
       this.renderer.domElement.style.display = 'block';
 
       this.container.appendChild(this.renderer.domElement);
       this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+
+      this.controls.enabled = false;
 
       this.time = 0;
       this.resize();
@@ -68,13 +79,22 @@ import Layout from "../layouts/Layout.astro";
     }
 
     private resize(): void {
-      // Update to window dimensions on resize
       this.width = window.innerWidth;
       this.height = window.innerHeight;
+      this.aspectRatio = this.width / this.height;
+      
+      const frustumSize = 1;
+      this.camera.left = frustumSize * this.aspectRatio / -2;
+      this.camera.right = frustumSize * this.aspectRatio / 2;
+      this.camera.top = frustumSize / 2;
+      this.camera.bottom = frustumSize / -2;
       
       this.renderer.setSize(this.width, this.height);
-      this.camera.aspect = this.width / this.height;
       this.camera.updateProjectionMatrix();
+      
+      
+      this.boundaryX = (frustumSize * this.aspectRatio / 2) - 0.13; 
+      this.boundaryY = (frustumSize / 2) - 0.15; 
     }
 
     private setupResize(): void {
@@ -86,13 +106,35 @@ import Layout from "../layouts/Layout.astro";
       this.material = new THREE.MeshNormalMaterial();
 
       this.mesh = new THREE.Mesh(this.geometry, this.material);
+      // Start at a random position
+      this.mesh.position.x = (Math.random() - 0.5) * this.boundaryX * 1.8;
+      this.mesh.position.y = (Math.random() - 0.5) * this.boundaryY * 1.8;
       this.scene.add(this.mesh);
     }
 
     private render(): void {
-      this.time += 0.05;
-      this.mesh.rotation.x = this.time / 2000;
-      this.mesh.rotation.y = this.time / 1000;
+      this.time += 1;
+      
+      // Update rotation
+      this.mesh.rotation.x += 0.003;
+      this.mesh.rotation.y += 0.003;
+      
+      // Update position
+      this.mesh.position.x += this.speedX;
+      this.mesh.position.y += this.speedY;
+      
+      // Check for collisions with screen edges
+      // For X-axis
+      if (Math.abs(this.mesh.position.x) > this.boundaryX) {
+        this.speedX *= -1; // Reverse direction
+        this.mesh.position.x = Math.sign(this.mesh.position.x) * this.boundaryX;
+      }
+      
+      // For Y-axis
+      if (Math.abs(this.mesh.position.y) > this.boundaryY) {
+        this.speedY *= -1; // Reverse direction
+        this.mesh.position.y = Math.sign(this.mesh.position.y) * this.boundaryY;
+      }
 
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(this.render.bind(this));
