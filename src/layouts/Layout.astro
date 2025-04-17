@@ -1,7 +1,6 @@
 ---
 import "../styles/global.css";
 import Analytics from "@vercel/analytics/astro";
-import SpeedInsights from "@vercel/speed-insights/astro";
 ---
 
 <!doctype html>
@@ -36,7 +35,6 @@ import SpeedInsights from "@vercel/speed-insights/astro";
     >
   </head>
   <body>
-    <SpeedInsights />
     <Analytics />
     <slot />
   </body>
@@ -49,7 +47,7 @@ import SpeedInsights from "@vercel/speed-insights/astro";
     width: 100%;
     height: 100%;
     font-family: "Space Grotesk", sans-serif;
-		font-display: swap;
+    font-display: swap;
   }
   ,
   h1,
