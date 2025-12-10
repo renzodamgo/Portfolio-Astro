@@ -1,0 +1,17 @@
+---
+export interface Props {
+    title: string;
+    institution: string;
+    date: string;
+}
+
+const { title, institution, date } = Astro.props;
+---
+
+<div>
+    <h4 class="font-bold">{title}</h4>
+    <div class="flex justify-between italic text-sm flex-col">
+        <h4 class="italic">{institution}</h4>
+        <p class="">{date}</p>
+    </div>
+</div>

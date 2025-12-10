@@ -1,7 +1,9 @@
 ---
 import ExperienceItem from "../components/ExperienceItem.astro";
 import ProjectItem from "../components/ProjectItem.astro";
+import EducationItem from "../components/EducationItem.astro";
 import Layout from "../layouts/Layout.astro";
+import Renzo from "../assets/renzodamian-anatolianroverchallenge.webp";
 import { Github, Linkedin, FileText, Mail } from "lucide-astro";
 
 export interface Experience {
@@ -20,7 +22,7 @@ const experiences: Experience[] = [
     {
         title: "Software Team Lead ",
         employer: "Marsworks",
-        date: "Oct 2024 – Present",
+        date: "Oct 2024 – Oct 2025",
     },
     {
         title: "Fullstack Java Developer",
@@ -67,6 +69,23 @@ const projects: Project[] = [
         github_link: "https://github.com/renzodamgo/Drivesafe",
     },
 ];
+
+const education = [
+    {
+        title: "Master of Science in Advanced Computer Science",
+        description:
+            "Completed with Merit at the University of Sheffield. Dissertation: Multi-Target Speaker Extraction for Conversational Enhancement using Deep Learning for the CHiME-9 ECHI Challenge.",
+        institution: "University of Sheffield",
+        date: "Sep 2024 – Nov 2025",
+    },
+    {
+        title: "Bachelor of Science in Computer Science",
+        description:
+            "Graduated with a GPA of 3.5/4.0 from Universidad Peruana de Ciencias Aplicadas (UPC) with concentrations in Machine Learning and Computer Vision.",
+        institution: "Universidad Peruana de Ciencias Aplicadas (UPC)",
+        date: "Jan 2018 – Jul 2023",
+    },
+];
 ---
 
 <Layout title="Three.js Canvas">
@@ -79,46 +98,57 @@ const projects: Project[] = [
                 class="mx-auto w-full max-w-[1200px] px-6 py-8 md:py-0 md:my-0 text-left lg:flex lg:gap-4"
             >
                 <div
-                    class="backdrop-blur-2xl font-bold border-1 border-gray-700 flex flex-col md:flex-row md:justify-between md:items-end p-4 gap-4"
+                    class="backdrop-blur-2xl font-bold border border-gray-700 p-4 gap-4 flex flex-col justify-end"
                 >
-                    <div>
-                        <h1 class="text-4xl">Renzo Damian</h1>
-                        <h2>Software Developer</h2>
+                    <div class="relative overflow-hidden">
+                        <img
+                            class="w-full grayscale-20"
+                            src={Renzo.src}
+                            alt="Anatolian Rover Challenge - Renzo Damian"
+                        />
                     </div>
-                    <div>
-                        <ul class="flex gap-4 md:pb-1">
-                            <li>
-                                <a
-                                    href="https://github.com/renzodamgo"
-                                    aria-label="GitHub profile"
-                                    target="_blank"
-                                    rel="noopener noreferrer"><Github /></a
-                                >
-                            </li>
-                            <li>
-                                <a
-                                    href="https://linkedin.com/in/renzo-damian"
-                                    aria-label="LinkedIn profile"
-                                    target="_blank"
-                                    rel="noopener noreferrer"><Linkedin /></a
-                                >
-                            </li>
-                            <li>
-                                <a
-                                    href="/Renzo_Damian_Software_Developer_2025.pdf"
-                                    aria-label="Download resume"
-                                    target="_blank"
-                                    rel="noopener noreferrer"><FileText /></a
-                                >
-                            </li>
-                            <li>
-                                <a
-                                    href="mailto:redamiangomez1@sheffield.ac.uk"
-                                    aria-label="Contact me"
-                                    target="_blank"><Mail /></a
-                                >
-                            </li>
-                        </ul>
+                    <div class="flex flex-col md:flex-row md:justify-between">
+                        <div>
+                            <h1 class="text-4xl">Renzo Damian</h1>
+                            <h2>Software Developer</h2>
+                        </div>
+                        <div class="flex items-end">
+                            <ul class="flex gap-4 md:pb-1">
+                                <li>
+                                    <a
+                                        href="https://github.com/renzodamgo"
+                                        aria-label="GitHub profile"
+                                        target="_blank"
+                                        rel="noopener noreferrer"><Github /></a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="https://linkedin.com/in/renzo-damian"
+                                        aria-label="LinkedIn profile"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        ><Linkedin /></a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="/Renzo_Damian_Software_Developer_2025.pdf"
+                                        aria-label="Download resume"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        ><FileText /></a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        href="mailto:redamiangomez1@sheffield.ac.uk"
+                                        aria-label="Contact me"
+                                        target="_blank"><Mail /></a
+                                    >
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
@@ -181,6 +211,23 @@ const projects: Project[] = [
                                         title={experience.title}
                                         employer={experience.employer}
                                         date={experience.date}
+                                    />
+                                ))
+                            }
+                        </div>
+                        <div
+                            class="w-full border-t-1 pb-2 mt-4 border-gray-600"
+                        >
+                        </div>
+
+                        <h3 class="font-bold pb-2 text-lg">Education</h3>
+                        <div class="space-y-4">
+                            {
+                                education.map((education) => (
+                                    <EducationItem
+                                        title={education.title}
+                                        institution={education.institution}
+                                        date={education.date}
                                     />
                                 ))
                             }
@@ -371,5 +418,5 @@ const projects: Project[] = [
                 domElement: document.getElementById("container") as HTMLElement,
             });
         </script>
-    </main></Layout
->
+    </main>
+</Layout>
