@@ -5,358 +5,371 @@ import Layout from "../layouts/Layout.astro";
 import { Github, Linkedin, FileText, Mail } from "lucide-astro";
 
 export interface Experience {
-  title: string;
-  employer: string;
-  date: string;
+    title: string;
+    employer: string;
+    date: string;
 }
 
 export interface Project {
-  title: string;
-  description: string;
-  github_link: string;
+    title: string;
+    description: string;
+    github_link: string;
 }
 
 const experiences: Experience[] = [
-  {
-    title: "Software Team Lead ",
-    employer: "Marsworks",
-    date: "Oct 2024 – Present",
-  },
-  {
-    title: "Fullstack Java Developer",
-    employer: "Bevertec",
-    date: "Sep 2022 — Sep 2023",
-  },
-  {
-    title: "Frontend Developer",
-    employer: "Rebels 247",
-    date: "Nov 2021 — Feb 2022",
-  },
+    {
+        title: "Software Team Lead ",
+        employer: "Marsworks",
+        date: "Oct 2024 – Present",
+    },
+    {
+        title: "Fullstack Java Developer",
+        employer: "Bevertec",
+        date: "Sep 2022 — Sep 2023",
+    },
+    {
+        title: "Frontend Developer",
+        employer: "Rebels 247",
+        date: "Nov 2021 — Feb 2022",
+    },
 ];
 
 const involvements: Experience[] = [
-  {
-    title: "Co-Founder ",
-    employer: "BLK Robotics",
-    date: "Dic 2023 — Present",
-  },
-  {
-    title: "Programming Coach",
-    employer: "Robotek",
-    date: "Feb 2024 – Sep 2024",
-  },
+    {
+        title: "Co-Founder ",
+        employer: "BLK Robotics",
+        date: "Dic 2023 — Present",
+    },
+    {
+        title: "Programming Coach",
+        employer: "Robotek",
+        date: "Feb 2024 – Sep 2024",
+    },
 ];
 
 const projects: Project[] = [
-  {
-    title: "Scarab: Self-Driving Mars Rover",
-    description:
-      "Designed and implemented the autonomous navigation pipeline for the Marsworks Scarab rover using ROS2, RTAB-Map SLAM, and Nav2. ",
-    github_link: "https://github.com/SheffMarsworks/ScarabRover",
-  },
-  {
-    title: "WRO 2024: Autonomous Driving Robot",
-    description:
-      "Ackermann robot designed to autonomously complete a circuit and evade obstacles using computer vision, 2D Lidar, and PID control with analog sensors. ",
-    github_link: "https://github.com/marieblasi/wro2024-robotek",
-  },
-  {
-    title: "Drivesafe: Driver Drowsiness Detection",
-    description:
-      "An ML-powered app detecting driver drowsiness and distraction using computer vision. Integrates PyTorch with Apple’s Core ML, leveraging YOLOv8 for on-device inference.",
-    github_link: "https://github.com/renzodamgo/Drivesafe",
-  },
+    {
+        title: "Scarab: Self-Driving Mars Rover",
+        description:
+            "Designed and implemented the autonomous navigation pipeline for the Marsworks Scarab rover using ROS2, RTAB-Map SLAM, and Nav2. ",
+        github_link: "https://github.com/SheffMarsworks/ScarabRover",
+    },
+    {
+        title: "WRO 2024: Autonomous Driving Robot",
+        description:
+            "Ackermann robot designed to autonomously complete a circuit and evade obstacles using computer vision, 2D Lidar, and PID control with analog sensors. ",
+        github_link: "https://github.com/marieblasi/wro2024-robotek",
+    },
+    {
+        title: "Drivesafe: Driver Drowsiness Detection",
+        description:
+            "An ML-powered app detecting driver drowsiness and distraction using computer vision. Integrates PyTorch with Apple’s Core ML, leveraging YOLOv8 for on-device inference.",
+        github_link: "https://github.com/renzodamgo/Drivesafe",
+    },
 ];
 ---
 
 <Layout title="Three.js Canvas">
-  <main class="bg-black">
-    <div class="fixed top-0 left-0 h-full w-full" id="container"></div>
-    <div
-      class="w-full h-full text-white md:h-screen md:flex md:flex-col md:justify-center md:items-center"
-    >
-      <div
-        class="mx-auto w-full max-w-[1200px] px-6 py-8 md:py-0 md:my-0 text-left lg:flex lg:gap-4"
-      >
+    <main class="bg-black">
+        <div class="fixed top-0 left-0 h-full w-full" id="container"></div>
         <div
-          class="backdrop-blur-2xl font-bold border-1 border-gray-700 flex flex-col md:flex-row md:justify-between md:items-end p-4 gap-4"
+            class="w-full h-full text-white md:h-screen md:flex md:flex-col md:justify-center md:items-center"
         >
-          <div>
-            <h1 class="text-4xl">Renzo Damian</h1>
-            <h2>Software Developer</h2>
-          </div>
-          <div>
-            <ul class="flex gap-4 md:pb-1">
-              <li>
-                <a
-                  href="https://github.com/renzodamgo"
-                  aria-label="GitHub profile"
-                  target="_blank"
-                  rel="noopener noreferrer"><Github /></a
+            <div
+                class="mx-auto w-full max-w-[1200px] px-6 py-8 md:py-0 md:my-0 text-left lg:flex lg:gap-4"
+            >
+                <div
+                    class="backdrop-blur-2xl font-bold border-1 border-gray-700 flex flex-col md:flex-row md:justify-between md:items-end p-4 gap-4"
                 >
-              </li>
-              <li>
-                <a
-                  href="https://linkedin.com/in/renzo-damian"
-                  aria-label="LinkedIn profile"
-                  target="_blank"
-                  rel="noopener noreferrer"><Linkedin /></a
-                >
-              </li>
-              <li>
-                <a
-                  href="/Renzo_Damian_Software_Developer_2025.pdf"
-                  aria-label="Download resume"
-                  target="_blank"
-                  rel="noopener noreferrer"><FileText /></a
-                >
-              </li>
-              <li>
-                <a
-                  href="mailto:redamiangomez1@sheffield.ac.uk"
-                  aria-label="Contact me"
-                  target="_blank"><Mail /></a
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
+                    <div>
+                        <h1 class="text-4xl">Renzo Damian</h1>
+                        <h2>Software Developer</h2>
+                    </div>
+                    <div>
+                        <ul class="flex gap-4 md:pb-1">
+                            <li>
+                                <a
+                                    href="https://github.com/renzodamgo"
+                                    aria-label="GitHub profile"
+                                    target="_blank"
+                                    rel="noopener noreferrer"><Github /></a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://linkedin.com/in/renzo-damian"
+                                    aria-label="LinkedIn profile"
+                                    target="_blank"
+                                    rel="noopener noreferrer"><Linkedin /></a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="/Renzo_Damian_Software_Developer_2025.pdf"
+                                    aria-label="Download resume"
+                                    target="_blank"
+                                    rel="noopener noreferrer"><FileText /></a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="mailto:redamiangomez1@sheffield.ac.uk"
+                                    aria-label="Contact me"
+                                    target="_blank"><Mail /></a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-        <div
-          class="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 grid gap-4 mt-4 lg:mt-0"
-        >
-          <div
-            id="About Me"
-            class="backdrop-blur-2xl p-4 border-1 border-gray-700"
-          >
-            <h3 class="font-bold pb-2 text-lg">About Me</h3>
-            <div class="space-y-4 text-sm">
-              <p class="">
-                I'm Renzo Damian, a software engineer based in Sheffield,
-                focusing on robotics and artificial intelligence.
-              </p>
-              <p>
-                Currently, I'm completing my Master's in Advanced Computer
-                Science while leading the software team at
-                <span>
-                  <a
-                    target="_blank"
-                    class="underline"
-                    rel="noopener noreferrer"
-                    href="https://marsworks.sites.sheffield.ac.uk/">Marsworks</a
-                  ></span
-                >, where I guide the development of autonomous navigation and
-                mapping in preparation for the <span>
-                  <a
-                    target="_blank"
-                    class="underline"
-                    rel="noopener noreferrer"
-                    href="https://www.anatolianrover.space/"
-                    >Anatolian Rover Challenge (ARC)</a
-                  >.
-                </span>
-              </p>
-              <p>
-                Outside of work and university, I like to stay active by
-                cycling. It's a great way to clear my head. I also enjoy
-                reading, especially science fiction books like Asimov's stories,
-                which first sparked my fascination with AI and robotics.
-              </p>
-            </div>
-          </div>
-          <div
-            id="Experience"
-            class="backdrop-blur-2xl p-4 border-1 border-gray-700"
-          >
-            <h3 class="font-bold pb-2 text-lg">Experience</h3>
-            <div class="space-y-4">
-              {
-                experiences.map((experience) => (
-                  <ExperienceItem
-                    title={experience.title}
-                    employer={experience.employer}
-                    date={experience.date}
-                  />
-                ))
-              }
-            </div>
-            <div class="w-full border-t-1 pb-2 mt-4 border-gray-600"></div>
+                <div
+                    class="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 grid gap-4 mt-4 lg:mt-0"
+                >
+                    <div
+                        id="About Me"
+                        class="backdrop-blur-2xl p-4 border-1 border-gray-700"
+                    >
+                        <h3 class="font-bold pb-2 text-lg">About Me</h3>
+                        <div class="space-y-4 text-sm">
+                            <p class="">
+                                I'm Renzo Damian, a software engineer based in
+                                Sheffield, focusing on robotics and artificial
+                                intelligence.
+                            </p>
+                            <p>
+                                Currently, I'm completing my Master's in
+                                Advanced Computer Science while leading the
+                                software team at
+                                <span>
+                                    <a
+                                        target="_blank"
+                                        class="underline"
+                                        rel="noopener noreferrer"
+                                        href="https://marsworks.sites.sheffield.ac.uk/"
+                                        >Marsworks</a
+                                    ></span
+                                >, where I guide the development of autonomous
+                                navigation and mapping in preparation for the <span
+                                >
+                                    <a
+                                        target="_blank"
+                                        class="underline"
+                                        rel="noopener noreferrer"
+                                        href="https://www.anatolianrover.space/"
+                                        >Anatolian Rover Challenge (ARC)</a
+                                    >.
+                                </span>
+                            </p>
+                            <p>
+                                Outside of work and university, I like to stay
+                                active by cycling. It's a great way to clear my
+                                head. I also enjoy reading, especially science
+                                fiction books like Asimov's stories, which first
+                                sparked my fascination with AI and robotics.
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        id="Experience"
+                        class="backdrop-blur-2xl p-4 border-1 border-gray-700"
+                    >
+                        <h3 class="font-bold pb-2 text-lg">Experience</h3>
+                        <div class="space-y-4">
+                            {
+                                experiences.map((experience) => (
+                                    <ExperienceItem
+                                        title={experience.title}
+                                        employer={experience.employer}
+                                        date={experience.date}
+                                    />
+                                ))
+                            }
+                        </div>
+                        <div
+                            class="w-full border-t-1 pb-2 mt-4 border-gray-600"
+                        >
+                        </div>
 
-            <h3 class="font-bold pb-2 text-lg">Involvements</h3>
-            <div class="space-y-4">
-              {
-                involvements.map((involvement) => (
-                  <ExperienceItem
-                    title={involvement.title}
-                    employer={involvement.employer}
-                    date={involvement.date}
-                  />
-                ))
-              }
-            </div>
-          </div>
-          <div
-            id="Projects"
-            class="backdrop-blur-2xl p-4 border-1 border-gray-700"
-          >
-            <h3 class="font-bold text-lg">Projects</h3>
-            <div class="space-y-4">
-              {
-                projects.map((experience) => (
-                  <ProjectItem
-                    title={experience.title}
-                    description={experience.description}
-                    github_link={experience.github_link}
-                  />
-                ))
-              }
-            </div>
-          </div>
-          <!-- <div id="Blog" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
+                        <h3 class="font-bold pb-2 text-lg">Involvements</h3>
+                        <div class="space-y-4">
+                            {
+                                involvements.map((involvement) => (
+                                    <ExperienceItem
+                                        title={involvement.title}
+                                        employer={involvement.employer}
+                                        date={involvement.date}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </div>
+                    <div
+                        id="Projects"
+                        class="backdrop-blur-2xl p-4 border-1 border-gray-700"
+                    >
+                        <h3 class="font-bold text-lg">Projects</h3>
+                        <div class="space-y-4">
+                            {
+                                projects.map((experience) => (
+                                    <ProjectItem
+                                        title={experience.title}
+                                        description={experience.description}
+                                        github_link={experience.github_link}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </div>
+                    <!-- <div id="Blog" class="backdrop-blur-2xl p-4 border-1 border-gray-700">
             <h3 class="font-bold text-lg">Blog</h3>
           </div> -->
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <script>
-      import * as THREE from "three";
-      import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-      interface SketchOptions {
-        domElement: HTMLElement;
-      }
+        <script>
+            import * as THREE from "three";
+            import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+            interface SketchOptions {
+                domElement: HTMLElement;
+            }
 
-      export default class Sketch {
-        private container: HTMLElement;
-        private width: number;
-        private height: number;
-        private camera: THREE.OrthographicCamera;
-        private scene: THREE.Scene;
-        private renderer: THREE.WebGLRenderer;
-        private controls: OrbitControls;
-        private time: number;
-        private geometry!: THREE.BoxGeometry;
-        private material!: THREE.MeshNormalMaterial;
-        private mesh!: THREE.Mesh;
-        private speedX: number = 0.0008;
-        private speedY: number = 0.0008;
-        private boundaryX: number = 0;
-        private boundaryY: number = 0;
-        private aspectRatio: number = 1;
+            export default class Sketch {
+                private container: HTMLElement;
+                private width: number;
+                private height: number;
+                private camera: THREE.OrthographicCamera;
+                private scene: THREE.Scene;
+                private renderer: THREE.WebGLRenderer;
+                private controls: OrbitControls;
+                private time: number;
+                private geometry!: THREE.BoxGeometry;
+                private material!: THREE.MeshNormalMaterial;
+                private mesh!: THREE.Mesh;
+                private speedX: number = 0.0008;
+                private speedY: number = 0.0008;
+                private boundaryX: number = 0;
+                private boundaryY: number = 0;
+                private aspectRatio: number = 1;
 
-        constructor(options: SketchOptions) {
-          this.container = options.domElement;
+                constructor(options: SketchOptions) {
+                    this.container = options.domElement;
 
-          // Get window dimensions
-          this.width = window.innerWidth;
-          this.height = window.innerHeight;
-          this.aspectRatio = this.width / this.height;
+                    // Get window dimensions
+                    this.width = window.innerWidth;
+                    this.height = window.innerHeight;
+                    this.aspectRatio = this.width / this.height;
 
-          const frustumSize = 1;
-          this.camera = new THREE.OrthographicCamera(
-            (frustumSize * this.aspectRatio) / -2,
-            (frustumSize * this.aspectRatio) / 2,
-            frustumSize / 2,
-            frustumSize / -2,
-            0.01,
-            10
-          );
-          this.camera.position.z = 1;
+                    const frustumSize = 1;
+                    this.camera = new THREE.OrthographicCamera(
+                        (frustumSize * this.aspectRatio) / -2,
+                        (frustumSize * this.aspectRatio) / 2,
+                        frustumSize / 2,
+                        frustumSize / -2,
+                        0.01,
+                        10,
+                    );
+                    this.camera.position.z = 1;
 
-          this.scene = new THREE.Scene();
+                    this.scene = new THREE.Scene();
 
-          this.renderer = new THREE.WebGLRenderer({ antialias: true });
-          this.renderer.setPixelRatio(window.devicePixelRatio);
+                    this.renderer = new THREE.WebGLRenderer({
+                        antialias: true,
+                    });
+                    this.renderer.setPixelRatio(window.devicePixelRatio);
 
-          this.renderer.setSize(this.width, this.height);
+                    this.renderer.setSize(this.width, this.height);
 
-          this.renderer.domElement.style.width = "100%";
-          this.renderer.domElement.style.height = "100%";
-          this.renderer.domElement.style.display = "block";
+                    this.renderer.domElement.style.width = "100%";
+                    this.renderer.domElement.style.height = "100%";
+                    this.renderer.domElement.style.display = "block";
 
-          this.container.appendChild(this.renderer.domElement);
-          this.controls = new OrbitControls(
-            this.camera,
-            this.renderer.domElement
-          );
+                    this.container.appendChild(this.renderer.domElement);
+                    this.controls = new OrbitControls(
+                        this.camera,
+                        this.renderer.domElement,
+                    );
 
-          this.controls.enabled = false;
+                    this.controls.enabled = false;
 
-          this.time = 0;
-          this.resize();
-          this.addObjects();
-          this.render();
+                    this.time = 0;
+                    this.resize();
+                    this.addObjects();
+                    this.render();
 
-          this.setupResize();
-        }
+                    this.setupResize();
+                }
 
-        private resize(): void {
-          this.width = window.innerWidth;
-          this.height = window.innerHeight;
-          this.aspectRatio = this.width / this.height;
+                private resize(): void {
+                    this.width = window.innerWidth;
+                    this.height = window.innerHeight;
+                    this.aspectRatio = this.width / this.height;
 
-          const frustumSize = 1;
-          this.camera.left = (frustumSize * this.aspectRatio) / -2;
-          this.camera.right = (frustumSize * this.aspectRatio) / 2;
-          this.camera.top = frustumSize / 2;
-          this.camera.bottom = frustumSize / -2;
+                    const frustumSize = 1;
+                    this.camera.left = (frustumSize * this.aspectRatio) / -2;
+                    this.camera.right = (frustumSize * this.aspectRatio) / 2;
+                    this.camera.top = frustumSize / 2;
+                    this.camera.bottom = frustumSize / -2;
 
-          this.renderer.setSize(this.width, this.height);
-          this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(this.width, this.height);
+                    this.camera.updateProjectionMatrix();
 
-          this.boundaryX = (frustumSize * this.aspectRatio) / 2 - 0.13;
-          this.boundaryY = frustumSize / 2 - 0.15;
-        }
+                    this.boundaryX =
+                        (frustumSize * this.aspectRatio) / 2 - 0.13;
+                    this.boundaryY = frustumSize / 2 - 0.15;
+                }
 
-        private setupResize(): void {
-          window.addEventListener("resize", this.resize.bind(this));
-        }
+                private setupResize(): void {
+                    window.addEventListener("resize", this.resize.bind(this));
+                }
 
-        private addObjects(): void {
-          this.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-          this.material = new THREE.MeshNormalMaterial();
+                private addObjects(): void {
+                    this.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                    this.material = new THREE.MeshNormalMaterial();
 
-          this.mesh = new THREE.Mesh(this.geometry, this.material);
-          // Start at a random position
-          this.mesh.position.x = (Math.random() - 0.5) * this.boundaryX * 1.8;
-          this.mesh.position.y = (Math.random() - 0.5) * this.boundaryY * 1.8;
-          this.scene.add(this.mesh);
-        }
+                    this.mesh = new THREE.Mesh(this.geometry, this.material);
+                    // Start at a random position
+                    this.mesh.position.x =
+                        (Math.random() - 0.5) * this.boundaryX * 1.8;
+                    this.mesh.position.y =
+                        (Math.random() - 0.5) * this.boundaryY * 1.8;
+                    this.scene.add(this.mesh);
+                }
 
-        private render(): void {
-          this.time += 1;
+                private render(): void {
+                    this.time += 1;
 
-          // Update rotation
-          this.mesh.rotation.x += 0.003;
-          this.mesh.rotation.y += 0.003;
+                    // Update rotation
+                    this.mesh.rotation.x += 0.003;
+                    this.mesh.rotation.y += 0.003;
 
-          // Update position
-          this.mesh.position.x += this.speedX;
-          this.mesh.position.y += this.speedY;
+                    // Update position
+                    this.mesh.position.x += this.speedX;
+                    this.mesh.position.y += this.speedY;
 
-          // Check for collisions with screen edges
-          // For X-axis
-          if (Math.abs(this.mesh.position.x) > this.boundaryX) {
-            this.speedX *= -1; // Reverse direction
-            this.mesh.position.x =
-              Math.sign(this.mesh.position.x) * this.boundaryX;
-          }
+                    // Check for collisions with screen edges
+                    // For X-axis
+                    if (Math.abs(this.mesh.position.x) > this.boundaryX) {
+                        this.speedX *= -1; // Reverse direction
+                        this.mesh.position.x =
+                            Math.sign(this.mesh.position.x) * this.boundaryX;
+                    }
 
-          // For Y-axis
-          if (Math.abs(this.mesh.position.y) > this.boundaryY) {
-            this.speedY *= -1; // Reverse direction
-            this.mesh.position.y =
-              Math.sign(this.mesh.position.y) * this.boundaryY;
-          }
+                    // For Y-axis
+                    if (Math.abs(this.mesh.position.y) > this.boundaryY) {
+                        this.speedY *= -1; // Reverse direction
+                        this.mesh.position.y =
+                            Math.sign(this.mesh.position.y) * this.boundaryY;
+                    }
 
-          this.renderer.render(this.scene, this.camera);
-          requestAnimationFrame(this.render.bind(this));
-        }
-      }
+                    this.renderer.render(this.scene, this.camera);
+                    requestAnimationFrame(this.render.bind(this));
+                }
+            }
 
-      new Sketch({
-        domElement: document.getElementById("container") as HTMLElement,
-      });
-    </script>
-  </main></Layout
+            new Sketch({
+                domElement: document.getElementById("container") as HTMLElement,
+            });
+        </script>
+    </main></Layout
 >
