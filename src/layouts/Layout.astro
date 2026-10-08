@@ -11,7 +11,7 @@ const site = Astro.site?.toString().replace(/\/$/, "") ?? "https://renzodamian.c
 
 const {
     title = "Renzo Damian — AI Engineer & Robotics Software Developer",
-    description = "Renzo Damian is an AI Engineer in Sheffield building autonomous robots with ROS2, Nav2 and PyTorch. MSc Advanced Computer Science, University of Sheffield.",
+    description = "Renzo Damian is an AI Engineer at Mandü HR in Lima, building applied AI and autonomous robots with ROS2, Nav2 and PyTorch. MSc Advanced Computer Science, University of Sheffield.",
 } = Astro.props;
 
 const canonical = Astro.url
@@ -55,8 +55,8 @@ const personSchema = {
             description: description,
             address: {
                 "@type": "PostalAddress",
-                addressLocality: "Sheffield",
-                addressCountry: "GB",
+                addressLocality: "Lima",
+                addressCountry: "PE",
             },
             alumniOf: [
                 {
