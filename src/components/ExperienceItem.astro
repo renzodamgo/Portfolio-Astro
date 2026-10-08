@@ -9,15 +9,9 @@ const { title, employer, date } = Astro.props;
 ---
 
 <div>
-    <h3 class="text-sm leading-snug font-medium text-cream-100">
-        {title}
-    </h3>
-    <div class="flex items-baseline justify-between gap-3 text-[13px]">
-        <p class="leading-relaxed text-cream-300">{employer}</p>
-        <p
-            class="shrink-0 font-mono text-[11px] tracking-[0.04em] text-cream-500 tabular-nums"
-        >
-            {date}
-        </p>
+    <h4 class="font-bold">{title}</h4>
+    <div class="flex justify-between text-sm italic">
+        <p class="italic">{employer}</p>
+        <p>{date}</p>
     </div>
 </div>
