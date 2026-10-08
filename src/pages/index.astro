@@ -4,7 +4,7 @@ import ProjectItem from "../components/ProjectItem.astro";
 import EducationItem from "../components/EducationItem.astro";
 import Layout from "../layouts/Layout.astro";
 import Renzo from "../assets/renzodamian-anatolianroverchallenge.webp";
-import { Github, Linkedin, FileText, Mail } from "lucide-astro";
+import { Github, Linkedin, FileText, Mail, MapPin } from "lucide-astro";
 
 export interface Experience {
     title: string;
@@ -94,17 +94,22 @@ const education = [
 
 const socials = [
     {
-        label: "GitHub",
+        label: "GitHub profile",
         href: "https://github.com/renzodamgo",
         Icon: Github,
     },
     {
-        label: "LinkedIn",
+        label: "LinkedIn profile",
         href: "https://linkedin.com/in/renzo-damian",
         Icon: Linkedin,
     },
     {
-        label: "Email",
+        label: "Download resume",
+        href: "/Renzo_Damian_CV.pdf",
+        Icon: FileText,
+    },
+    {
+        label: "Contact me",
         href: "mailto:redamiangomez1@sheffield.ac.uk",
         Icon: Mail,
     },
@@ -113,158 +118,159 @@ const socials = [
 
 <Layout>
     <a
-        href="#about"
+        href="#about-me"
         class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-sm focus:bg-amber-400 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-coal-950"
     >
         Skip to content
     </a>
 
     <main class="bg-coal-950 text-cream-100">
-        <div class="mx-auto w-full max-w-[1160px] px-6 md:px-10">
-            <header class="pt-14 md:pt-20">
-                <h1
-                    class="font-display max-w-[12ch] text-5xl leading-[0.95] font-bold text-balance uppercase md:text-6xl"
+        <div class="fixed top-0 left-0 h-full w-full" id="container" aria-hidden="true"></div>
+        <div
+            class="pointer-events-none fixed inset-0"
+            aria-hidden="true"
+            style="background: radial-gradient(120% 90% at 50% 0%, transparent 30%, rgba(12,10,7,0.72) 68%, #0c0a07 100%), linear-gradient(to bottom, rgba(12,10,7,0.55), rgba(12,10,7,0.88));"
+        >
+        </div>
+        <div
+            class="relative w-full text-cream-100 md:flex md:min-h-screen md:flex-col md:items-center md:justify-center"
+        >
+            <div
+                class="relative mx-auto w-full max-w-[1200px] px-6 py-8 text-left md:my-0 md:py-10 lg:flex lg:gap-4"
+            >
+                <div
+                    class="flex flex-col justify-end gap-4 border border-line bg-coal-900/70 p-4 backdrop-blur-2xl"
                 >
-                    Renzo Damian
-                </h1>
-                <p class="mt-4 max-w-[52ch] text-lg leading-snug text-cream-300">
-                    AI Engineer at Mandü HR — applied AI, robotics and
-                    autonomous systems.
-                </p>
-                <p
-                    class="mt-3 font-mono text-[12px] tracking-[0.08em] text-cream-500 uppercase"
-                >
-                    Lima, Peru
-                </p>
-
-                <ul class="mt-6 flex flex-wrap items-center gap-3">
-                    {
-                        socials.map(({ label, href, Icon }) => (
-                            <li>
-                                <a
-                                    href={href}
-                                    target={
-                                        href.startsWith("mailto:")
-                                            ? undefined
-                                            : "_blank"
-                                    }
-                                    rel={
-                                        href.startsWith("mailto:")
-                                            ? undefined
-                                            : "noopener noreferrer"
-                                    }
-                                    aria-label={label}
-                                    class="grid size-10 place-items-center border border-line text-cream-300 transition-colors duration-200 hover:border-amber-400 hover:text-amber-300"
-                                >
-                                    <Icon size={17} />
-                                </a>
-                            </li>
-                        ))
-                    }
-                    <li>
-                        <a
-                            href="/Renzo_Damian_CV.pdf"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex h-10 items-center gap-2 bg-amber-400 px-4 text-sm font-semibold text-coal-950 transition-colors duration-200 hover:bg-amber-300"
-                        >
-                            <FileText size={15} aria-hidden="true" />
-                            Resume
-                        </a>
-                    </li>
-                </ul>
-            </header>
-
-            <div class="mt-12 grid gap-12 pb-10 md:mt-14 lg:grid-cols-12 lg:gap-10">
-                <aside class="lg:col-span-4">
-                    <div class="lg:sticky lg:top-8">
-                        <figure class="border border-line">
-                            <img
-                                class="aspect-[4/3] w-full object-cover grayscale"
-                                src={Renzo.src}
-                                width={800}
-                                height={533}
-                                alt="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
-                                loading="eager"
-                                fetchpriority="high"
-                            />
-                        </figure>
-
-                        <section
-                            id="about"
-                            aria-labelledby="about-heading"
-                            class="mt-10 scroll-mt-8"
-                        >
-                            <h2
-                                id="about-heading"
-                                class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                            >
-                                About
-                            </h2>
-                            <div
-                                class="mt-4 max-w-[68ch] space-y-4 text-[15px] leading-[1.7] text-cream-300"
-                            >
-                                <p>
-                                    I'm Renzo Damian, an AI Engineer at{" "}
-                                    <a
-                                        target="_blank"
-                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                        rel="noopener noreferrer"
-                                        href="https://www.manduhr.com/"
-                                        >Mandü HR</a
-                                    >{" "}
-                                    in Lima, Peru, working on applied AI and
-                                    autonomous systems.
-                                </p>
-                                <p>
-                                    I recently finished my Master's in Advanced
-                                    Computer Science at the University of
-                                    Sheffield (with Merit), where I also led the
-                                    software team at{" "}
-                                    <a
-                                        target="_blank"
-                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                        rel="noopener noreferrer"
-                                        href="https://marsworks.sites.sheffield.ac.uk/"
-                                        >Marsworks</a
-                                    >, developing autonomous navigation and
-                                    mapping for the{" "}
-                                    <a
-                                        target="_blank"
-                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                        rel="noopener noreferrer"
-                                        href="https://www.anatolianrover.space/"
-                                        >Anatolian Rover Challenge (ARC)</a
-                                    >.
-                                </p>
-                                <p>
-                                    I'm back coaching at{" "}
-                                    <a
-                                        target="_blank"
-                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                        rel="noopener noreferrer"
-                                        href="https://www.robotek.pe/"
-                                        >Robotek</a
-                                    >, preparing a team for the WRO 2026 finals
-                                    in Puerto Rico. Outside of work, I cycle to
-                                    clear my head and read science fiction —
-                                    Asimov's stories first sparked my
-                                    fascination with AI and robotics.
-                                </p>
-                            </div>
-                        </section>
+                    <div class="overflow-hidden">
+                        <img
+                            class="aspect-[4/3] w-full object-cover grayscale"
+                            src={Renzo.src}
+                            width={800}
+                            height={533}
+                            alt="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
+                            loading="eager"
+                            fetchpriority="high"
+                        />
                     </div>
-                </aside>
+                    <div class="flex flex-col md:flex-row md:justify-between md:gap-6">
+                        <div class="grid gap-2">
+                            <h1
+                                class="font-display text-4xl leading-none font-bold tracking-[0.01em] uppercase"
+                            >
+                                Renzo Damian
+                            </h1>
+                            <p
+                                class="flex items-center gap-1.5 font-mono text-[12px] tracking-[0.08em] text-cream-300 uppercase"
+                            >
+                                <MapPin size={14} aria-hidden="true" />
+                                Lima, Peru
+                            </p>
+                            <h2 class="pb-4 text-xl text-cream-300 md:pb-0">
+                                AI Engineer — Mandü HR
+                            </h2>
+                        </div>
+                        <div class="flex items-end">
+                            <ul class="flex gap-4 md:pb-1">
+                                {
+                                    socials.map(({ label, href, Icon }) => (
+                                        <li>
+                                            <a
+                                                href={href}
+                                                aria-label={label}
+                                                target={
+                                                    href.startsWith("mailto:")
+                                                        ? undefined
+                                                        : "_blank"
+                                                }
+                                                rel={
+                                                    href.startsWith("mailto:")
+                                                        ? undefined
+                                                        : "noopener noreferrer"
+                                                }
+                                                class="text-cream-300 transition-colors duration-200 hover:text-amber-300"
+                                            >
+                                                <Icon size={20} />
+                                            </a>
+                                        </li>
+                                    ))
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="lg:col-span-8">
-                    <section aria-labelledby="experience-heading">
-                        <h2
-                            id="experience-heading"
-                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                <div
+                    class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:mt-0"
+                >
+                    <div
+                        id="about-me"
+                        class="scroll-mt-8 border border-line bg-coal-900/70 p-4 backdrop-blur-2xl"
+                    >
+                        <h3
+                            class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
+                        >
+                            About Me
+                        </h3>
+                        <div class="space-y-4 text-sm leading-relaxed text-cream-300">
+                            <p>
+                                I'm Renzo Damian, an AI Engineer at{" "}
+                                <a
+                                    target="_blank"
+                                    class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                    rel="noopener noreferrer"
+                                    href="https://www.manduhr.com/"
+                                    >Mandü HR</a
+                                >{" "}
+                                in Lima, Peru, working on applied AI and
+                                autonomous systems.
+                            </p>
+                            <p>
+                                I recently finished my Master's in Advanced
+                                Computer Science at the University of Sheffield
+                                (with Merit), where I also led the software team
+                                at{" "}
+                                <a
+                                    target="_blank"
+                                    class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                    rel="noopener noreferrer"
+                                    href="https://marsworks.sites.sheffield.ac.uk/"
+                                    >Marsworks</a
+                                >, developing autonomous navigation and mapping
+                                for the{" "}
+                                <a
+                                    target="_blank"
+                                    class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                    rel="noopener noreferrer"
+                                    href="https://www.anatolianrover.space/"
+                                    >Anatolian Rover Challenge (ARC)</a
+                                >.
+                            </p>
+                            <p>
+                                I'm back coaching at{" "}
+                                <a
+                                    target="_blank"
+                                    class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                    rel="noopener noreferrer"
+                                    href="https://www.robotek.pe/"
+                                    >Robotek</a
+                                >, preparing a team for the WRO 2026 finals in
+                                Puerto Rico. Outside of work, I cycle to clear
+                                my head and read science fiction — Asimov's
+                                stories first sparked my fascination with AI and
+                                robotics.
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        id="experience"
+                        class="border border-line bg-coal-900/70 p-4 backdrop-blur-2xl"
+                    >
+                        <h3
+                            class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
                         >
                             Experience
-                        </h2>
-                        <div class="mt-1 divide-y divide-line">
+                        </h3>
+                        <div class="space-y-4">
                             {
                                 experiences.map((experience) => (
                                     <ExperienceItem
@@ -275,16 +281,58 @@ const socials = [
                                 ))
                             }
                         </div>
-                    </section>
-
-                    <section aria-labelledby="projects-heading" class="mt-12">
-                        <h2
-                            id="projects-heading"
-                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                        <div class="mt-4 border-t border-line pt-4">
+                            <h3
+                                class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
+                            >
+                                Education
+                            </h3>
+                            <div class="space-y-4">
+                                {
+                                    education.map((item) => (
+                                        <div>
+                                            <EducationItem
+                                                title={item.title}
+                                                institution={item.institution}
+                                                date={item.date}
+                                            />
+                                            <p class="mt-1 text-sm leading-relaxed text-cream-300">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
+                        <div class="mt-4 border-t border-line pt-4">
+                            <h3
+                                class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
+                            >
+                                Involvements
+                            </h3>
+                            <div class="space-y-4">
+                                {
+                                    involvements.map((involvement) => (
+                                        <ExperienceItem
+                                            title={involvement.title}
+                                            employer={involvement.employer}
+                                            date={involvement.date}
+                                        />
+                                    ))
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        id="projects"
+                        class="border border-line bg-coal-900/70 p-4 backdrop-blur-2xl sm:col-span-2 md:col-span-1"
+                    >
+                        <h3
+                            class="font-display text-lg font-bold tracking-[0.04em] uppercase"
                         >
                             Projects
-                        </h2>
-                        <div class="mt-1 divide-y divide-line">
+                        </h3>
+                        <div class="space-y-4">
                             {
                                 projects.map((project) => (
                                     <ProjectItem
@@ -295,64 +343,175 @@ const socials = [
                                 ))
                             }
                         </div>
-                    </section>
-
-                    <section aria-labelledby="education-heading" class="mt-12">
-                        <h2
-                            id="education-heading"
-                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                        >
-                            Education
-                        </h2>
-                        <div class="mt-1 divide-y divide-line">
-                            {
-                                education.map((item) => (
-                                    <div class="py-4">
-                                        <EducationItem
-                                            title={item.title}
-                                            institution={item.institution}
-                                            date={item.date}
-                                        />
-                                        <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-cream-300">
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    </section>
-
-                    <section
-                        aria-labelledby="involvements-heading"
-                        class="mt-12"
-                    >
-                        <h2
-                            id="involvements-heading"
-                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                        >
-                            Involvement
-                        </h2>
-                        <div class="mt-1 divide-y divide-line">
-                            {
-                                involvements.map((involvement) => (
-                                    <ExperienceItem
-                                        title={involvement.title}
-                                        employer={involvement.employer}
-                                        date={involvement.date}
-                                    />
-                                ))
-                            }
-                        </div>
-                    </section>
+                    </div>
                 </div>
             </div>
-
-            <footer
-                class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-7 font-mono text-[11px] tracking-[0.1em] text-cream-500 uppercase"
-            >
-                <p>Renzo Damian — Lima, Peru</p>
-                <p>Built with Astro</p>
-            </footer>
         </div>
+
+        <script>
+            import * as THREE from "three";
+            import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+            interface SketchOptions {
+                domElement: HTMLElement;
+            }
+
+            export default class Sketch {
+                private container: HTMLElement;
+                private width: number;
+                private height: number;
+                private camera: THREE.OrthographicCamera;
+                private scene: THREE.Scene;
+                private renderer: THREE.WebGLRenderer;
+                private controls: OrbitControls;
+                private time: number;
+                private geometry!: THREE.BoxGeometry;
+                private material!: THREE.MeshNormalMaterial;
+                private mesh!: THREE.Mesh;
+                private speedX: number = 0.0008;
+                private speedY: number = 0.0008;
+                private boundaryX: number = 0;
+                private boundaryY: number = 0;
+                private aspectRatio: number = 1;
+                private running: boolean = true;
+                private rafId: number = 0;
+
+                constructor(options: SketchOptions) {
+                    this.container = options.domElement;
+
+                    this.width = window.innerWidth;
+                    this.height = window.innerHeight;
+                    this.aspectRatio = this.width / this.height;
+
+                    const frustumSize = 1;
+                    this.camera = new THREE.OrthographicCamera(
+                        (frustumSize * this.aspectRatio) / -2,
+                        (frustumSize * this.aspectRatio) / 2,
+                        frustumSize / 2,
+                        frustumSize / -2,
+                        0.01,
+                        10,
+                    );
+                    this.camera.position.z = 1;
+
+                    this.scene = new THREE.Scene();
+
+                    this.renderer = new THREE.WebGLRenderer({
+                        antialias: true,
+                        alpha: true,
+                    });
+                    this.renderer.setPixelRatio(
+                        Math.min(window.devicePixelRatio, 2),
+                    );
+
+                    this.renderer.setSize(this.width, this.height);
+
+                    this.renderer.domElement.style.width = "100%";
+                    this.renderer.domElement.style.height = "100%";
+                    this.renderer.domElement.style.display = "block";
+                    this.renderer.domElement.style.opacity = "0.35";
+
+                    this.container.appendChild(this.renderer.domElement);
+                    this.controls = new OrbitControls(
+                        this.camera,
+                        this.renderer.domElement,
+                    );
+
+                    this.controls.enabled = false;
+
+                    this.time = 0;
+                    this.resize();
+                    this.addObjects();
+
+                    const prefersReducedMotion = window.matchMedia(
+                        "(prefers-reduced-motion: reduce)",
+                    ).matches;
+                    if (prefersReducedMotion) {
+                        this.renderer.render(this.scene, this.camera);
+                    } else {
+                        this.render();
+                    }
+
+                    this.setupResize();
+
+                    document.addEventListener("visibilitychange", () => {
+                        if (document.hidden) {
+                            this.running = false;
+                            cancelAnimationFrame(this.rafId);
+                        } else if (!prefersReducedMotion) {
+                            if (!this.running) {
+                                this.running = true;
+                                this.render();
+                            }
+                        }
+                    });
+                }
+
+                private resize(): void {
+                    this.width = window.innerWidth;
+                    this.height = window.innerHeight;
+                    this.aspectRatio = this.width / this.height;
+
+                    const frustumSize = 1;
+                    this.camera.left = (frustumSize * this.aspectRatio) / -2;
+                    this.camera.right = (frustumSize * this.aspectRatio) / 2;
+                    this.camera.top = frustumSize / 2;
+                    this.camera.bottom = frustumSize / -2;
+
+                    this.renderer.setSize(this.width, this.height);
+                    this.camera.updateProjectionMatrix();
+
+                    this.boundaryX =
+                        (frustumSize * this.aspectRatio) / 2 - 0.13;
+                    this.boundaryY = frustumSize / 2 - 0.15;
+                }
+
+                private setupResize(): void {
+                    window.addEventListener("resize", this.resize.bind(this));
+                }
+
+                private addObjects(): void {
+                    this.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                    this.material = new THREE.MeshNormalMaterial();
+
+                    this.mesh = new THREE.Mesh(this.geometry, this.material);
+                    this.mesh.position.x =
+                        (Math.random() - 0.5) * this.boundaryX * 1.8;
+                    this.mesh.position.y =
+                        (Math.random() - 0.5) * this.boundaryY * 1.8;
+                    this.scene.add(this.mesh);
+                }
+
+                private render(): void {
+                    this.time += 1;
+
+                    this.mesh.rotation.x += 0.003;
+                    this.mesh.rotation.y += 0.003;
+
+                    this.mesh.position.x += this.speedX;
+                    this.mesh.position.y += this.speedY;
+
+                    if (Math.abs(this.mesh.position.x) > this.boundaryX) {
+                        this.speedX *= -1;
+                        this.mesh.position.x =
+                            Math.sign(this.mesh.position.x) * this.boundaryX;
+                    }
+
+                    if (Math.abs(this.mesh.position.y) > this.boundaryY) {
+                        this.speedY *= -1;
+                        this.mesh.position.y =
+                            Math.sign(this.mesh.position.y) * this.boundaryY;
+                    }
+
+                    this.renderer.render(this.scene, this.camera);
+                    this.rafId = requestAnimationFrame(
+                        this.render.bind(this),
+                    );
+                }
+            }
+
+            new Sketch({
+                domElement: document.getElementById("container") as HTMLElement,
+            });
+        </script>
     </main>
 </Layout>
