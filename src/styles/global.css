@@ -2,9 +2,10 @@
 
 @theme {
     --font-display:
-        "Chakra Petch", "Satoshi", ui-sans-serif, system-ui, sans-serif;
+        "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        sans-serif;
     --font-sans:
-        "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
         sans-serif;
     --font-mono:
         "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
