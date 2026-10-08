@@ -125,7 +125,7 @@ const socials = [
     </a>
 
     <main class="bg-coal-950 text-cream-100">
-        <div class="mx-auto w-full max-w-[760px] px-6 md:px-8">
+        <div class="mx-auto w-full max-w-[1160px] px-6 md:px-10">
             <header class="pt-14 md:pt-20">
                 <h1
                     class="font-display max-w-[12ch] text-5xl leading-[0.95] font-bold text-balance uppercase md:text-6xl"
@@ -179,151 +179,163 @@ const socials = [
                 </ul>
             </header>
 
-            <div class="mt-12 pb-10 md:mt-14">
-                <figure class="border border-line">
-                    <img
-                        class="aspect-[16/9] w-full object-cover grayscale"
-                        src={Renzo.src}
-                        width={800}
-                        height={533}
-                        alt="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
-                        loading="eager"
-                        fetchpriority="high"
-                    />
-                </figure>
+            <div class="mt-12 grid gap-12 pb-10 md:mt-14 lg:grid-cols-12 lg:gap-10">
+                <aside class="lg:col-span-4">
+                    <div class="lg:sticky lg:top-8">
+                        <figure class="border border-line">
+                            <img
+                                class="aspect-[4/3] w-full object-cover grayscale"
+                                src={Renzo.src}
+                                width={800}
+                                height={533}
+                                alt="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
+                                loading="eager"
+                                fetchpriority="high"
+                            />
+                        </figure>
 
-                <section
-                    id="about"
-                    aria-labelledby="about-heading"
-                    class="mt-12 scroll-mt-8"
-                >
-                    <h2
-                        id="about-heading"
-                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                    >
-                        About
-                    </h2>
-                    <div
-                        class="mt-4 max-w-[68ch] space-y-4 text-[15px] leading-[1.7] text-cream-300"
-                    >
-                        <p>
-                            I'm Renzo Damian, a software engineer based in
-                            Sheffield, focusing on robotics and artificial
-                            intelligence.
-                        </p>
-                        <p>
-                            Currently, I'm completing my Master's in Advanced
-                            Computer Science while leading the software team at{" "}
-                            <a
-                                target="_blank"
-                                class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                rel="noopener noreferrer"
-                                href="https://marsworks.sites.sheffield.ac.uk/"
-                                >Marsworks</a
-                            >, where I guide the development of autonomous
-                            navigation and mapping in preparation for the{" "}
-                            <a
-                                target="_blank"
-                                class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                rel="noopener noreferrer"
-                                href="https://www.anatolianrover.space/"
-                                >Anatolian Rover Challenge (ARC)</a
-                            >.
-                        </p>
-                        <p>
-                            Outside of work and university, I like to stay
-                            active by cycling. It's a great way to clear my
-                            head. I also enjoy reading, especially science
-                            fiction books like Asimov's stories, which first
-                            sparked my fascination with AI and robotics.
-                        </p>
+                        <section
+                            id="about"
+                            aria-labelledby="about-heading"
+                            class="mt-10 scroll-mt-8"
+                        >
+                            <h2
+                                id="about-heading"
+                                class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                            >
+                                About
+                            </h2>
+                            <div
+                                class="mt-4 max-w-[68ch] space-y-4 text-[15px] leading-[1.7] text-cream-300"
+                            >
+                                <p>
+                                    I'm Renzo Damian, a software engineer based
+                                    in Sheffield, focusing on robotics and
+                                    artificial intelligence.
+                                </p>
+                                <p>
+                                    Currently, I'm completing my Master's in
+                                    Advanced Computer Science while leading the
+                                    software team at{" "}
+                                    <a
+                                        target="_blank"
+                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                        rel="noopener noreferrer"
+                                        href="https://marsworks.sites.sheffield.ac.uk/"
+                                        >Marsworks</a
+                                    >, where I guide the development of
+                                    autonomous navigation and mapping in
+                                    preparation for the{" "}
+                                    <a
+                                        target="_blank"
+                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                        rel="noopener noreferrer"
+                                        href="https://www.anatolianrover.space/"
+                                        >Anatolian Rover Challenge (ARC)</a
+                                    >.
+                                </p>
+                                <p>
+                                    Outside of work and university, I like to
+                                    stay active by cycling. It's a great way to
+                                    clear my head. I also enjoy reading,
+                                    especially science fiction books like
+                                    Asimov's stories, which first sparked my
+                                    fascination with AI and robotics.
+                                </p>
+                            </div>
+                        </section>
                     </div>
-                </section>
+                </aside>
 
-                <section aria-labelledby="experience-heading" class="mt-12">
-                    <h2
-                        id="experience-heading"
-                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                    >
-                        Experience
-                    </h2>
-                    <div class="mt-1 divide-y divide-line">
-                        {
-                            experiences.map((experience) => (
-                                <ExperienceItem
-                                    title={experience.title}
-                                    employer={experience.employer}
-                                    date={experience.date}
-                                />
-                            ))
-                        }
-                    </div>
-                </section>
-
-                <section aria-labelledby="projects-heading" class="mt-12">
-                    <h2
-                        id="projects-heading"
-                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                    >
-                        Projects
-                    </h2>
-                    <div class="mt-1 divide-y divide-line">
-                        {
-                            projects.map((project) => (
-                                <ProjectItem
-                                    title={project.title}
-                                    description={project.description}
-                                    github_link={project.github_link}
-                                />
-                            ))
-                        }
-                    </div>
-                </section>
-
-                <section aria-labelledby="education-heading" class="mt-12">
-                    <h2
-                        id="education-heading"
-                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
-                    >
-                        Education
-                    </h2>
-                    <div class="mt-1 divide-y divide-line">
-                        {
-                            education.map((item) => (
-                                <div class="py-4">
-                                    <EducationItem
-                                        title={item.title}
-                                        institution={item.institution}
-                                        date={item.date}
+                <div class="lg:col-span-8">
+                    <section aria-labelledby="experience-heading">
+                        <h2
+                            id="experience-heading"
+                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                        >
+                            Experience
+                        </h2>
+                        <div class="mt-1 divide-y divide-line">
+                            {
+                                experiences.map((experience) => (
+                                    <ExperienceItem
+                                        title={experience.title}
+                                        employer={experience.employer}
+                                        date={experience.date}
                                     />
-                                    <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-cream-300">
-                                        {item.description}
-                                    </p>
-                                </div>
-                            ))
-                        }
-                    </div>
-                </section>
+                                ))
+                            }
+                        </div>
+                    </section>
 
-                <section aria-labelledby="involvements-heading" class="mt-12">
-                    <h2
-                        id="involvements-heading"
-                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                    <section aria-labelledby="projects-heading" class="mt-12">
+                        <h2
+                            id="projects-heading"
+                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                        >
+                            Projects
+                        </h2>
+                        <div class="mt-1 divide-y divide-line">
+                            {
+                                projects.map((project) => (
+                                    <ProjectItem
+                                        title={project.title}
+                                        description={project.description}
+                                        github_link={project.github_link}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </section>
+
+                    <section aria-labelledby="education-heading" class="mt-12">
+                        <h2
+                            id="education-heading"
+                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                        >
+                            Education
+                        </h2>
+                        <div class="mt-1 divide-y divide-line">
+                            {
+                                education.map((item) => (
+                                    <div class="py-4">
+                                        <EducationItem
+                                            title={item.title}
+                                            institution={item.institution}
+                                            date={item.date}
+                                        />
+                                        <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-cream-300">
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </section>
+
+                    <section
+                        aria-labelledby="involvements-heading"
+                        class="mt-12"
                     >
-                        Involvement
-                    </h2>
-                    <div class="mt-1 divide-y divide-line">
-                        {
-                            involvements.map((involvement) => (
-                                <ExperienceItem
-                                    title={involvement.title}
-                                    employer={involvement.employer}
-                                    date={involvement.date}
-                                />
-                            ))
-                        }
-                    </div>
-                </section>
+                        <h2
+                            id="involvements-heading"
+                            class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                        >
+                            Involvement
+                        </h2>
+                        <div class="mt-1 divide-y divide-line">
+                            {
+                                involvements.map((involvement) => (
+                                    <ExperienceItem
+                                        title={involvement.title}
+                                        employer={involvement.employer}
+                                        date={involvement.date}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </section>
+                </div>
             </div>
 
             <footer
