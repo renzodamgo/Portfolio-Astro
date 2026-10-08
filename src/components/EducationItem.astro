@@ -9,17 +9,25 @@ const { title, institution, date } = Astro.props;
 ---
 
 <div class="py-4">
-    <h3
-        class="text-[15px] font-medium leading-snug text-cream-100 text-balance"
-    >
-        {title}
-    </h3>
-    <div class="mt-1 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <p class="text-sm leading-relaxed text-cream-300">{institution}</p>
+    <div class="flex items-baseline gap-3">
+        <h3
+            class="min-w-0 text-[15px] font-semibold leading-snug text-cream-100 text-balance"
+        >
+            {title}
+        </h3>
+        <span
+            aria-hidden="true"
+            class="hidden min-w-8 flex-1 self-center border-b border-dotted border-cream-500/50 sm:block"
+        ></span>
         <p
-            class="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-cream-500 tabular-nums"
+            class="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-cream-300 tabular-nums"
         >
             {date}
         </p>
     </div>
+    <p
+        class="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-cream-500"
+    >
+        {institution}
+    </p>
 </div>

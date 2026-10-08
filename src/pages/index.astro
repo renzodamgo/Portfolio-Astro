@@ -126,84 +126,250 @@ const socials = [
 
     <main class="relative min-h-screen bg-coal-950 text-cream-100">
         <div
-            class="pointer-events-none fixed inset-0"
-            id="container"
+            class="spec-grid pointer-events-none fixed inset-0"
             aria-hidden="true"
         >
         </div>
         <div
             class="pointer-events-none fixed inset-0"
             aria-hidden="true"
-            style="background: radial-gradient(120% 90% at 50% 0%, transparent 30%, rgba(12,10,7,0.72) 68%, #0c0a07 100%), linear-gradient(to bottom, rgba(12,10,7,0.55), rgba(12,10,7,0.88));"
+            style="background: linear-gradient(to bottom, rgba(12,10,7,0.35), rgba(12,10,7,0.9));"
         >
         </div>
 
         <div class="relative mx-auto w-full max-w-[1160px] px-6 md:px-10">
-            <header class="pt-14 md:pt-24">
-                <h1
-                    class="font-display max-w-[14ch] text-5xl leading-[0.95] font-semibold tracking-[-0.01em] text-balance uppercase md:text-7xl"
+            <div
+                class="flex items-center justify-between gap-4 border-b border-line py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-cream-500"
+            >
+                <span class="flex items-center gap-2">
+                    <span
+                        class="grid size-6 place-items-center border border-line text-[10px] font-bold tracking-normal text-cream-100"
+                        aria-hidden="true">RD</span
+                    >
+                    <span>Folio — 001</span>
+                </span>
+                <span class="hidden md:block"
+                    >Sheffield, UK — 53.38°N 1.47°W</span
                 >
-                    Renzo Damian
-                </h1>
-                <p
-                    class="mt-4 max-w-[52ch] text-lg leading-snug text-cream-300 md:text-xl"
-                >
-                    Software developer working in robotics and artificial
-                    intelligence.
-                </p>
-                <p
-                    class="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.1em] text-cream-500"
-                >
-                    <MapPin size={14} aria-hidden="true" />
-                    <span>Sheffield, UK</span>
-                    <span aria-hidden="true" class="text-line">/</span>
-                    <span>AI · Robotics · Full-stack</span>
-                </p>
+                <span>Rev. 2026.10</span>
+            </div>
 
-                <ul class="mt-7 flex flex-wrap items-center gap-3">
-                    {
-                        socials.map(({ label, href, Icon }) => (
+            <header class="relative pt-10 md:pt-16">
+                <span
+                    aria-hidden="true"
+                    class="absolute top-4 left-0 font-mono text-sm text-cream-500 select-none"
+                    >+</span
+                >
+                <span
+                    aria-hidden="true"
+                    class="absolute top-4 right-0 font-mono text-sm text-cream-500 select-none"
+                    >+</span
+                >
+
+                <div class="grid gap-10 lg:grid-cols-12 lg:gap-8">
+                    <div class="lg:col-span-8">
+                        <p
+                            class="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400"
+                        >
+                            P.01 — Personal Dossier
+                        </p>
+                        <h1
+                            class="font-display mt-3 max-w-[12ch] text-6xl leading-[0.92] font-bold tracking-[-0.01em] text-balance uppercase md:text-8xl"
+                        >
+                            Renzo Damian
+                        </h1>
+
+                        <dl
+                            class="mt-8 max-w-xl font-mono text-[12px] uppercase tracking-[0.14em]"
+                        >
+                            <div
+                                class="flex items-baseline gap-3 border-t border-line py-2.5"
+                            >
+                                <dt class="shrink-0 text-cream-500">Role</dt>
+                                <span
+                                    aria-hidden="true"
+                                    class="min-w-6 flex-1 self-center border-b border-dotted border-cream-500/50"
+                                ></span>
+                                <dd class="text-right text-cream-100">
+                                    AI Engineer — Mandü HR
+                                </dd>
+                            </div>
+                            <div
+                                class="flex items-baseline gap-3 border-t border-line py-2.5"
+                            >
+                                <dt class="shrink-0 text-cream-500">Field</dt>
+                                <span
+                                    aria-hidden="true"
+                                    class="min-w-6 flex-1 self-center border-b border-dotted border-cream-500/50"
+                                ></span>
+                                <dd class="text-right text-cream-100">
+                                    Robotics / Autonomous Systems
+                                </dd>
+                            </div>
+                            <div
+                                class="flex items-baseline gap-3 border-t border-b border-line py-2.5"
+                            >
+                                <dt class="shrink-0 text-cream-500">Base</dt>
+                                <span
+                                    aria-hidden="true"
+                                    class="min-w-6 flex-1 self-center border-b border-dotted border-cream-500/50"
+                                ></span>
+                                <dd
+                                    class="flex items-center justify-end gap-1.5 text-right text-cream-100"
+                                >
+                                    <MapPin size={13} aria-hidden="true" />
+                                    Sheffield, UK
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <ul class="mt-7 flex flex-wrap items-center gap-3">
+                            {
+                                socials.map(({ label, href, Icon }) => (
+                                    <li>
+                                        <a
+                                            href={href}
+                                            target={
+                                                href.startsWith("mailto:")
+                                                    ? undefined
+                                                    : "_blank"
+                                            }
+                                            rel={
+                                                href.startsWith("mailto:")
+                                                    ? undefined
+                                                    : "noopener noreferrer"
+                                            }
+                                            aria-label={label}
+                                            class="grid size-11 place-items-center border border-line bg-coal-900/80 text-cream-300 transition-colors duration-200 hover:border-amber-400 hover:text-amber-300"
+                                        >
+                                            <Icon size={18} />
+                                        </a>
+                                    </li>
+                                ))
+                            }
                             <li>
                                 <a
-                                    href={href}
-                                    target={
-                                        href.startsWith("mailto:")
-                                            ? undefined
-                                            : "_blank"
-                                    }
-                                    rel={
-                                        href.startsWith("mailto:")
-                                            ? undefined
-                                            : "noopener noreferrer"
-                                    }
-                                    aria-label={label}
-                                    class="grid size-11 place-items-center rounded-full border border-line bg-coal-900/80 text-cream-300 transition-colors duration-200 hover:border-amber-400 hover:text-amber-300"
+                                    href="/Renzo_Damian_CV.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex h-11 items-center gap-2 bg-amber-400 px-5 font-mono text-[12px] font-bold tracking-[0.14em] text-coal-950 uppercase transition-colors duration-200 hover:bg-amber-300"
                                 >
-                                    <Icon size={18} />
+                                    <FileText size={16} aria-hidden="true" />
+                                    Resume — PDF
                                 </a>
                             </li>
-                        ))
-                    }
-                    <li>
-                        <a
-                            href="/Renzo_Damian_CV.pdf"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex h-11 items-center gap-2 rounded-full bg-amber-400 px-5 text-sm font-medium text-coal-950 transition-colors duration-200 hover:bg-amber-300"
+                        </ul>
+                    </div>
+
+                    <div class="lg:col-span-4">
+                        <div
+                            class="flex flex-row items-start gap-6 lg:flex-col lg:items-end"
                         >
-                            <FileText size={16} aria-hidden="true" />
-                            Resume
-                        </a>
-                    </li>
-                </ul>
+                            <div
+                                class="relative size-28 shrink-0 md:size-36"
+                                aria-hidden="true"
+                            >
+                                <svg
+                                    viewBox="0 0 120 120"
+                                    class="animate-spin-slow h-full w-full"
+                                >
+                                    <defs>
+                                        <path
+                                            id="badge-circle"
+                                            d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"
+                                        ></path>
+                                    </defs>
+                                    <text
+                                        class="fill-cream-500 font-mono"
+                                        font-size="10"
+                                        letter-spacing="2"
+                                    >
+                                        <textPath
+                                            href="#badge-circle"
+                                            textLength="286"
+                                            lengthAdjust="spacingAndGlyphs"
+                                            >RENZO DAMIAN • AI ENGINEER •
+                                        </textPath>
+                                    </text>
+                                </svg>
+                                <span
+                                    class="absolute inset-0 grid place-items-center font-mono text-sm font-bold tracking-[0.2em] text-amber-400"
+                                    >RD</span
+                                >
+                            </div>
+
+                            <div
+                                class="relative w-full max-w-[280px] border border-line bg-coal-900/70 p-4"
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    class="absolute -top-2 -left-1 font-mono text-xs text-cream-500 select-none"
+                                    >+</span
+                                >
+                                <span
+                                    aria-hidden="true"
+                                    class="absolute -top-2 -right-1 font-mono text-xs text-cream-500 select-none"
+                                    >+</span
+                                >
+                                <span
+                                    aria-hidden="true"
+                                    class="absolute -bottom-2.5 -left-1 font-mono text-xs text-cream-500 select-none"
+                                    >+</span
+                                >
+                                <span
+                                    aria-hidden="true"
+                                    class="absolute -bottom-2.5 -right-1 font-mono text-xs text-cream-500 select-none"
+                                    >+</span
+                                >
+                                <p
+                                    class="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400"
+                                >
+                                    Status / Current
+                                </p>
+                                <p
+                                    class="font-display mt-2 text-xl leading-none font-bold uppercase"
+                                >
+                                    AI Engineer
+                                </p>
+                                <p
+                                    class="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-cream-300"
+                                >
+                                    Mandü HR
+                                </p>
+                                <p
+                                    class="mt-1 font-mono text-[11px] tracking-[0.08em] text-cream-500 tabular-nums"
+                                >
+                                    AUG 2026 — PRESENT
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </header>
 
-            <div class="mt-14 grid gap-12 pb-10 md:mt-20 lg:grid-cols-12 lg:gap-10">
+            <div
+                aria-hidden="true"
+                class="mt-12 h-2.5 md:mt-16"
+                style="background: repeating-linear-gradient(-45deg, #2e2618 0 8px, transparent 8px 16px);"
+            >
+            </div>
+
+            <div class="mt-12 grid gap-12 pb-10 md:mt-16 lg:grid-cols-12 lg:gap-10">
                 <aside class="lg:col-span-4">
                     <div class="lg:sticky lg:top-8">
                         <figure
-                            class="overflow-hidden rounded-md border border-line bg-coal-900"
+                            class="relative border border-line bg-coal-900"
                         >
+                            <span
+                                aria-hidden="true"
+                                class="absolute -top-2 -left-1 z-10 font-mono text-xs text-cream-500 select-none"
+                                >+</span
+                            >
+                            <span
+                                aria-hidden="true"
+                                class="absolute -top-2 -right-1 z-10 font-mono text-xs text-cream-500 select-none"
+                                >+</span
+                            >
                             <img
                                 class="aspect-[4/3] w-full object-cover grayscale"
                                 src={Renzo.src}
@@ -214,9 +380,9 @@ const socials = [
                                 fetchpriority="high"
                             />
                             <figcaption
-                                class="border-t border-line px-4 py-3 font-mono text-[11px] leading-relaxed tracking-[0.04em] text-cream-500"
+                                class="border-t border-line px-4 py-3 font-mono text-[11px] leading-relaxed tracking-[0.08em] text-cream-500 uppercase"
                             >
-                                Anatolian Rover Challenge — Marsworks
+                                Fig. 01 — Anatolian Rover Challenge / Marsworks
                             </figcaption>
                         </figure>
 
@@ -225,12 +391,24 @@ const socials = [
                             aria-labelledby="about-heading"
                             class="mt-10 scroll-mt-8"
                         >
-                            <h2
-                                id="about-heading"
-                                class="font-display border-t border-line pt-8 text-xl font-semibold tracking-[0.06em] text-cream-100 uppercase md:text-2xl"
+                            <div
+                                class="flex items-baseline gap-3 border-t border-line pt-6"
                             >
-                                About
-                            </h2>
+                                <span
+                                    class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
+                                    >(01)</span
+                                >
+                                <h2
+                                    id="about-heading"
+                                    class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
+                                >
+                                    Profile
+                                </h2>
+                                <span
+                                    aria-hidden="true"
+                                    class="h-px flex-1 self-center bg-line"
+                                ></span>
+                            </div>
                             <div
                                 class="mt-5 max-w-[68ch] space-y-4 text-[15px] leading-[1.7] text-cream-300"
                             >
@@ -275,15 +453,29 @@ const socials = [
 
                 <div class="lg:col-span-8">
                     <section aria-labelledby="experience-heading">
-                        <h2
-                            id="experience-heading"
-                            class="font-display border-t border-line pt-8 text-xl font-semibold tracking-[0.06em] text-cream-100 uppercase md:text-2xl"
-                        >
-                            Experience
-                        </h2>
                         <div
-                            class="mt-2 divide-y divide-line"
+                            class="flex items-baseline gap-3 border-t border-line pt-6"
                         >
+                            <span
+                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
+                                >(02)</span
+                            >
+                            <h2
+                                id="experience-heading"
+                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
+                            >
+                                Experience
+                            </h2>
+                            <span
+                                aria-hidden="true"
+                                class="h-px flex-1 self-center bg-line"
+                            ></span>
+                            <span
+                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
+                                >{experiences.length} ENTRIES</span
+                            >
+                        </div>
+                        <div class="mt-2 divide-y divide-line">
                             {
                                 experiences.map((experience) => (
                                     <ExperienceItem
@@ -300,16 +492,33 @@ const socials = [
                         aria-labelledby="projects-heading"
                         class="mt-14"
                     >
-                        <h2
-                            id="projects-heading"
-                            class="font-display border-t border-line pt-8 text-xl font-semibold tracking-[0.06em] text-cream-100 uppercase md:text-2xl"
+                        <div
+                            class="flex items-baseline gap-3 border-t border-line pt-6"
                         >
-                            Projects
-                        </h2>
+                            <span
+                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
+                                >(03)</span
+                            >
+                            <h2
+                                id="projects-heading"
+                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
+                            >
+                                Selected Work
+                            </h2>
+                            <span
+                                aria-hidden="true"
+                                class="h-px flex-1 self-center bg-line"
+                            ></span>
+                            <span
+                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
+                                >{projects.length} ENTRIES</span
+                            >
+                        </div>
                         <div class="mt-2 divide-y divide-line">
                             {
-                                projects.map((project) => (
+                                projects.map((project, i) => (
                                     <ProjectItem
+                                        index={`P.0${i + 1}`}
                                         title={project.title}
                                         description={project.description}
                                         github_link={project.github_link}
@@ -323,12 +532,28 @@ const socials = [
                         aria-labelledby="education-heading"
                         class="mt-14"
                     >
-                        <h2
-                            id="education-heading"
-                            class="font-display border-t border-line pt-8 text-xl font-semibold tracking-[0.06em] text-cream-100 uppercase md:text-2xl"
+                        <div
+                            class="flex items-baseline gap-3 border-t border-line pt-6"
                         >
-                            Education
-                        </h2>
+                            <span
+                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
+                                >(04)</span
+                            >
+                            <h2
+                                id="education-heading"
+                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
+                            >
+                                Education
+                            </h2>
+                            <span
+                                aria-hidden="true"
+                                class="h-px flex-1 self-center bg-line"
+                            ></span>
+                            <span
+                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
+                                >{education.length} ENTRIES</span
+                            >
+                        </div>
                         <div class="mt-2 divide-y divide-line">
                             {
                                 education.map((item) => (
@@ -351,12 +576,28 @@ const socials = [
                         aria-labelledby="involvements-heading"
                         class="mt-14"
                     >
-                        <h2
-                            id="involvements-heading"
-                            class="font-display border-t border-line pt-8 text-xl font-semibold tracking-[0.06em] text-cream-100 uppercase md:text-2xl"
+                        <div
+                            class="flex items-baseline gap-3 border-t border-line pt-6"
                         >
-                            Involvements
-                        </h2>
+                            <span
+                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
+                                >(05)</span
+                            >
+                            <h2
+                                id="involvements-heading"
+                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
+                            >
+                                Involvement
+                            </h2>
+                            <span
+                                aria-hidden="true"
+                                class="h-px flex-1 self-center bg-line"
+                            ></span>
+                            <span
+                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
+                                >{involvements.length} ENTRIES</span
+                            >
+                        </div>
                         <div class="mt-2 divide-y divide-line">
                             {
                                 involvements.map((involvement) => (
@@ -373,187 +614,12 @@ const socials = [
             </div>
 
             <footer
-                class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-8 font-mono text-[11px] uppercase tracking-[0.1em] text-cream-500"
+                class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-8 font-mono text-[11px] uppercase tracking-[0.14em] text-cream-500"
             >
                 <p>Renzo Damian — Sheffield, UK</p>
-                <p>Built with Astro · Three.js</p>
+                <p class="hidden sm:block">End of folio — 001 ////</p>
+                <p>Built with Astro</p>
             </footer>
         </div>
-
-        <script>
-            import * as THREE from "three";
-            import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-            interface SketchOptions {
-                domElement: HTMLElement;
-            }
-
-            export default class Sketch {
-                private container: HTMLElement;
-                private width: number;
-                private height: number;
-                private camera: THREE.OrthographicCamera;
-                private scene: THREE.Scene;
-                private renderer: THREE.WebGLRenderer;
-                private controls: OrbitControls;
-                private time: number;
-                private geometry!: THREE.BoxGeometry;
-                private material!: THREE.MeshNormalMaterial;
-                private mesh!: THREE.Mesh;
-                private speedX: number = 0.0008;
-                private speedY: number = 0.0008;
-                private boundaryX: number = 0;
-                private boundaryY: number = 0;
-                private aspectRatio: number = 1;
-                private running: boolean = true;
-                private rafId: number = 0;
-
-                constructor(options: SketchOptions) {
-                    this.container = options.domElement;
-
-                    // Get window dimensions
-                    this.width = window.innerWidth;
-                    this.height = window.innerHeight;
-                    this.aspectRatio = this.width / this.height;
-
-                    const frustumSize = 1;
-                    this.camera = new THREE.OrthographicCamera(
-                        (frustumSize * this.aspectRatio) / -2,
-                        (frustumSize * this.aspectRatio) / 2,
-                        frustumSize / 2,
-                        frustumSize / -2,
-                        0.01,
-                        10,
-                    );
-                    this.camera.position.z = 1;
-
-                    this.scene = new THREE.Scene();
-
-                    this.renderer = new THREE.WebGLRenderer({
-                        antialias: true,
-                        alpha: true,
-                    });
-                    this.renderer.setPixelRatio(
-                        Math.min(window.devicePixelRatio, 2),
-                    );
-
-                    this.renderer.setSize(this.width, this.height);
-
-                    this.renderer.domElement.style.width = "100%";
-                    this.renderer.domElement.style.height = "100%";
-                    this.renderer.domElement.style.display = "block";
-                    this.renderer.domElement.style.opacity = "0.35";
-
-                    this.container.appendChild(this.renderer.domElement);
-                    this.controls = new OrbitControls(
-                        this.camera,
-                        this.renderer.domElement,
-                    );
-
-                    this.controls.enabled = false;
-
-                    this.time = 0;
-                    this.resize();
-                    this.addObjects();
-
-                    const prefersReducedMotion = window.matchMedia(
-                        "(prefers-reduced-motion: reduce)",
-                    ).matches;
-                    if (prefersReducedMotion) {
-                        this.renderer.render(this.scene, this.camera);
-                    } else {
-                        this.render();
-                    }
-
-                    this.setupResize();
-
-                    document.addEventListener(
-                        "visibilitychange",
-                        () => {
-                            if (document.hidden) {
-                                this.running = false;
-                                cancelAnimationFrame(this.rafId);
-                            } else if (!prefersReducedMotion) {
-                                if (!this.running) {
-                                    this.running = true;
-                                    this.render();
-                                }
-                            }
-                        },
-                    );
-                }
-
-                private resize(): void {
-                    this.width = window.innerWidth;
-                    this.height = window.innerHeight;
-                    this.aspectRatio = this.width / this.height;
-
-                    const frustumSize = 1;
-                    this.camera.left = (frustumSize * this.aspectRatio) / -2;
-                    this.camera.right = (frustumSize * this.aspectRatio) / 2;
-                    this.camera.top = frustumSize / 2;
-                    this.camera.bottom = frustumSize / -2;
-
-                    this.renderer.setSize(this.width, this.height);
-                    this.camera.updateProjectionMatrix();
-
-                    this.boundaryX =
-                        (frustumSize * this.aspectRatio) / 2 - 0.13;
-                    this.boundaryY = frustumSize / 2 - 0.15;
-                }
-
-                private setupResize(): void {
-                    window.addEventListener("resize", this.resize.bind(this));
-                }
-
-                private addObjects(): void {
-                    this.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-                    this.material = new THREE.MeshNormalMaterial();
-
-                    this.mesh = new THREE.Mesh(this.geometry, this.material);
-                    // Start at a random position
-                    this.mesh.position.x =
-                        (Math.random() - 0.5) * this.boundaryX * 1.8;
-                    this.mesh.position.y =
-                        (Math.random() - 0.5) * this.boundaryY * 1.8;
-                    this.scene.add(this.mesh);
-                }
-
-                private render(): void {
-                    this.time += 1;
-
-                    // Update rotation
-                    this.mesh.rotation.x += 0.003;
-                    this.mesh.rotation.y += 0.003;
-
-                    // Update position
-                    this.mesh.position.x += this.speedX;
-                    this.mesh.position.y += this.speedY;
-
-                    // Check for collisions with screen edges
-                    // For X-axis
-                    if (Math.abs(this.mesh.position.x) > this.boundaryX) {
-                        this.speedX *= -1; // Reverse direction
-                        this.mesh.position.x =
-                            Math.sign(this.mesh.position.x) * this.boundaryX;
-                    }
-
-                    // For Y-axis
-                    if (Math.abs(this.mesh.position.y) > this.boundaryY) {
-                        this.speedY *= -1; // Reverse direction
-                        this.mesh.position.y =
-                            Math.sign(this.mesh.position.y) * this.boundaryY;
-                    }
-
-                    this.renderer.render(this.scene, this.camera);
-                    this.rafId = requestAnimationFrame(
-                        this.render.bind(this),
-                    );
-                }
-            }
-
-            new Sketch({
-                domElement: document.getElementById("container") as HTMLElement,
-            });
-        </script>
     </main>
 </Layout>

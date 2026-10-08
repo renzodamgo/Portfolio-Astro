@@ -64,3 +64,44 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-cream-500);
 }
+
+.spec-grid {
+    background-image:
+        linear-gradient(
+            to right,
+            rgb(245 238 225 / 0.05) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            rgb(245 238 225 / 0.05) 1px,
+            transparent 1px
+        );
+    background-size: 54px 54px;
+    mask-image: radial-gradient(
+        85% 65% at 50% 18%,
+        black 25%,
+        transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+        85% 65% at 50% 18%,
+        black 25%,
+        transparent 100%
+    );
+}
+
+.animate-spin-slow {
+    animation: spin-slow 26s linear infinite;
+}
+
+@keyframes spin-slow {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-spin-slow {
+        animation: none;
+    }
+}
