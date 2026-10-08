@@ -206,11 +206,11 @@ const socials = [
                         id="about-me"
                         class="scroll-mt-8 border border-line bg-coal-900/70 p-4 backdrop-blur-2xl"
                     >
-                        <h3
+                        <h2
                             class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
                         >
                             About Me
-                        </h3>
+                        </h2>
                         <div class="space-y-4 text-sm leading-relaxed text-cream-300">
                             <p>
                                 I'm Renzo Damian, an AI Engineer at{" "}
@@ -265,11 +265,11 @@ const socials = [
                         id="experience"
                         class="border border-line bg-coal-900/70 p-4 backdrop-blur-2xl"
                     >
-                        <h3
+                        <h2
                             class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
                         >
                             Experience
-                        </h3>
+                        </h2>
                         <div class="space-y-4">
                             {
                                 experiences.map((experience) => (
@@ -282,34 +282,29 @@ const socials = [
                             }
                         </div>
                         <div class="mt-4 border-t border-line pt-4">
-                            <h3
+                            <h2
                                 class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
                             >
                                 Education
-                            </h3>
+                            </h2>
                             <div class="space-y-4">
                                 {
                                     education.map((item) => (
-                                        <div>
-                                            <EducationItem
-                                                title={item.title}
-                                                institution={item.institution}
-                                                date={item.date}
-                                            />
-                                            <p class="mt-1 text-sm leading-relaxed text-cream-300">
-                                                {item.description}
-                                            </p>
-                                        </div>
+                                        <EducationItem
+                                            title={item.title}
+                                            institution={item.institution}
+                                            date={item.date}
+                                        />
                                     ))
                                 }
                             </div>
                         </div>
                         <div class="mt-4 border-t border-line pt-4">
-                            <h3
+                            <h2
                                 class="font-display pb-2 text-lg font-bold tracking-[0.04em] uppercase"
                             >
                                 Involvements
-                            </h3>
+                            </h2>
                             <div class="space-y-4">
                                 {
                                     involvements.map((involvement) => (
@@ -327,11 +322,11 @@ const socials = [
                         id="projects"
                         class="border border-line bg-coal-900/70 p-4 backdrop-blur-2xl sm:col-span-2 md:col-span-1"
                     >
-                        <h3
+                        <h2
                             class="font-display text-lg font-bold tracking-[0.04em] uppercase"
                         >
                             Projects
-                        </h3>
+                        </h2>
                         <div class="space-y-4">
                             {
                                 projects.map((project) => (
