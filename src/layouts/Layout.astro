@@ -7,10 +7,90 @@ interface Props {
     description?: string;
 }
 
+const site = Astro.site?.toString().replace(/\/$/, "") ?? "https://renzodamian.com";
+
 const {
-    title = "Renzo Damian — Software Developer",
-    description = "ML & Robotics Software Engineer based in Sheffield, UK. M.S. Computer Science (University of Sheffield), focusing on AI and autonomous systems.",
+    title = "Renzo Damian — AI Engineer & Robotics Software Developer",
+    description = "Renzo Damian is an AI Engineer in Sheffield building autonomous robots with ROS2, Nav2 and PyTorch. MSc Advanced Computer Science, University of Sheffield.",
 } = Astro.props;
+
+const canonical = Astro.url
+    ? new URL(Astro.url.pathname, site).toString()
+    : site + "/";
+
+const personSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "ProfilePage",
+            "@id": canonical + "#webpage",
+            url: canonical,
+            name: title,
+            description: description,
+            inLanguage: "en",
+            isPartOf: { "@id": site + "/#website" },
+            about: { "@id": site + "/#person" },
+            primaryImageOfPage: {
+                "@type": "ImageObject",
+                url: site + "/og-image.jpg",
+                width: 1200,
+                height: 630,
+            },
+        },
+        {
+            "@type": "WebSite",
+            "@id": site + "/#website",
+            url: site + "/",
+            name: "Renzo Damian — Portfolio",
+            inLanguage: "en",
+            publisher: { "@id": site + "/#person" },
+        },
+        {
+            "@type": "Person",
+            "@id": site + "/#person",
+            name: "Renzo Damian",
+            url: site + "/",
+            image: site + "/og-image.jpg",
+            jobTitle: "AI Engineer",
+            description: description,
+            address: {
+                "@type": "PostalAddress",
+                addressLocality: "Sheffield",
+                addressCountry: "GB",
+            },
+            alumniOf: [
+                {
+                    "@type": "CollegeOrUniversity",
+                    name: "University of Sheffield",
+                    sameAs: "https://www.sheffield.ac.uk/",
+                },
+                {
+                    "@type": "CollegeOrUniversity",
+                    name: "Universidad Peruana de Ciencias Aplicadas",
+                },
+            ],
+            worksFor: {
+                "@type": "Organization",
+                name: "Mandü HR",
+            },
+            sameAs: [
+                "https://github.com/renzodamgo",
+                "https://linkedin.com/in/renzo-damian",
+                "https://renzodamian.com",
+            ],
+            knowsAbout: [
+                "Artificial Intelligence",
+                "Robotics",
+                "ROS2",
+                "Autonomous Navigation",
+                "SLAM",
+                "Machine Learning",
+                "PyTorch",
+                "Computer Vision",
+            ],
+        },
+    ],
+};
 ---
 
 <!doctype html>
@@ -20,8 +100,44 @@ const {
         <meta name="viewport" content="width=device-width" />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
-        <meta name="theme-color" content="#0c0a07" />
         <meta name="description" content={description} />
+        <link rel="canonical" href={canonical} />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="Renzo Damian" />
+        <meta
+            name="keywords"
+            content="Renzo Damian, AI Engineer, Robotics Software Developer, ROS2, Nav2, PyTorch, autonomous robots, Sheffield"
+        />
+        <meta name="theme-color" content="#0c0a07" />
+        <meta name="theme-color" content="#0c0a07" media="(prefers-color-scheme: dark)" />
+        <meta name="color-scheme" content="dark" />
+
+        <meta property="og:type" content="profile" />
+        <meta property="og:site_name" content="Renzo Damian — Portfolio" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:image" content={site + "/og-image.jpg"} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+            property="og:image:alt"
+            content="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
+        />
+        <meta property="profile:first_name" content="Renzo" />
+        <meta property="profile:last_name" content="Damian" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={site + "/og-image.jpg"} />
+        <meta
+            name="twitter:image:alt"
+            content="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
+        />
+
+        <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+
         <link
             rel="apple-touch-icon"
             sizes="180x180"
