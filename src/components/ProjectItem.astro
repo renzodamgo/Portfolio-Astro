@@ -2,13 +2,12 @@
 import { ArrowUpRight } from "lucide-astro";
 
 export interface Props {
-    index: string;
     title: string;
     description: string;
     github_link: string;
 }
 
-const { index, title, description, github_link } = Astro.props;
+const { title, description, github_link } = Astro.props;
 ---
 
 <article class="group py-5">
@@ -18,20 +17,13 @@ const { index, title, description, github_link } = Astro.props;
         rel="noopener noreferrer"
         class="flex items-start justify-between gap-4 rounded-sm"
     >
-        <div class="min-w-0">
-            <p
-                class="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-400"
-            >
-                {index} — GitHub
-            </p>
-            <h3
-                class="font-display mt-1 text-lg leading-tight font-bold tracking-[0.01em] text-cream-100 uppercase text-balance transition-colors duration-200 group-hover:text-amber-300"
-            >
-                {title}
-            </h3>
-        </div>
+        <h3
+            class="font-display min-w-0 text-lg leading-tight font-bold text-cream-100 text-balance transition-colors duration-200 group-hover:text-amber-300"
+        >
+            {title}
+        </h3>
         <span
-            class="mt-1 grid size-8 shrink-0 place-items-center border border-line text-cream-400 transition-all duration-200 group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-coal-950"
+            class="mt-0.5 grid size-8 shrink-0 place-items-center border border-line text-cream-400 transition-all duration-200 group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-coal-950"
             aria-hidden="true"
         >
             <ArrowUpRight size={16} />

@@ -4,7 +4,7 @@ import ProjectItem from "../components/ProjectItem.astro";
 import EducationItem from "../components/EducationItem.astro";
 import Layout from "../layouts/Layout.astro";
 import Renzo from "../assets/renzodamian-anatolianroverchallenge.webp";
-import { Github, Linkedin, FileText, Mail, MapPin } from "lucide-astro";
+import { Github, Linkedin, FileText, Mail } from "lucide-astro";
 
 export interface Experience {
     title: string;
@@ -124,500 +124,212 @@ const socials = [
         Skip to content
     </a>
 
-    <main class="relative min-h-screen bg-coal-950 text-cream-100">
-        <div
-            class="spec-grid pointer-events-none fixed inset-0"
-            aria-hidden="true"
-        >
-        </div>
-        <div
-            class="pointer-events-none fixed inset-0"
-            aria-hidden="true"
-            style="background: linear-gradient(to bottom, rgba(12,10,7,0.35), rgba(12,10,7,0.9));"
-        >
-        </div>
-
-        <div class="relative mx-auto w-full max-w-[1160px] px-6 md:px-10">
-            <div
-                class="flex items-center justify-between gap-4 border-b border-line py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-cream-500"
-            >
-                <span class="flex items-center gap-2">
-                    <span
-                        class="grid size-6 place-items-center border border-line text-[10px] font-bold tracking-normal text-cream-100"
-                        aria-hidden="true">RD</span
-                    >
-                    <span>Folio — 001</span>
-                </span>
-                <span class="hidden md:block"
-                    >Sheffield, UK — 53.38°N 1.47°W</span
+    <main class="bg-coal-950 text-cream-100">
+        <div class="mx-auto w-full max-w-[760px] px-6 md:px-8">
+            <header class="pt-14 md:pt-20">
+                <h1
+                    class="font-display max-w-[12ch] text-5xl leading-[0.95] font-bold text-balance uppercase md:text-6xl"
                 >
-                <span>Rev. 2026.10</span>
-            </div>
-
-            <header class="relative pt-10 md:pt-16">
-                <span
-                    aria-hidden="true"
-                    class="absolute top-4 left-0 font-mono text-sm text-cream-500 select-none"
-                    >+</span
+                    Renzo Damian
+                </h1>
+                <p class="mt-4 max-w-[52ch] text-lg leading-snug text-cream-300">
+                    AI Engineer working in robotics and artificial intelligence.
+                </p>
+                <p
+                    class="mt-3 font-mono text-[12px] tracking-[0.08em] text-cream-500 uppercase"
                 >
-                <span
-                    aria-hidden="true"
-                    class="absolute top-4 right-0 font-mono text-sm text-cream-500 select-none"
-                    >+</span
-                >
+                    Sheffield, UK
+                </p>
 
-                <div class="grid gap-10 lg:grid-cols-12 lg:gap-8">
-                    <div class="lg:col-span-8">
-                        <p
-                            class="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400"
-                        >
-                            P.01 — Personal Dossier
-                        </p>
-                        <h1
-                            class="font-display mt-3 max-w-[12ch] text-6xl leading-[0.92] font-bold tracking-[-0.01em] text-balance uppercase md:text-8xl"
-                        >
-                            Renzo Damian
-                        </h1>
-
-                        <dl
-                            class="mt-8 max-w-xl font-mono text-[12px] uppercase tracking-[0.14em]"
-                        >
-                            <div
-                                class="flex items-baseline gap-3 border-t border-line py-2.5"
-                            >
-                                <dt class="shrink-0 text-cream-500">Role</dt>
-                                <span
-                                    aria-hidden="true"
-                                    class="min-w-6 flex-1 self-center border-b border-dotted border-cream-500/50"
-                                ></span>
-                                <dd class="text-right text-cream-100">
-                                    AI Engineer — Mandü HR
-                                </dd>
-                            </div>
-                            <div
-                                class="flex items-baseline gap-3 border-t border-line py-2.5"
-                            >
-                                <dt class="shrink-0 text-cream-500">Field</dt>
-                                <span
-                                    aria-hidden="true"
-                                    class="min-w-6 flex-1 self-center border-b border-dotted border-cream-500/50"
-                                ></span>
-                                <dd class="text-right text-cream-100">
-                                    Robotics / Autonomous Systems
-                                </dd>
-                            </div>
-                            <div
-                                class="flex items-baseline gap-3 border-t border-b border-line py-2.5"
-                            >
-                                <dt class="shrink-0 text-cream-500">Base</dt>
-                                <span
-                                    aria-hidden="true"
-                                    class="min-w-6 flex-1 self-center border-b border-dotted border-cream-500/50"
-                                ></span>
-                                <dd
-                                    class="flex items-center justify-end gap-1.5 text-right text-cream-100"
-                                >
-                                    <MapPin size={13} aria-hidden="true" />
-                                    Sheffield, UK
-                                </dd>
-                            </div>
-                        </dl>
-
-                        <ul class="mt-7 flex flex-wrap items-center gap-3">
-                            {
-                                socials.map(({ label, href, Icon }) => (
-                                    <li>
-                                        <a
-                                            href={href}
-                                            target={
-                                                href.startsWith("mailto:")
-                                                    ? undefined
-                                                    : "_blank"
-                                            }
-                                            rel={
-                                                href.startsWith("mailto:")
-                                                    ? undefined
-                                                    : "noopener noreferrer"
-                                            }
-                                            aria-label={label}
-                                            class="grid size-11 place-items-center border border-line bg-coal-900/80 text-cream-300 transition-colors duration-200 hover:border-amber-400 hover:text-amber-300"
-                                        >
-                                            <Icon size={18} />
-                                        </a>
-                                    </li>
-                                ))
-                            }
+                <ul class="mt-6 flex flex-wrap items-center gap-3">
+                    {
+                        socials.map(({ label, href, Icon }) => (
                             <li>
                                 <a
-                                    href="/Renzo_Damian_CV.pdf"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex h-11 items-center gap-2 bg-amber-400 px-5 font-mono text-[12px] font-bold tracking-[0.14em] text-coal-950 uppercase transition-colors duration-200 hover:bg-amber-300"
+                                    href={href}
+                                    target={
+                                        href.startsWith("mailto:")
+                                            ? undefined
+                                            : "_blank"
+                                    }
+                                    rel={
+                                        href.startsWith("mailto:")
+                                            ? undefined
+                                            : "noopener noreferrer"
+                                    }
+                                    aria-label={label}
+                                    class="grid size-10 place-items-center border border-line text-cream-300 transition-colors duration-200 hover:border-amber-400 hover:text-amber-300"
                                 >
-                                    <FileText size={16} aria-hidden="true" />
-                                    Resume — PDF
+                                    <Icon size={17} />
                                 </a>
                             </li>
-                        </ul>
-                    </div>
-
-                    <div class="lg:col-span-4">
-                        <div
-                            class="flex flex-row items-start gap-6 lg:flex-col lg:items-end"
+                        ))
+                    }
+                    <li>
+                        <a
+                            href="/Renzo_Damian_CV.pdf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex h-10 items-center gap-2 bg-amber-400 px-4 text-sm font-semibold text-coal-950 transition-colors duration-200 hover:bg-amber-300"
                         >
-                            <div
-                                class="relative size-28 shrink-0 md:size-36"
-                                aria-hidden="true"
-                            >
-                                <svg
-                                    viewBox="0 0 120 120"
-                                    class="animate-spin-slow h-full w-full"
-                                >
-                                    <defs>
-                                        <path
-                                            id="badge-circle"
-                                            d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"
-                                        ></path>
-                                    </defs>
-                                    <text
-                                        class="fill-cream-500 font-mono"
-                                        font-size="10"
-                                        letter-spacing="2"
-                                    >
-                                        <textPath
-                                            href="#badge-circle"
-                                            textLength="286"
-                                            lengthAdjust="spacingAndGlyphs"
-                                            >RENZO DAMIAN • AI ENGINEER •
-                                        </textPath>
-                                    </text>
-                                </svg>
-                                <span
-                                    class="absolute inset-0 grid place-items-center font-mono text-sm font-bold tracking-[0.2em] text-amber-400"
-                                    >RD</span
-                                >
-                            </div>
-
-                            <div
-                                class="relative w-full max-w-[280px] border border-line bg-coal-900/70 p-4"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    class="absolute -top-2 -left-1 font-mono text-xs text-cream-500 select-none"
-                                    >+</span
-                                >
-                                <span
-                                    aria-hidden="true"
-                                    class="absolute -top-2 -right-1 font-mono text-xs text-cream-500 select-none"
-                                    >+</span
-                                >
-                                <span
-                                    aria-hidden="true"
-                                    class="absolute -bottom-2.5 -left-1 font-mono text-xs text-cream-500 select-none"
-                                    >+</span
-                                >
-                                <span
-                                    aria-hidden="true"
-                                    class="absolute -bottom-2.5 -right-1 font-mono text-xs text-cream-500 select-none"
-                                    >+</span
-                                >
-                                <p
-                                    class="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400"
-                                >
-                                    Status / Current
-                                </p>
-                                <p
-                                    class="font-display mt-2 text-xl leading-none font-bold uppercase"
-                                >
-                                    AI Engineer
-                                </p>
-                                <p
-                                    class="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-cream-300"
-                                >
-                                    Mandü HR
-                                </p>
-                                <p
-                                    class="mt-1 font-mono text-[11px] tracking-[0.08em] text-cream-500 tabular-nums"
-                                >
-                                    AUG 2026 — PRESENT
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            <FileText size={15} aria-hidden="true" />
+                            Resume
+                        </a>
+                    </li>
+                </ul>
             </header>
 
-            <div
-                aria-hidden="true"
-                class="mt-12 h-2.5 md:mt-16"
-                style="background: repeating-linear-gradient(-45deg, #2e2618 0 8px, transparent 8px 16px);"
-            >
-            </div>
+            <div class="mt-12 pb-10 md:mt-14">
+                <figure class="border border-line">
+                    <img
+                        class="aspect-[16/9] w-full object-cover grayscale"
+                        src={Renzo.src}
+                        width={800}
+                        height={533}
+                        alt="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
+                        loading="eager"
+                        fetchpriority="high"
+                    />
+                </figure>
 
-            <div class="mt-12 grid gap-12 pb-10 md:mt-16 lg:grid-cols-12 lg:gap-10">
-                <aside class="lg:col-span-4">
-                    <div class="lg:sticky lg:top-8">
-                        <figure
-                            class="relative border border-line bg-coal-900"
-                        >
-                            <span
-                                aria-hidden="true"
-                                class="absolute -top-2 -left-1 z-10 font-mono text-xs text-cream-500 select-none"
-                                >+</span
-                            >
-                            <span
-                                aria-hidden="true"
-                                class="absolute -top-2 -right-1 z-10 font-mono text-xs text-cream-500 select-none"
-                                >+</span
-                            >
-                            <img
-                                class="aspect-[4/3] w-full object-cover grayscale"
-                                src={Renzo.src}
-                                width={800}
-                                height={533}
-                                alt="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
-                                loading="eager"
-                                fetchpriority="high"
-                            />
-                            <figcaption
-                                class="border-t border-line px-4 py-3 font-mono text-[11px] leading-relaxed tracking-[0.08em] text-cream-500 uppercase"
-                            >
-                                Fig. 01 — Anatolian Rover Challenge / Marsworks
-                            </figcaption>
-                        </figure>
-
-                        <section
-                            id="about"
-                            aria-labelledby="about-heading"
-                            class="mt-10 scroll-mt-8"
-                        >
-                            <div
-                                class="flex items-baseline gap-3 border-t border-line pt-6"
-                            >
-                                <span
-                                    class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
-                                    >(01)</span
-                                >
-                                <h2
-                                    id="about-heading"
-                                    class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
-                                >
-                                    Profile
-                                </h2>
-                                <span
-                                    aria-hidden="true"
-                                    class="h-px flex-1 self-center bg-line"
-                                ></span>
-                            </div>
-                            <div
-                                class="mt-5 max-w-[68ch] space-y-4 text-[15px] leading-[1.7] text-cream-300"
-                            >
-                                <p>
-                                    I'm Renzo Damian, a software engineer based
-                                    in Sheffield, focusing on robotics and
-                                    artificial intelligence.
-                                </p>
-                                <p>
-                                    Currently, I'm completing my Master's in
-                                    Advanced Computer Science while leading the
-                                    software team at{" "}
-                                    <a
-                                        target="_blank"
-                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                        rel="noopener noreferrer"
-                                        href="https://marsworks.sites.sheffield.ac.uk/"
-                                        >Marsworks</a
-                                    >, where I guide the development of
-                                    autonomous navigation and mapping in
-                                    preparation for the{" "}
-                                    <a
-                                        target="_blank"
-                                        class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
-                                        rel="noopener noreferrer"
-                                        href="https://www.anatolianrover.space/"
-                                        >Anatolian Rover Challenge (ARC)</a
-                                    >.
-                                </p>
-                                <p>
-                                    Outside of work and university, I like to
-                                    stay active by cycling. It's a great way to
-                                    clear my head. I also enjoy reading,
-                                    especially science fiction books like
-                                    Asimov's stories, which first sparked my
-                                    fascination with AI and robotics.
-                                </p>
-                            </div>
-                        </section>
+                <section
+                    id="about"
+                    aria-labelledby="about-heading"
+                    class="mt-12 scroll-mt-8"
+                >
+                    <h2
+                        id="about-heading"
+                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                    >
+                        About
+                    </h2>
+                    <div
+                        class="mt-4 max-w-[68ch] space-y-4 text-[15px] leading-[1.7] text-cream-300"
+                    >
+                        <p>
+                            I'm Renzo Damian, a software engineer based in
+                            Sheffield, focusing on robotics and artificial
+                            intelligence.
+                        </p>
+                        <p>
+                            Currently, I'm completing my Master's in Advanced
+                            Computer Science while leading the software team at{" "}
+                            <a
+                                target="_blank"
+                                class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                rel="noopener noreferrer"
+                                href="https://marsworks.sites.sheffield.ac.uk/"
+                                >Marsworks</a
+                            >, where I guide the development of autonomous
+                            navigation and mapping in preparation for the{" "}
+                            <a
+                                target="_blank"
+                                class="text-cream-100 underline decoration-amber-400/70 underline-offset-4 transition-colors hover:text-amber-300"
+                                rel="noopener noreferrer"
+                                href="https://www.anatolianrover.space/"
+                                >Anatolian Rover Challenge (ARC)</a
+                            >.
+                        </p>
+                        <p>
+                            Outside of work and university, I like to stay
+                            active by cycling. It's a great way to clear my
+                            head. I also enjoy reading, especially science
+                            fiction books like Asimov's stories, which first
+                            sparked my fascination with AI and robotics.
+                        </p>
                     </div>
-                </aside>
+                </section>
 
-                <div class="lg:col-span-8">
-                    <section aria-labelledby="experience-heading">
-                        <div
-                            class="flex items-baseline gap-3 border-t border-line pt-6"
-                        >
-                            <span
-                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
-                                >(02)</span
-                            >
-                            <h2
-                                id="experience-heading"
-                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
-                            >
-                                Experience
-                            </h2>
-                            <span
-                                aria-hidden="true"
-                                class="h-px flex-1 self-center bg-line"
-                            ></span>
-                            <span
-                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
-                                >{experiences.length} ENTRIES</span
-                            >
-                        </div>
-                        <div class="mt-2 divide-y divide-line">
-                            {
-                                experiences.map((experience) => (
-                                    <ExperienceItem
-                                        title={experience.title}
-                                        employer={experience.employer}
-                                        date={experience.date}
-                                    />
-                                ))
-                            }
-                        </div>
-                    </section>
-
-                    <section
-                        aria-labelledby="projects-heading"
-                        class="mt-14"
+                <section aria-labelledby="experience-heading" class="mt-12">
+                    <h2
+                        id="experience-heading"
+                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
                     >
-                        <div
-                            class="flex items-baseline gap-3 border-t border-line pt-6"
-                        >
-                            <span
-                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
-                                >(03)</span
-                            >
-                            <h2
-                                id="projects-heading"
-                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
-                            >
-                                Selected Work
-                            </h2>
-                            <span
-                                aria-hidden="true"
-                                class="h-px flex-1 self-center bg-line"
-                            ></span>
-                            <span
-                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
-                                >{projects.length} ENTRIES</span
-                            >
-                        </div>
-                        <div class="mt-2 divide-y divide-line">
-                            {
-                                projects.map((project, i) => (
-                                    <ProjectItem
-                                        index={`P.0${i + 1}`}
-                                        title={project.title}
-                                        description={project.description}
-                                        github_link={project.github_link}
-                                    />
-                                ))
-                            }
-                        </div>
-                    </section>
+                        Experience
+                    </h2>
+                    <div class="mt-1 divide-y divide-line">
+                        {
+                            experiences.map((experience) => (
+                                <ExperienceItem
+                                    title={experience.title}
+                                    employer={experience.employer}
+                                    date={experience.date}
+                                />
+                            ))
+                        }
+                    </div>
+                </section>
 
-                    <section
-                        aria-labelledby="education-heading"
-                        class="mt-14"
+                <section aria-labelledby="projects-heading" class="mt-12">
+                    <h2
+                        id="projects-heading"
+                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
                     >
-                        <div
-                            class="flex items-baseline gap-3 border-t border-line pt-6"
-                        >
-                            <span
-                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
-                                >(04)</span
-                            >
-                            <h2
-                                id="education-heading"
-                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
-                            >
-                                Education
-                            </h2>
-                            <span
-                                aria-hidden="true"
-                                class="h-px flex-1 self-center bg-line"
-                            ></span>
-                            <span
-                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
-                                >{education.length} ENTRIES</span
-                            >
-                        </div>
-                        <div class="mt-2 divide-y divide-line">
-                            {
-                                education.map((item) => (
-                                    <div class="py-4">
-                                        <EducationItem
-                                            title={item.title}
-                                            institution={item.institution}
-                                            date={item.date}
-                                        />
-                                        <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-cream-300">
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    </section>
+                        Projects
+                    </h2>
+                    <div class="mt-1 divide-y divide-line">
+                        {
+                            projects.map((project) => (
+                                <ProjectItem
+                                    title={project.title}
+                                    description={project.description}
+                                    github_link={project.github_link}
+                                />
+                            ))
+                        }
+                    </div>
+                </section>
 
-                    <section
-                        aria-labelledby="involvements-heading"
-                        class="mt-14"
+                <section aria-labelledby="education-heading" class="mt-12">
+                    <h2
+                        id="education-heading"
+                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
                     >
-                        <div
-                            class="flex items-baseline gap-3 border-t border-line pt-6"
-                        >
-                            <span
-                                class="font-mono text-[11px] tracking-[0.2em] text-amber-400"
-                                >(05)</span
-                            >
-                            <h2
-                                id="involvements-heading"
-                                class="font-display text-xl font-bold tracking-[0.04em] text-cream-100 uppercase md:text-2xl"
-                            >
-                                Involvement
-                            </h2>
-                            <span
-                                aria-hidden="true"
-                                class="h-px flex-1 self-center bg-line"
-                            ></span>
-                            <span
-                                class="hidden font-mono text-[11px] tracking-[0.14em] text-cream-500 sm:block"
-                                >{involvements.length} ENTRIES</span
-                            >
-                        </div>
-                        <div class="mt-2 divide-y divide-line">
-                            {
-                                involvements.map((involvement) => (
-                                    <ExperienceItem
-                                        title={involvement.title}
-                                        employer={involvement.employer}
-                                        date={involvement.date}
+                        Education
+                    </h2>
+                    <div class="mt-1 divide-y divide-line">
+                        {
+                            education.map((item) => (
+                                <div class="py-4">
+                                    <EducationItem
+                                        title={item.title}
+                                        institution={item.institution}
+                                        date={item.date}
                                     />
-                                ))
-                            }
-                        </div>
-                    </section>
-                </div>
+                                    <p class="mt-2 max-w-[68ch] text-sm leading-relaxed text-cream-300">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
+
+                <section aria-labelledby="involvements-heading" class="mt-12">
+                    <h2
+                        id="involvements-heading"
+                        class="font-display border-t border-line pt-5 text-lg font-bold tracking-[0.04em] uppercase"
+                    >
+                        Involvement
+                    </h2>
+                    <div class="mt-1 divide-y divide-line">
+                        {
+                            involvements.map((involvement) => (
+                                <ExperienceItem
+                                    title={involvement.title}
+                                    employer={involvement.employer}
+                                    date={involvement.date}
+                                />
+                            ))
+                        }
+                    </div>
+                </section>
             </div>
 
             <footer
-                class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-8 font-mono text-[11px] uppercase tracking-[0.14em] text-cream-500"
+                class="flex flex-wrap items-center justify-between gap-3 border-t border-line py-7 font-mono text-[11px] tracking-[0.1em] text-cream-500 uppercase"
             >
                 <p>Renzo Damian — Sheffield, UK</p>
-                <p class="hidden sm:block">End of folio — 001 ////</p>
                 <p>Built with Astro</p>
             </footer>
         </div>

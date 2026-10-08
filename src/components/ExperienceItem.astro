@@ -8,25 +8,17 @@ export interface Props {
 const { title, employer, date } = Astro.props;
 ---
 
-<div class="flex items-baseline gap-3 py-4">
+<div class="flex items-baseline justify-between gap-6 py-4">
     <div class="min-w-0">
         <h3
             class="text-[15px] font-semibold leading-snug text-cream-100 text-balance"
         >
             {title}
         </h3>
-        <p
-            class="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-cream-500"
-        >
-            {employer}
-        </p>
+        <p class="mt-0.5 text-sm leading-relaxed text-cream-300">{employer}</p>
     </div>
-    <span
-        aria-hidden="true"
-        class="hidden min-w-8 flex-1 self-center border-b border-dotted border-cream-500/50 sm:block"
-    ></span>
     <p
-        class="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-cream-300 tabular-nums"
+        class="shrink-0 font-mono text-[11px] tracking-[0.06em] text-cream-500 tabular-nums"
     >
         {date}
     </p>
