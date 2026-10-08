@@ -8,10 +8,18 @@ export interface Props {
 const { title, institution, date } = Astro.props;
 ---
 
-<div>
-    <h4 class="font-bold">{title}</h4>
-    <div class="flex justify-between italic text-sm flex-col">
-        <h4 class="italic">{institution}</h4>
-        <p class="">{date}</p>
+<div class="py-4">
+    <h4
+        class="text-[15px] font-medium leading-snug text-cream-100 text-balance"
+    >
+        {title}
+    </h4>
+    <div class="mt-1 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <p class="text-sm leading-relaxed text-cream-300">{institution}</p>
+        <p
+            class="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-cream-500 tabular-nums"
+        >
+            {date}
+        </p>
     </div>
 </div>

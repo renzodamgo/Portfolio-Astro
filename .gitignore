@@ -17,6 +17,14 @@ pnpm-debug.log*
 .env
 .env.production
 
+# Impeccable engine binaries (re-downloaded via `npx impeccable install`)
+.opencode/skills/impeccable/scripts/bin/
+.claude/skills/impeccable/scripts/bin/
+.agents/skills/impeccable/scripts/bin/
+.cursor/skills/impeccable/scripts/bin/
+.gemini/skills/impeccable/scripts/bin/
+.hermes/skills/impeccable/scripts/bin/
+
 # macOS-specific files
 .DS_Store
 

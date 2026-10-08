@@ -1,18 +1,25 @@
 ---
-// Define the props with TypeScript
 export interface Props {
-  title: string;
-  employer: string;
-  date: string;
+    title: string;
+    employer: string;
+    date: string;
 }
 
 const { title, employer, date } = Astro.props;
 ---
 
-<div>
-  <h4 class="font-bold">{title}</h4>
-  <div class="flex justify-between italic text-sm">
-    <h4 class="italic">{employer}</h4>
-    <p class="">{date}</p>
-  </div>
+<div class="group flex items-baseline justify-between gap-6 py-4">
+    <div class="min-w-0">
+        <h4
+            class="text-[15px] font-medium leading-snug text-cream-100 text-balance"
+        >
+            {title}
+        </h4>
+        <p class="mt-1 text-sm leading-relaxed text-cream-300">{employer}</p>
+    </div>
+    <p
+        class="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-cream-500 tabular-nums"
+    >
+        {date}
+    </p>
 </div>
