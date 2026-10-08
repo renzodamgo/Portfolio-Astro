@@ -9,7 +9,7 @@ const { title, description, github_link } = Astro.props;
 ---
 
 <div>
-    <h3 class="text-[15px] leading-snug font-semibold text-cream-100">
+    <h3 class="text-sm leading-snug font-medium text-cream-100">
         <a
             href={github_link}
             target="_blank"
@@ -18,7 +18,7 @@ const { title, description, github_link } = Astro.props;
             >{title}</a
         >
     </h3>
-    <p class="mt-0.5 text-sm leading-relaxed text-cream-300">{description}</p>
+    <p class="mt-0.5 text-[13px] leading-relaxed text-cream-300">{description}</p>
     <a
         class="mt-1 inline-block font-mono text-[11px] tracking-[0.08em] text-cream-500 uppercase transition-colors duration-200 hover:text-amber-300"
         href={github_link}
