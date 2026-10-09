@@ -10,7 +10,7 @@ interface Props {
 const site = Astro.site?.toString().replace(/\/$/, "") ?? "https://renzodamian.com";
 
 const {
-    title = "Renzo Damian — AI Engineer & Robotics Software Developer",
+    title = "Renzo Damian | AI Engineer & Robotics Software Developer",
     description = "Renzo Damian is an AI Engineer at Mandü HR in Lima, building autonomous robots with ROS2, Nav2 and PyTorch. MSc Computer Science, Sheffield.",
 } = Astro.props;
 
@@ -41,7 +41,7 @@ const personSchema = {
             "@type": "WebSite",
             "@id": site + "/#website",
             url: site + "/",
-            name: "Renzo Damian — Portfolio",
+            name: "Renzo Damian",
             inLanguage: "en",
             publisher: { "@id": site + "/#person" },
         },
@@ -113,7 +113,7 @@ const personSchema = {
         <meta name="color-scheme" content="dark" />
 
         <meta property="og:type" content="profile" />
-        <meta property="og:site_name" content="Renzo Damian — Portfolio" />
+        <meta property="og:site_name" content="Renzo Damian" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
