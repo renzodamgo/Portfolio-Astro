@@ -18,6 +18,11 @@
     const COAL = new THREE.Vector3(0.0471, 0.0392, 0.0275); // #0c0a07
     const AMBER = new THREE.Vector3(0.9098, 0.6392, 0.2392); // #e8a33d
     const AMBER_DEEP = new THREE.Vector3(0.7804, 0.498, 0.1333); // #c77f22
+    // Light theme: paper base with soft amber washes
+    const PAPER = new THREE.Vector3(0.984, 0.961, 0.91); // #fbf5e8
+    const AMBER_SOFT = new THREE.Vector3(0.96, 0.78, 0.47);
+    const AMBER_SOFT_DEEP = new THREE.Vector3(0.93, 0.68, 0.34);
+    const isLight = () => document.documentElement.dataset.theme === "light";
 
     class TouchTexture {
         private size = 64;
@@ -154,6 +159,7 @@
         uniform sampler2D uTouchTexture;
         uniform float uGrainIntensity;
         uniform vec3 uBase;
+        uniform float uLight;
         uniform float uGradientSize;
         uniform float uGradientCount;
         uniform float uColor1Weight;
@@ -263,7 +269,7 @@
             color = mix(uBase, color, mixFactor1);
 
             float brightness = length(color);
-            if (brightness > 1.0) {
+            if (uLight < 0.5 && brightness > 1.0) {
                 color = color * (1.0 / brightness);
             }
 
@@ -303,7 +309,7 @@
             color = clamp(color, vec3(0.0), vec3(1.0));
 
             float brightness = length(color);
-            if (brightness > 1.0) {
+            if (uLight < 0.5 && brightness > 1.0) {
                 color = color * (1.0 / brightness);
             }
 
@@ -373,6 +379,7 @@
                 uTouchTexture: { value: null },
                 uGrainIntensity: { value: 0.04 },
                 uBase: { value: COAL.clone() },
+                uLight: { value: 0 },
                 uGradientSize: { value: 0.55 },
                 uGradientCount: { value: 9.0 },
                 uColor1Weight: { value: 0.7 },
@@ -384,6 +391,25 @@
 
             this.build();
             this.bind();
+            this.applyTheme();
+            window.addEventListener("themechange", () => this.applyTheme());
+        }
+
+        private applyTheme() {
+            const u = this.uniforms;
+            const light = isLight();
+            const [a, b, c, d] = light
+                ? [AMBER_SOFT, PAPER, AMBER_SOFT_DEEP, PAPER]
+                : [AMBER, COAL, AMBER_DEEP, COAL];
+            u.uColor1.value.copy(a);
+            u.uColor2.value.copy(b);
+            u.uColor3.value.copy(c);
+            u.uColor4.value.copy(d);
+            u.uColor5.value.copy(a);
+            u.uColor6.value.copy(b);
+            u.uBase.value.copy(light ? PAPER : COAL);
+            u.uLight.value = light ? 1 : 0;
+            u.uIntensity.value = light ? 0.95 : 0.72;
         }
 
         private getViewSize() {

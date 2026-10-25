@@ -1,0 +1,338 @@
+/* Styles for the /learn section. Imported only by LearnLayout. */
+
+/* The page: plain white (light) or black (dark), no liquid background, so text and figures read at full contrast. */
+body.learn {
+    background-color: #000;
+}
+html[data-theme="light"] body.learn {
+    background-color: #fff;
+    --color-black: #ffffff;
+    --color-coal-950: #ffffff;
+    --color-coal-900: #f8f5ee;
+    --color-line: #cfc3a4;
+}
+
+/* Cards and navigation links (index of guides, steps list, previous / next) */
+.learn-card {
+    border: 1px solid color-mix(in oklab, var(--color-white) 30%, transparent);
+    background: color-mix(in oklab, var(--color-black) 60%, transparent);
+    transition: border-color 0.15s, background-color 0.15s;
+}
+.learn-card:hover {
+    border-color: var(--btn-on-border);
+    background: var(--btn-bg-hover);
+}
+.learn-card:active {
+    background: var(--btn-bg-active);
+}
+.learn-card:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.prose-learn {
+    color: color-mix(in oklab, var(--color-white) 85%, transparent);
+    font-size: 1rem;
+    line-height: 1.75;
+    overflow-wrap: break-word;
+}
+
+.prose-learn > * + * {
+    margin-top: 1.1em;
+}
+
+.prose-learn h1,
+.prose-learn h2,
+.prose-learn h3,
+.prose-learn h4 {
+    color: var(--color-white);
+    font-weight: 600;
+    line-height: 1.3;
+    scroll-margin-top: 1.5rem;
+}
+.prose-learn h2 {
+    margin-top: 2.2em;
+    padding-bottom: 0.35em;
+    border-bottom: 1px solid var(--color-line);
+    font-size: 1.5rem;
+}
+.prose-learn h3 {
+    margin-top: 1.8em;
+    font-size: 1.2rem;
+}
+.prose-learn h4 {
+    margin-top: 1.5em;
+    font-size: 1rem;
+    color: var(--color-amber-300);
+}
+
+.prose-learn a {
+    color: var(--color-amber-300);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.prose-learn a:hover {
+    color: var(--color-amber-400);
+}
+
+.prose-learn strong {
+    color: var(--color-white);
+    font-weight: 600;
+}
+
+.prose-learn ul,
+.prose-learn ol {
+    padding-left: 1.4em;
+}
+.prose-learn ul {
+    list-style: disc;
+}
+.prose-learn ol {
+    list-style: decimal;
+}
+.prose-learn li + li {
+    margin-top: 0.35em;
+}
+.prose-learn li::marker {
+    color: var(--color-amber-500);
+}
+
+.prose-learn hr {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin: 2em 0;
+}
+
+/* Inline code */
+.prose-learn :not(pre) > code {
+    padding: 0.12em 0.4em;
+    border: 1px solid var(--color-line);
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--color-white) 8%, transparent);
+    color: var(--color-amber-300);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    overflow-wrap: anywhere;
+}
+
+/* Code blocks (Shiki sets inline colors; the background is forced to the site palette) */
+.prose-learn pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--color-black) 55%, transparent) !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    tab-size: 4;
+}
+.prose-learn pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    white-space: pre;
+}
+.prose-learn pre:not(.astro-code) code {
+    color: var(--color-white);
+}
+
+/* Tables */
+.prose-learn table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.prose-learn th,
+.prose-learn td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--color-line);
+    text-align: left;
+    vertical-align: top;
+}
+.prose-learn th {
+    background: color-mix(in oklab, var(--color-white) 8%, transparent);
+    color: var(--color-white);
+    font-weight: 600;
+}
+
+/* Callouts: blockquotes */
+.prose-learn blockquote {
+    padding: 0.8rem 1.1rem;
+    border: 1px solid var(--color-line);
+    border-left: 3px solid var(--color-amber-400);
+    border-radius: 0 6px 6px 0;
+    background: color-mix(in oklab, var(--color-black) 45%, transparent);
+    color: color-mix(in oklab, var(--color-white) 85%, transparent);
+}
+.prose-learn blockquote > * + * {
+    margin-top: 0.6em;
+}
+
+/* Images and figures */
+.prose-learn img,
+.prose-learn svg,
+.prose-learn video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+.prose-learn figure {
+    margin: 1.6em 0;
+}
+.prose-learn figcaption {
+    margin-top: 0.5em;
+    color: color-mix(in oklab, var(--color-white) 72%, transparent);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Widgets mount points */
+.prose-learn [data-widget] {
+    min-height: 4rem;
+    padding: 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--color-black) 45%, transparent);
+}
+
+/* OS tabs (see src/scripts/learn/os-tabs.ts) */
+.os-tabs {
+    display: inline-flex;
+    gap: 2px;
+    margin-bottom: 0.6rem;
+    padding: 2px;
+    border: 1px solid var(--btn-border);
+    border-radius: 8px;
+    background: var(--btn-bg);
+}
+.os-tabs button {
+    min-height: 2.25rem;
+    padding: 0.3rem 0.9rem;
+    border-radius: 6px;
+    color: var(--color-white);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+.os-tabs button:hover {
+    background: var(--btn-bg-hover);
+}
+.os-tabs button:active {
+    background: var(--btn-bg-active);
+}
+.os-tabs button[aria-selected="true"] {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    font-weight: 600;
+}
+.os-tabs button[aria-selected="true"]:hover {
+    background: var(--btn-primary-bg-hover);
+}
+.os-tabs button:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+@media (pointer: coarse) {
+    .os-tabs button {
+        min-height: 2.5rem;
+    }
+}
+.prose-learn [data-os][hidden] {
+    display: none;
+}
+
+
+/* Code: two Shiki themes (astro.config.mjs), the CSS variables pick one */
+.prose-learn .astro-code,
+.prose-learn .astro-code span {
+    color: var(--shiki-dark);
+}
+html[data-theme="light"] .prose-learn .astro-code,
+html[data-theme="light"] .prose-learn .astro-code span {
+    color: var(--shiki-light);
+}
+
+
+/* details / summary (reference code folded in the steps) */
+.prose-learn details {
+    border: 1px solid var(--btn-border);
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--color-black) 60%, transparent);
+}
+.prose-learn details > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 7px;
+    color: var(--color-white);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+.prose-learn details > summary::-webkit-details-marker {
+    display: none;
+}
+.prose-learn details > summary::before {
+    content: "";
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid var(--ctl-accent);
+    border-bottom: 2px solid var(--ctl-accent);
+    transform: rotate(-45deg);
+    transition: transform 0.15s;
+}
+.prose-learn details[open] > summary::before {
+    transform: rotate(45deg);
+}
+.prose-learn details > summary:hover {
+    background: var(--btn-bg-hover);
+}
+.prose-learn details > summary:active {
+    background: var(--btn-bg-active);
+}
+.prose-learn details > summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+.prose-learn details[open] > summary {
+    border-bottom: 1px solid var(--color-line);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.prose-learn details > *:not(summary) {
+    margin-inline: 0.9rem;
+}
+.prose-learn details > *:not(summary):last-child {
+    margin-bottom: 0.9rem;
+}
+.prose-learn details > summary + * {
+    margin-top: 0.8rem;
+}
+
+/* Keys */
+.prose-learn kbd {
+    padding: 0.1em 0.45em;
+    border: 1px solid var(--btn-border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: var(--color-white);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+}
+
+/* Links in the prose: the amber of the light theme is already dark enough; keep them underlined and give them a state */
+.prose-learn a:focus-visible {
+    outline-offset: 2px;
+    border-radius: 2px;
+}

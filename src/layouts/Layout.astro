@@ -1,10 +1,26 @@
 ---
 import "../styles/global.css";
 import Analytics from "@vercel/analytics/astro";
+import LiquidBackground from "../components/LiquidBackground.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
 
 interface Props {
     title?: string;
     description?: string;
+    /** Document language. */
+    lang?: string;
+    /** Absolute canonical URL. Defaults to the current pathname on the site. */
+    canonical?: string;
+    /** Absolute URL (or site-relative path) of the social image. */
+    ogImage?: string;
+    /** Open Graph type. Defaults to "profile" (homepage). */
+    ogType?: string;
+    /** JSON-LD object or array. When given it replaces the default Person graph. */
+    jsonld?: Record<string, unknown> | Record<string, unknown>[];
+    /** Render the WebGL LiquidBackground layer. */
+    background?: boolean;
+    /** Class on the body element (the /learn pages use "learn": plain white / black page, no liquid background). */
+    bodyClass?: string;
 }
 
 const site = Astro.site?.toString().replace(/\/$/, "") ?? "https://renzodamian.com";
@@ -12,11 +28,24 @@ const site = Astro.site?.toString().replace(/\/$/, "") ?? "https://renzodamian.c
 const {
     title = "Renzo Damian | AI Engineer & Robotics Software Developer",
     description = "Renzo Damian is an AI Engineer at Mandü HR in Lima, building autonomous robots with ROS2, Nav2 and PyTorch. MSc Computer Science, Sheffield.",
+    lang = "en",
+    canonical: canonicalProp,
+    ogImage,
+    ogType = "profile",
+    jsonld,
+    background = true,
+    bodyClass,
 } = Astro.props;
 
-const canonical = Astro.url
-    ? new URL(Astro.url.pathname, site).toString()
-    : site + "/";
+const canonical =
+    canonicalProp ??
+    (Astro.url ? new URL(Astro.url.pathname, site).toString() : site + "/");
+
+const imageUrl = ogImage ? new URL(ogImage, site + "/").toString() : site + "/og-image.jpg";
+const imageAlt = ogImage
+    ? title
+    : "Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge";
+const isProfile = ogType === "profile";
 
 const personSchema = {
     "@context": "https://schema.org",
@@ -91,11 +120,26 @@ const personSchema = {
         },
     ],
 };
+
+const structuredData = jsonld ?? personSchema;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
     <head>
+        <script is:inline>
+            // Theme before the first paint: the saved choice, otherwise the system one (dark by default)
+            (function () {
+                var theme = null;
+                try {
+                    theme = localStorage.getItem("theme");
+                } catch (e) {}
+                if (theme !== "light" && theme !== "dark") {
+                    theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+                }
+                document.documentElement.dataset.theme = theme;
+            })();
+        </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
         <meta name="generator" content={Astro.generator} />
@@ -112,31 +156,25 @@ const personSchema = {
         <meta name="theme-color" content="#0c0a07" media="(prefers-color-scheme: dark)" />
         <meta name="color-scheme" content="dark" />
 
-        <meta property="og:type" content="profile" />
+        <meta property="og:type" content={ogType} />
         <meta property="og:site_name" content="Renzo Damian" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        <meta property="og:image" content={site + "/og-image.jpg"} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta
-            property="og:image:alt"
-            content="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
-        />
-        <meta property="profile:first_name" content="Renzo" />
-        <meta property="profile:last_name" content="Damian" />
+        <meta property="og:image" content={imageUrl} />
+        {!ogImage && <meta property="og:image:width" content="1200" />}
+        {!ogImage && <meta property="og:image:height" content="630" />}
+        <meta property="og:image:alt" content={imageAlt} />
+        {isProfile && <meta property="profile:first_name" content="Renzo" />}
+        {isProfile && <meta property="profile:last_name" content="Damian" />}
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={site + "/og-image.jpg"} />
-        <meta
-            name="twitter:image:alt"
-            content="Renzo Damian with the Marsworks rover at the Anatolian Rover Challenge"
-        />
+        <meta name="twitter:image" content={imageUrl} />
+        <meta name="twitter:image:alt" content={imageAlt} />
 
-        <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+        <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
 
         <link
             rel="apple-touch-icon"
@@ -171,8 +209,10 @@ const personSchema = {
             />
         </noscript>
     </head>
-    <body>
+    <body class={bodyClass}>
         <Analytics />
+        {background && <LiquidBackground />}
         <slot />
+        <ThemeToggle />
     </body>
 </html>

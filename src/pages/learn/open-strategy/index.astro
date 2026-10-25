@@ -1,0 +1,133 @@
+---
+import { getEntry } from "astro:content";
+import LearnLayout from "../../../layouts/LearnLayout.astro";
+import { GUIDE_BASE, GUIDE_ID, SITE, getGuideSteps, stepLabel, stepUrl } from "../../../lib/learn";
+
+const guide = await getEntry("guides", GUIDE_ID);
+if (!guide) throw new Error(`Missing guide "${GUIDE_ID}"`);
+const steps = await getGuideSteps();
+
+const canonical = `${SITE}${GUIDE_BASE}`;
+const title = `${guide.data.title} | Learn | Renzo Damian`;
+const description = guide.data.summary;
+const hours = Math.round(guide.data.minutes / 60);
+
+const jsonld = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "@id": `${canonical}#course`,
+    url: canonical,
+    name: guide.data.title,
+    description,
+    inLanguage: "es",
+    educationalLevel: guide.data.level,
+    timeRequired: `PT${guide.data.minutes}M`,
+    provider: { "@type": "Person", name: "Renzo Damian", url: `${SITE}/` },
+    hasPart: steps.map((step) => ({
+        "@type": "LearningResource",
+        name: step.data.title,
+        url: `${SITE}${stepUrl(step)}`,
+    })),
+};
+---
+
+<LearnLayout
+    title={title}
+    description={description}
+    canonical={canonical}
+    jsonld={jsonld}
+>
+    <nav aria-label="Ruta" class="mb-6 text-sm text-white/70">
+        <a class="hover:text-amber-300" href="/learn/">Learn</a>
+        <span aria-hidden="true"> / </span>
+        <span>Estrategia del Open</span>
+    </nav>
+
+    <header>
+        <h1 class="text-4xl font-semibold">{guide.data.title}</h1>
+        <p class="mt-4 text-lg text-white/80">{guide.data.summary}</p>
+        <p class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/70">
+            <span>Nivel: {guide.data.level}</span>
+            <span>Unas {hours} horas</span>
+            <span>{steps.length} pasos</span>
+        </p>
+    </header>
+
+    <div class="prose-learn mt-10">
+        <h2>Qué vas a construir</h2>
+        <p>
+            Un programa que conduce un coche con dirección Ackermann por el
+            campo del reto Open de la WRO Future Engineers y completa tres
+            vueltas usando solo lo que tiene el coche real: LiDAR, giroscopio
+            y cámara, con ruido. Empiezas con el modelo del coche y terminas
+            midiendo puntos y tiempo de cada ronda.
+        </p>
+        <p>
+            Cada paso aporta una pieza, trae ejercicios con pruebas
+            automáticas y una solución verificada que puedes comparar con la
+            tuya.
+        </p>
+
+        <h2>Qué necesitas</h2>
+        <ul>
+            <li>Python básico: funciones, listas y clases sencillas.</li>
+            <li>
+                Un ordenador con Ubuntu, WSL2 o macOS, y una terminal con git.
+            </li>
+            <li>
+                Ganas de probar: cada ejercicio se verifica con pruebas que
+                corren en segundos.
+            </li>
+        </ul>
+        <p>
+            No hace falta saber ROS ni tener un coche: el paso 0 deja todo
+            listo y la guía incluye un
+            <a href={`${GUIDE_BASE}simulador/`}>simulador en el navegador</a>.
+        </p>
+
+        <h2>Los pasos</h2>
+    </div>
+
+    <ol class="mt-4 divide-y divide-line border border-white/15 bg-black/50">
+        {
+            steps.map((step) => (
+                <li>
+                    <a
+                        href={stepUrl(step)}
+                        class="group flex items-baseline gap-4 px-4 py-3 transition-colors hover:bg-[var(--btn-bg-hover)] active:bg-[var(--btn-bg-active)]"
+                    >
+                        <span class="w-24 shrink-0 text-xs font-medium tracking-wide text-amber-400 uppercase">
+                            {stepLabel(step)}
+                        </span>
+                        <span class="min-w-0">
+                            <span class="block font-medium group-hover:text-amber-300">
+                                {step.data.title}
+                            </span>
+                            <span class="block text-sm text-white/70">
+                                {step.data.summary}
+                            </span>
+                        </span>
+                    </a>
+                </li>
+            ))
+        }
+    </ol>
+
+    <div class="prose-learn mt-10">
+        <h2>Código y herramientas</h2>
+        <p>
+            Todo el código vive en
+            <a
+                href={guide.data.repo}
+                target="_blank"
+                rel="noopener noreferrer">{guide.data.repo.replace("https://", "")}</a
+            >. Cada paso tiene una etiqueta (<code>step-1</code>,
+            <code>step-2</code>, y así) con la solución, para que veas en un
+            diff qué cambia de un paso al siguiente.
+        </p>
+        <p>
+            Si prefieres ver el coche antes de programarlo, prueba el
+            <a href={`${GUIDE_BASE}simulador/`}>simulador del coche</a>.
+        </p>
+    </div>
+</LearnLayout>

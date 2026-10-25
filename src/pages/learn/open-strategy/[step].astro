@@ -1,0 +1,195 @@
+---
+import { render } from "astro:content";
+import LearnLayout from "../../../layouts/LearnLayout.astro";
+import {
+    GUIDE_BASE,
+    LAST_STEP,
+    SITE,
+    getGuideSteps,
+    stepLabel,
+    stepUrl,
+    type StepEntry,
+} from "../../../lib/learn";
+
+export async function getStaticPaths() {
+    const steps = await getGuideSteps();
+    return steps.map((entry, index) => ({
+        params: { step: entry.data.slug },
+        props: {
+            entry,
+            prev: steps[index - 1] as StepEntry | undefined,
+            next: steps[index + 1] as StepEntry | undefined,
+            total: LAST_STEP,
+        },
+    }));
+}
+
+const { entry, prev, next, total } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, tag, compareFrom, order } = entry.data;
+
+const REPO = "https://github.com/renzodamgo/robotek-learn";
+const compareUrl = `${REPO}/compare/${compareFrom}...${tag}`;
+const num = (value: string) => value.replace("step-", "");
+const diffCommand = `bash tools/compare-step.sh ${num(compareFrom)} ${num(tag)}`;
+const mineCommand = `bash tools/compare-step.sh ${num(tag)}`;
+const showDiff = compareFrom !== tag;
+
+const canonical = `${SITE}${stepUrl(entry)}`;
+const pageTitle = `${stepLabel(entry)}: ${title} | Estrategia del Open | Renzo Damian`;
+
+const jsonld = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": `${canonical}#article`,
+    mainEntityOfPage: canonical,
+    url: canonical,
+    headline: `${stepLabel(entry)}: ${title}`,
+    description: summary,
+    inLanguage: "es",
+    proficiencyLevel: "Intermediate",
+    author: { "@type": "Person", name: "Renzo Damian", url: `${SITE}/` },
+    publisher: { "@type": "Person", name: "Renzo Damian", url: `${SITE}/` },
+    isPartOf: {
+        "@type": "Course",
+        name: "Construye la estrategia del Open",
+        url: `${SITE}${GUIDE_BASE}`,
+    },
+    position: order,
+};
+---
+
+<LearnLayout
+    title={pageTitle}
+    description={summary}
+    canonical={canonical}
+    ogType="article"
+    jsonld={jsonld}
+>
+    <nav aria-label="Ruta" class="mb-6 text-sm text-white/70">
+        <a class="hover:text-amber-300" href="/learn/">Learn</a>
+        <span aria-hidden="true"> / </span>
+        <a class="hover:text-amber-300" href={GUIDE_BASE}>Estrategia del Open</a>
+        <span aria-hidden="true"> / </span>
+        <span>{stepLabel(entry)}</span>
+    </nav>
+
+    <header>
+        <p class="flex flex-wrap items-center gap-3 text-sm">
+            <span class="font-medium tracking-wide text-amber-400 uppercase">
+                {stepLabel(entry)}{order > 0 && order <= LAST_STEP && ` de ${total}`}
+            </span>
+            <code
+                class="border border-white/15 bg-white/10 px-2 py-0.5 font-mono text-xs text-amber-300"
+                >{tag}</code
+            >
+        </p>
+        <h1 class="mt-2 text-3xl font-semibold md:text-4xl">{title}</h1>
+        <p class="mt-3 text-white/80">{summary}</p>
+    </header>
+
+    <article class="prose-learn mt-8">
+        <Content />
+    </article>
+
+    {
+        showDiff && (
+            <section
+                aria-labelledby="cambios"
+                class="mt-12 border border-white/15 bg-black/50 p-5"
+            >
+                <h2 id="cambios" class="text-lg font-semibold">
+                    Los cambios de este paso
+                </h2>
+                <p class="mt-2 text-sm text-white/80">
+                    Compara tu código con la solución: de{" "}
+                    <code class="text-amber-300">{compareFrom}</code> a{" "}
+                    <code class="text-amber-300">{tag}</code>.
+                </p>
+                <p class="mt-3">
+                    <a
+                        class="text-amber-300 underline underline-offset-4 hover:text-amber-400"
+                        href={compareUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Ver los cambios de este paso
+                    </a>
+                </p>
+                <p class="mt-3 text-sm text-white/80">
+                    O en tu terminal, dentro del repositorio. Lo que cambia la
+                    referencia en este paso:
+                </p>
+                <pre
+                    class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
+                    tabindex="0"
+                >
+                    <code>{diffCommand}</code>
+                </pre>
+                <p class="mt-3 text-sm text-white/80">
+                    Tu árbol contra la referencia de este paso:
+                </p>
+                <pre
+                    class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
+                    tabindex="0"
+                >
+                    <code>{mineCommand}</code>
+                </pre>
+            </section>
+        )
+    }
+
+    <nav
+        aria-label="Pasos"
+        class="mt-10 grid gap-4 border-t border-white/15 pt-6 sm:grid-cols-2"
+    >
+        {
+            prev ? (
+                <a
+                    href={stepUrl(prev)}
+                    rel="prev"
+                    class="group learn-card p-4"
+                >
+                    <span class="block text-xs text-white/70">Anterior</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        {stepLabel(prev)}: {prev.data.title}
+                    </span>
+                </a>
+            ) : (
+                <a
+                    href={GUIDE_BASE}
+                    class="group learn-card p-4"
+                >
+                    <span class="block text-xs text-white/70">Volver</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        Índice de la guía
+                    </span>
+                </a>
+            )
+        }
+        {
+            next ? (
+                <a
+                    href={stepUrl(next)}
+                    rel="next"
+                    class="group learn-card p-4 text-left sm:text-right"
+                >
+                    <span class="block text-xs text-white/70">Siguiente</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        {stepLabel(next)}: {next.data.title}
+                    </span>
+                </a>
+            ) : (
+                <a
+                    href="/learn/"
+                    class="group learn-card p-4 text-left sm:text-right"
+                >
+                    <span class="block text-xs text-white/70">Fin</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        Más guías
+                    </span>
+                </a>
+            )
+        }
+    </nav>
+</LearnLayout>
