@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" role="img" aria-label="Energía y luces"><rect width="1000" height="600" fill="#d7ebf6"/><text x="20" y="576" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="bold" text-anchor="start" fill="#1d2430">12</text><text x="100" y="564" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">Energía y luces</text><rect x="20" y="20" width="300" height="124" fill="#b6d2e4" stroke="#1d2430" stroke-width="2"/>
+<text x="34" y="46" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">Necesitas</text>
+<text x="34" y="74" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">1x</text>
+<text x="72" y="74" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">batería con su conector</text>
+<text x="34" y="100" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">1x</text>
+<text x="72" y="100" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">cable USB-C a USB-C</text>
+<text x="34" y="126" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">3x</text>
+<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">cable dupont para los LED</text><rect x="380" y="40" width="240" height="110" rx="10" fill="#fdecea" stroke="#1d2430" stroke-width="2.5"/>
+<text x="500.0" y="66" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Batería 2S</text>
+<text x="500.0" y="87" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">7,4 V · 5000 mAh</text>
+<text x="500.0" y="105" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">(6 a 8,4 V)</text>
+<rect x="380" y="230" width="240" height="110" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="500.0" y="256" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Placa RRC Lite</text>
+<text x="500.0" y="277" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">entrada de batería</text>
+<text x="500.0" y="295" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">salida 5 V / 5 A (USB-C, PD)</text>
+<rect x="720" y="230" width="250" height="110" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
+<text x="845.0" y="256" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Raspberry Pi 5</text>
+<text x="845.0" y="277" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">entrada USB-C</text>
+<rect x="720" y="40" width="250" height="110" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
+<text x="845.0" y="66" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">TB6612FNG</text>
+<text x="845.0" y="87" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">VM: potencia del motor</text>
+<rect x="720" y="400" width="250" height="110" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="845.0" y="426" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Anillo de 16 LED</text>
+<text x="845.0" y="447" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">WS2812: 5 V, GND y DIN</text>
+<text x="845.0" y="465" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">DIN al GPIO10 (pin 19)</text>
+<path d="M 500 150 L 500 230" fill="none" stroke="#1d2430" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><path d="M 500 150 L 500 230" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 620 95 L 720 95" fill="none" stroke="#1d2430" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><path d="M 620 95 L 720 95" fill="none" stroke="#c0392b" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 620 285 L 720 285" fill="none" stroke="#1d2430" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><path d="M 620 285 L 720 285" fill="none" stroke="#2c3e50" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 845 340 L 845 400" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 845 340 L 845 400" fill="none" stroke="#27ae60" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="30" y="360" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">Batería: a la RRC Lite y a VM</text>
+<text x="30" y="380" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">del TB6612. El Pi toma 5 V de</text>
+<text x="30" y="400" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">la placa por USB-C. La placa se</text>
+<text x="30" y="420" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">apaga bajo 6 V: carga antes de</text>
+<text x="30" y="440" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">6,8 V. LED con brillo bajo: al</text>
+<text x="30" y="460" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">100 % reinició el Pi.</text></svg>

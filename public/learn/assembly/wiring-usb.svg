@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 580" width="1000" height="580" role="img" aria-label="Los sensores, por USB"><rect width="1000" height="580" fill="#d7ebf6"/><text x="20" y="556" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="bold" text-anchor="start" fill="#1d2430">10</text><text x="100" y="544" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">Los sensores, por USB</text><rect x="20" y="20" width="300" height="98" fill="#b6d2e4" stroke="#1d2430" stroke-width="2"/>
+<text x="34" y="46" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">Necesitas</text>
+<text x="34" y="74" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">3x</text>
+<text x="72" y="74" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">cable USB</text>
+<text x="34" y="100" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">1x</text>
+<text x="72" y="100" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">adaptador USB del LiDAR</text><rect x="380" y="40" width="300" height="250" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
+<text x="530.0" y="66" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Raspberry Pi 5</text>
+<text x="530.0" y="87" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">2 controladores: azul 3.0, negro 2.0</text>
+<rect x="420" y="150" width="105" height="120" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<rect x="545" y="150" width="105" height="120" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="430" y="262" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">USB 0</text>
+<text x="555" y="262" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">USB 1</text>
+<rect x="440" y="190" width="30" height="26" rx="3" fill="#2f6fd6" stroke="#1d2430" stroke-width="2"/>
+<rect x="475" y="190" width="30" height="26" rx="3" fill="#222" stroke="#1d2430" stroke-width="2"/>
+<rect x="565" y="190" width="30" height="26" rx="3" fill="#2f6fd6" stroke="#1d2430" stroke-width="2"/>
+<rect x="600" y="190" width="30" height="26" rx="3" fill="#222" stroke="#1d2430" stroke-width="2"/>
+<text x="455" y="236" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#1d2430">azul</text>
+<text x="490" y="236" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#1d2430">negro</text>
+<text x="580" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#1d2430">azul</text>
+<text x="615" y="184" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#1d2430">negro</text>
+<rect x="760" y="40" width="220" height="80" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="870.0" y="66" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Cámara</text>
+<text x="870.0" y="87" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">USB 2.0 · /dev/video0</text>
+<rect x="760" y="160" width="220" height="80" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="870.0" y="186" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">LiDAR LD19</text>
+<text x="870.0" y="207" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">con su adaptador USB (CP2102)</text>
+<rect x="760" y="290" width="220" height="80" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="870.0" y="316" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Placa RRC Lite</text>
+<text x="870.0" y="337" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">USB · /dev/ttyACM0</text>
+<path d="M 760 80 L 700 80 L 700 122 L 455 122 L 455 190" fill="none" stroke="#1d2430" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/><path d="M 760 80 L 700 80 L 700 122 L 455 122 L 455 190" fill="none" stroke="#9b59b6" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 760 200 L 730 200 L 730 140 L 490 140 L 490 190" fill="none" stroke="#1d2430" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/><path d="M 760 200 L 730 200 L 730 140 L 490 140 L 490 190" fill="none" stroke="#e67e22" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 760 330 L 690 330 L 690 300 L 615 300 L 615 216" fill="none" stroke="#1d2430" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/><path d="M 760 330 L 690 330 L 690 300 L 615 300 L 615 216" fill="none" stroke="#27ae60" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="30" y="420" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">Así quedó medido en el coche del equipo: cámara al azul del USB 0, LiDAR al negro del USB 0</text>
+<text x="30" y="442" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">y placa al negro del USB 1. Los tres son USB 2.0 o 1.1, así que cualquier puerto sirve, y los</text>
+<text x="30" y="464" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">nombres /dev/serial/by-id no dependen del puerto. Enchúfalos con el Pi apagado.</text></svg>

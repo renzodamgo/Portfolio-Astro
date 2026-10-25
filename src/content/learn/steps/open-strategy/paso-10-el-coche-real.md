@@ -34,6 +34,8 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 ## 1. Qué necesitas
 
+¿Todavía no está armado? Las instrucciones de montaje y de cables, paso a paso y con dibujos, están en [Armar y conectar el coche](/learn/open-strategy/armar-y-conectar-el-coche/).
+
 ### Piezas
 
 - Una **Raspberry Pi 5** con Ubuntu 24.04 (la del equipo). Una Pi 4 no la he probado: el motor usa el chip de GPIO 4 del Pi 5, y en otra placa ese número cambia (`gpiochip` en `robot.yaml`).
