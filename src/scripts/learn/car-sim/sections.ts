@@ -40,15 +40,22 @@ export function createSectionJudge(direction: Direction, max = MAX_SECTION_POINT
       const section = footprintSection(x, y, yaw);
       if (current === null) { current = section; return null; }
       if (section === null || section === current) return null;
-      if (section === (current + sign + 8) % 8) {
-        const exited = current;
+      // Sections moved in the round direction (1..7). Hugging the island, the outline can go from a straight to
+      // the next one without ever being wholly inside the corner square between them: that jump of 2 counts the
+      // corner too (it was driven through), instead of losing the count for the rest of the round.
+      const ahead = (((section - current) * sign) % 8 + 8) % 8;
+      if (ahead === 1 || ahead === 2) {
+        let exited: number | null = null;
+        for (let k = 0; k < ahead; k++) {
+          const left = (current + sign * k + 8) % 8;
+          if (reverse) { reverse--; continue; }
+          if (count < max) { count++; exited = left; }
+        }
         current = section;
-        if (reverse) { reverse--; return null; }
-        if (count < max) { count++; return exited; }
-        return null;
+        return exited;
       }
-      if (section === (current - sign + 8) % 8) {
-        reverse++;
+      if (ahead === 7 || ahead === 6) {
+        reverse += 8 - ahead;
         current = section;
       }
       return null;

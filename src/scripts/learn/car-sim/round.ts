@@ -82,10 +82,12 @@ export function createRound(direction: Direction, emit: (event: RoundEvent) => v
       emit({ type: 'start' });
     }
     const t = s.clock - startClock;
+    const before = judge.count;
     const exited = judge.update(s.x, s.y, s.yaw);
     if (exited !== null) {
       const n = judge.count;
-      if (n % SECTIONS_PER_LAP === 0 && n <= LAPS * SECTIONS_PER_LAP) {
+      // A skipped corner adds 2 at once: a lap ends when the count reaches a multiple of 8, not only lands on it.
+      if (Math.floor(n / SECTIONS_PER_LAP) > Math.floor(before / SECTIONS_PER_LAP) && n <= LAPS * SECTIONS_PER_LAP) {
         lapTimes.push(t);
         emit({ type: 'lap', lap: n / SECTIONS_PER_LAP, time: t });
       }
