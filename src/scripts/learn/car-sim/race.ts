@@ -13,10 +13,10 @@ const COUNTDOWN = ['3', '2', '1', '¡Ya!'];
 
 export interface Look { car: string; skin: string; hair: string; shirt: string }
 export const SWATCHES = {
-  car: ['#662bb3', '#d8392b', '#2f6fd6', '#27ae60', '#f39c12', '#222222'],
+  car: ['#662bb3', '#d8392b', '#2f6fd6', '#27ae60', '#f39c12', '#ff6fae', '#222222'],
   skin: ['#f6d7c3', '#f1c6a5', '#d9a07b', '#a8714f', '#6e4630'],
-  hair: ['#1c1c1c', '#3b2a20', '#8a5a2b', '#e0b84f', '#c0392b', '#7d5fff'],
-  shirt: ['#2f6fd6', '#d8392b', '#27ae60', '#f39c12', '#ffffff', '#111111'],
+  hair: ['#1c1c1c', '#3b2a20', '#8a5a2b', '#e0b84f', '#c0392b', '#7d5fff', '#8e44ad', '#ff6fae'],
+  shirt: ['#2f6fd6', '#d8392b', '#27ae60', '#f39c12', '#ffffff', '#111111', '#8e44ad', '#ff6fae'],
 } as const;
 const DEFAULT_LOOK: Look = { car: SWATCHES.car[0], skin: SWATCHES.skin[1], hair: SWATCHES.hair[1], shirt: SWATCHES.shirt[0] };
 
