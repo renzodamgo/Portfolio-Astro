@@ -97,33 +97,54 @@ También puedes mover los cuatro deslizadores a mano y el instante con **Instant
 
 ## Escríbelo
 
-1. **Crea `src/my_open/my_open/lane.py`** con las constantes `GAP`, `GAIN` y `LIMIT`, y las dos funciones `lateral_bias(inner, sign=1, gap=GAP)` y `lane_steer(goal, yaw, inner, sign=1)`.
-2. **Edita `drive.py`** (el del paso 3): importa `wrap`, `GAP` y `lane_steer`; cambia `STOP_FRONT` por `TURN_FRONT = 1.19` y `SPEED` a 1,28; pasa a `perceive` el `forward_yaw` real; y en `control` conduce con `lane_steer`.
+> **En este paso**
+> Escribes: `lane.py` (un archivo, 2 funciones pequeñas: `lateral_bias` y `lane_steer`).
+> Copias hecho: `drive.py`, el nodo que habla con ROS; no hace falta entenderlo todavía.
 
-**Pistas para `lateral_bias`.**
+Desde la raíz del repositorio, copia el nodo de la referencia del paso 4 (necesitas el `git fetch --tags` del paso 0):
 
-1. El error es `inner - gap`: positivo si estás más lejos de la isla de lo debido.
-2. Multiplícalo por `GAIN` y por `sign`.
-3. Limita el resultado a `[-LIMIT, LIMIT]` con `clamp` (de `robotek_course.minisim`).
+```bash
+git show step-4:src/my_open/my_open/drive.py > src/my_open/my_open/drive.py
+```
 
-**Pista para `lane_steer`.** Es la ley de rumbo `heading_steer` del paso 2, con la meta desplazada: `goal + lateral_bias(inner, sign)`.
+### Paso 4.1: cuánto desviar la meta
 
-**Pistas para `drive.py`.**
+Es como una cuesta: cuanto más lejos estás del hueco buscado, más apuntas hacia la isla, pero con un tope para no dar un volantazo. `inner` es el hueco medido (`scene.left`) y `sign` vale +1 con la isla a la izquierda y -1 a la derecha.
 
-1. En `on_scan`, el `forward_yaw` es `wrap(0.0 - self.heading.yaw)`.
-2. En `control`, la isla está a la izquierda: `inner = self.scene.left` si es finito y `GAP` si no.
-3. El paro es `self.stopped or self.scene.front_axis <= TURN_FRONT`, con enclavamiento como en el paso 3.
-
-Antes de mirar la referencia, corre las pruebas.
-
-<details>
-<summary>Ver la referencia de lane.py</summary>
+Crea `src/my_open/my_open/lane.py` y pega esto (imports y un marcador, ya hechos):
 
 ```python
 """Step 4 - The lane: stay at a fixed distance from the island wall."""
 from robotek_course.minisim import clamp
 from .heading import heading_steer
 
+
+def lane_steer(goal, yaw, inner, sign=1): return 0.0  # marcador
+```
+
+Y debajo, este esqueleto con sus tres constantes:
+
+```python
+GAP = 0.25     # m: el hueco que se busca
+GAIN = 0.3     # rad de desvío por cada metro de error
+LIMIT = 0.4    # rad (23°): el desvío nunca pide más que esto
+
+def lateral_bias(inner, sign=1, gap=GAP):
+    ...
+```
+
+**Qué va dentro:** el error es `inner - gap` (positivo si estás más lejos de la isla de lo debido). Multiplícalo por `GAIN` y por `sign`, y limita el resultado entre `-LIMIT` y `LIMIT` con `clamp`.
+
+```bash
+python -m pytest course/tests/test_step_4.py -q -k "no_offset_at_the_wanted_gap or too_far or offset_is_limited"
+```
+
+Debes ver `3 passed`: sin desvío en el hueco buscado, más lejos apunta hacia la isla, y con el hueco en 5 m el desvío se queda en 0,4 rad.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
 GAP = 0.25            # m kept from the island wall
 GAIN = 0.3            # rad of heading offset per metre of gap error
 LIMIT = 0.4           # rad: the offset never asks for more than this
@@ -136,8 +157,32 @@ def lateral_bias(inner, sign=1, gap=GAP):
     clockwise lap) and -1 when it is on the right. Farther than ``gap``: aim a little towards the island.
     """
     return clamp(sign * GAIN * (inner - gap), -LIMIT, LIMIT)
+```
 
+</details>
 
+### Paso 4.2: girar hacia la meta desplazada
+
+Ya tienes la ley de rumbo del paso 2, que sabe llevar el coche a un rumbo meta. Solo le cambias la meta: la de siempre más el desvío. Reemplaza el marcador `lane_steer` por:
+
+```python
+def lane_steer(goal, yaw, inner, sign=1):
+    """The heading law of step 2, aimed at the goal heading plus the lateral offset."""
+    ...
+```
+
+**Qué va dentro:** llama a `heading_steer` con la meta `goal + lateral_bias(inner, sign)` y el rumbo actual `yaw`.
+
+```bash
+python -m pytest course/tests/test_step_4.py -q -k "steering_adds or mirrors"
+```
+
+Debes ver `2 passed`: con el hueco en el valor buscado el volante vale 0, y con la isla a la derecha todo es el espejo.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
 def lane_steer(goal, yaw, inner, sign=1):
     """The heading law of step 2, aimed at the goal heading plus the lateral offset."""
     return heading_steer(goal + lateral_bias(inner, sign), yaw)
@@ -145,106 +190,61 @@ def lane_steer(goal, yaw, inner, sign=1):
 
 </details>
 
-<details>
-<summary>Ver la referencia de los cambios en drive.py (solo lo que cambia)</summary>
+## Pruébalo en el simulador
 
-La referencia de este paso deja de publicar `/scene` y `/scene_markers` (ya cumplieron su función; puedes conservarlos si te sirven). Los cambios que importan:
-
-```python
-from robotek_course.minisim import Scene, wrap
-from .lane import GAP, lane_steer
-
-SPEED = 1.28              # m/s commanded (the real car reaches 0.6 m/s with this command)
-TURN_FRONT = 1.19         # m: where a corner will start (step 6); for now the car stops here
-```
-
-`on_scan` usa el rumbo estimado:
-
-```python
-def on_scan(self, msg):
-    stamp = (msg.header.stamp.sec, msg.header.stamp.nanosec)
-    if stamp != self.stamp:              # each scan once
-        self.stamp = stamp
-        self.scene = perceive(msg, forward_yaw=wrap(0.0 - self.heading.yaw), sign=1)
-```
-
-Y en `control`, la parte final:
-
-```python
-yaw = self.heading.update(self.gyro, dt)
-self.stopped = self.stopped or self.scene.front_axis <= TURN_FRONT
-if not self.stopped:
-    inner = self.scene.left if math.isfinite(self.scene.left) else GAP     # the island is on the left
-    speed, steer = SPEED, lane_steer(0.0, yaw, inner, sign=1)
-```
-
-</details>
-
-## Pruébalo
-
-Pruebas sin ROS ni Gazebo:
+Primero todas las pruebas, que incluyen un banco de 14 s donde el coche se acerca al hueco sin oscilar:
 
 ```bash
-python3 -m pytest course/tests/test_step_4.py -q
+python -m pytest course/tests/test_step_4.py -q
 ```
 
-Son 6 pruebas: sin desvío cuando el hueco es el buscado; más lejos apunta hacia la isla y más cerca apunta hacia fuera; el desvío tiene límite; con la isla a la derecha todo es el espejo; el volante suma el desvío al rumbo meta; y en un banco de 14 s el coche se acerca al hueco buscado (termina por debajo de 0,31 m), nunca baja de 0,20 m y solo se acerca, sin oscilar.
-
-Si cambias `GAIN` en `lane.py` para probar otras ganancias, `test_a_car_too_far_aims_towards_the_island_and_one_too_close_aims_away` falla: comprueba el valor `0,3 * 0,20`. Es esperado; devuelve `GAIN` a 0,3 cuando termines.
-
-Ahora en Gazebo, sin ventana:
+Debes ver `6 passed`. Ahora con Gazebo, sin ventana (en macOS mira el paso 0 para el prefijo de `colcon` y el `source`):
 
 ```bash
-colcon build --symlink-install --packages-select my_open
-source install/setup.bash        # en macOS: source tools/macos_env.sh ~/robotek-ros/jazzy
+colcon build --symlink-install --packages-select my_open && source install/setup.bash
+```
+
+Debe terminar sin errores. Luego:
+
+```bash
 python3 course/verify_step.py 4
 ```
 
-El comprobador genera el campo con la isla de 9 m (la isla va de x = -0,5 a 9,0 m y la pared del este está a 10 m), lanza el simulador y tu nodo, publica Start y registra la pose real del coche, que tu nodo nunca ve. Mide el hueco cuando llega la orden de parar y exige:
-
-- que el coche se pare antes de la pared de enfrente;
-- que el hueco esté entre 0,20 y 0,31 m (la ley pide 0,25 m);
-- que desde la mitad del recorrido hasta el final nunca baje de 0,20 m;
-- que no toque ninguna pared.
-
-Debe terminar con `PASS`. La referencia midió un hueco de 0,270, 0,241 y 0,265 m en tres ejecuciones, tras recorrer unos 8,7 m (unos 15 s de simulación a 0,6 m/s, tiempo suficiente para que la ley cierre el error). El banco de Python, con el mismo comando 1,28 y 0,5 m de hueco inicial, da 0,271 m a los 15 s y 0,265 m a los 20 s (ahí el hueco se lee exacto, no por LiDAR). Los dos coinciden: entre 0,24 y 0,27 m.
-
-¿Por qué no probarlo en el campo normal? Con la geometría del campo, el coche arranca con la pared de enfrente a `1,5 - 0,128 = 1,372 m` del LiDAR y recibe la orden de parar a 1,19 m, es decir, tras 18 cm. Luego todavía rueda de 0,7 a 1 m hasta detenerse. Es normal: no hay forma de ver aquí la convergencia sin la isla larga.
+Debe terminar con `PASS`. Usa el campo de la isla de 9 m, publica Start y mide el hueco cuando llega la orden de parar: debe estar entre 0,20 y 0,31 m, sin tocar ninguna pared. La referencia midió 0,270, 0,241 y 0,265 m; el tuyo puede variar unos milímetros por el ruido.
 
 ### Rómpelo
 
-Antes de tocar nada, **predice**: con `GAIN = 0`, ¿qué hueco tendrá el coche a los 14 s si sale a 0,45 m? Pruébalo con el botón **GAIN 0** del widget. El coche no corrige y se queda donde salió (0,456 m en el banco).
-
-Para probarlo en el código:
-
-1. En `lateral_bias`, quita el `clamp` y corre las pruebas. Falla solo `test_the_offset_is_limited`: con el hueco en 5 m pide `0,3 * 4,75 = 1,4 rad` (82°) y el coche daría un volantazo hacia la isla.
-2. Deshaz el cambio. Invierte el signo del error (`gap - inner` en vez de `inner - gap`). Fallan cuatro pruebas, entre ellas la del banco de 14 s: el coche huiría de la isla en vez de acercarse.
+1. Predice: con `GAIN = 0`, ¿qué hueco tendrá el coche a los 14 s si sale a 0,45 m? Compruébalo con el botón **GAIN 0** del widget: no corrige y se queda en 0,456 m.
+2. En `lateral_bias`, quita el `clamp` y corre las pruebas. Solo falla `test_the_offset_is_limited`: con el hueco en 5 m pide `0,3 * 4,75 = 1,4 rad` (82°). Deshaz el cambio.
 
 ## Si algo falla
 
-- **El coche se acerca a la isla en vez de alejarse (o al revés).** Revisa el signo: si el coche está más lejos de lo debido (`inner > gap`), el desvío debe ser positivo con `sign = +1`, y la ley de rumbo gira a la izquierda con un `goal` positivo.
-- **El coche no corrige nunca.** Mira que el nodo pase `inner` y no un valor fijo. Si `left` es `inf` el nodo usa `GAP` y el desvío es 0: comprueba con `ros2 topic echo /scene` (si conservas la publicación del paso 3) que `left` sea finito.
-- **El coche corrige, pero en el campo normal no llega a 0,25 m.** Es lo esperado: con `GAIN = 0,3` hacen falta metros y la isla normal tiene 1 m. Usa `verify_step.py 4`.
-- **El coche oscila.** Con `GAIN` entre 0,3 y 1,0 el banco no oscila. Si te oscila, sospecha de `forward_yaw` o del signo, no de la ganancia.
-- **Tu hueco final no es exactamente 0,270 m.** No es un fallo si queda dentro de 0,20 a 0,31 m y el coche no toca nada: el ruido del LiDAR y del giroscopio cambia unos milímetros de una ejecución a otra (la referencia dio 0,241 en una).
-- **`verify_step.py` dice que ya hay un `gz sim` en marcha.** Cierra el otro Gazebo o usa `--wait 60` para esperar a que termine.
-- **Pasan las pruebas pero el coche choca en Gazebo.** Las pruebas leen el hueco exacto; en Gazebo lo da el LiDAR. Revisa la percepción del paso 3.
-
-## Compara
-
-```bash
-bash tools/compare-step.sh 3 4     # qué añade la referencia
-bash tools/compare-step.sh 4       # tu árbol contra el paso 4
-```
+- **El coche se acerca a la isla cuando debería alejarse, o al revés.** Revisa el signo: con el coche más lejos de lo debido (`inner > gap`) y `sign = +1`, el desvío debe ser positivo.
+- **En el campo normal el hueco no llega a 0,25 m.** Es lo esperado: la isla normal mide 1 m y la ley necesita metros. Usa `verify_step.py 4`.
+- **Pasan las pruebas pero el coche choca en Gazebo, o `verify_step.py` dice que ya hay un `gz sim` en marcha.** Las pruebas leen el hueco exacto y Gazebo lo da el LiDAR: revisa la percepción del paso 3. Si hay otro simulador abierto, ciérralo o usa `--wait 60`.
 
 ## Resumen
 
-- La ley de carril no gira el volante según el hueco: desplaza la meta del rumbo `GAIN * (inner - GAP)` radianes (limitada a `LIMIT`) y deja que la ley de rumbo del paso 2 la siga.
-- Con `GAIN = 0,3` el hueco baja de forma exponencial con una constante de unos 5,6 s a la velocidad real: es lenta y no se pasa. Más ganancia llega antes en el mini, pero no está medida en Gazebo.
-- Esta comprobación usa una isla larga de 9 m; en el campo normal la isla es demasiado corta para ver la convergencia.
+- La ley de carril no gira el volante según el hueco: desplaza la meta del rumbo `GAIN * (inner - GAP)` radianes, limitada a `LIMIT`, y la ley de rumbo del paso 2 la sigue.
+- Con `GAIN = 0,3` el hueco baja de forma exponencial, lenta y sin pasarse. Más ganancia llega antes en el mini, pero no está medida en Gazebo.
+- Esta comprobación usa una isla larga de 9 m; para comparar tu `lane.py` con la referencia: `bash tools/compare-step.sh 4`.
 
 ## Antes de seguir
 
 - [ ] `pytest` marca `6 passed` y `verify_step.py 4` termina en `PASS` con un hueco entre 0,20 y 0,31 m.
 - [ ] Sabes decir qué hace `LIMIT` y qué verías sin él.
 - [ ] Predijiste el hueco con `GAIN = 0` y lo comprobaste en el widget.
+
+<details>
+<summary>Para curiosos: cómo funciona drive.py</summary>
+
+`drive.py` es el mismo nodo del paso 3 con cuatro cambios, que explica la sección «Qué hace el nodo con esto» de arriba:
+
+- `on_scan` pasa a `perceive` el `forward_yaw` real, `wrap(0.0 - self.heading.yaw)`, para medir `front_axis` a lo largo de la pista aunque el coche vaya torcido.
+- En `control`, la isla está a la izquierda: si `left` es finito, `inner = self.scene.left`; si no, usa `GAP` y el desvío es 0. Conduce con `lane_steer(0.0, yaw, inner, sign=1)`.
+- Se detiene cuando `front_axis` baja de `TURN_FRONT` (1,19 m), con enclavamiento como en el paso 3.
+- La velocidad sube a `SPEED = 1.28` (comando; el coche real alcanza 0,6 m/s) y el nodo ya no publica `/scene`.
+
+Para leerlo, abre `src/my_open/my_open/drive.py`.
+
+</details>

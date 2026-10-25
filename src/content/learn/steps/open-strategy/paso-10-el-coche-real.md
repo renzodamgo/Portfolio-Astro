@@ -62,7 +62,23 @@ Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. El pin **ST
 
 ## 2. Clonar y preparar el Pi con un comando
 
-En el Pi, con internet, clona el repositorio:
+### El camino corto: la estrategia de referencia
+
+Si solo quieres ver al coche hacer la ronda con la estrategia terminada de los pasos 2 a 9, son tres comandos en el Pi, con internet:
+
+```bash
+git clone https://github.com/renzodamgo/robotek-learn.git && cd robotek-learn
+bash tools/setup-pi.sh --with-reference
+source install/setup.bash && ros2 launch robotek_course open_challenge.launch.py motor_max_pct:=30
+```
+
+El segundo comando instala todo y, además, saca la estrategia terminada de la etiqueta `step-9` y la deja en `src/my_open`. Con el tercero arrancan los nodos del coche. Cuando las luces estén **verdes**, pulsas el botón de la placa **una vez** para empezar y **otra vez** para parar. Antes de pulsarlo la primera vez, lee la sección 4: el coche en alto, el motor limitado y la batería cargada. Y ojo con la dirección: el archivo `robot.yaml` trae el centro y el signo del servo del coche del equipo (`servo_measured: false`). Si tu coche es otro, el servo saltará a ese centro en cuanto la estrategia publique y el coche saldrá torcido. Haz antes las comprobaciones 3.5 y 3.6.
+
+Si ya tienes la estrategia de otra forma, `get-reference.sh` no la pisa: avisa y sale. Con `--force` guarda una copia (`src/my_open.bak-FECHA`) y la reemplaza. Si lanzas sin tener `my_open`, el lanzador no da un error técnico: te dice en español los dos caminos y sale.
+
+### El camino largo: tu propia estrategia
+
+Clona igual:
 
 ```bash
 git clone https://github.com/renzodamgo/robotek-learn.git
@@ -71,7 +87,7 @@ cd robotek-learn
 
 Tu estrategia `my_open` no está en git (el repositorio la ignora en `main`). Cópiala desde tu ordenador a `robotek-learn/src/my_open/` antes de seguir, con `rsync`, `scp` o clonándola de tu propio repositorio. Cada vez que cambies tu código en el ordenador tendrás que volver a copiarla.
 
-Ahora el script:
+Ahora el script (sin `--with-reference`, porque ya tienes tu paquete):
 
 ```bash
 bash tools/setup-pi.sh
@@ -294,7 +310,7 @@ Para el motor, esto es lo que midió el equipo con la batería baja: el coche em
 ### Antes de poner el coche en el campo
 
 1. Las comprobaciones 3.1 a 3.6 pasan, y `servo_measured` e `imu_adapter.measured` son `true`.
-2. **Baja el tope del motor** en `robot.yaml`: `motor_max_pct: 30`. Con el valor del equipo (50) el coche irá a unos 0,4 m/s; con 30, a unos 0,3. Es lento y es lo que quieres para empezar. Recompila `robotek_hardware`.
+2. **Baja el tope del motor.** Lánzalo con `motor_max_pct:=30` (o cambia `motor_max_pct` en `robot.yaml` y recompila `robotek_hardware`). Con el valor del equipo (50) el coche irá a unos 0,4 m/s; con 30, a unos 0,3. Es lento y es lo que quieres para empezar.
 3. La batería cargada: `ros2 topic echo /rrc/battery --once`.
 4. Un campo Open montado, la isla fija y el coche en la sección de salida, como en el simulador.
 
@@ -304,7 +320,7 @@ Guarda la salida de la consola, que es tu registro:
 
 ```bash
 mkdir -p ~/rondas-coche
-ros2 launch robotek_course car.launch.py strategy:=my_open 2>&1 | tee ~/rondas-coche/ronda-01.log
+ros2 launch robotek_course open_challenge.launch.py motor_max_pct:=30 2>&1 | tee ~/rondas-coche/ronda-01.log
 ```
 
 Espera a que las luces se pongan **verdes**. Con la batería cargada y el coche en su posición de salida, pulsa el botón **una vez**.

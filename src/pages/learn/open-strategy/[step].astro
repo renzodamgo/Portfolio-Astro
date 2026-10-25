@@ -1,6 +1,7 @@
 ---
 import { render } from "astro:content";
 import LearnLayout from "../../../layouts/LearnLayout.astro";
+import GuideSteps from "../../../components/learn/GuideSteps.astro";
 import {
     GUIDE_BASE,
     LAST_STEP,
@@ -17,6 +18,7 @@ export async function getStaticPaths() {
         params: { step: entry.data.slug },
         props: {
             entry,
+            steps,
             prev: steps[index - 1] as StepEntry | undefined,
             next: steps[index + 1] as StepEntry | undefined,
             total: LAST_STEP,
@@ -24,8 +26,8 @@ export async function getStaticPaths() {
     }));
 }
 
-const { entry, prev, next, total } = Astro.props;
-const { Content } = await render(entry);
+const { entry, steps, prev, next, total } = Astro.props;
+const { Content, headings } = await render(entry);
 const { title, summary, tag, compareFrom, order } = entry.data;
 
 const REPO = "https://github.com/renzodamgo/robotek-learn";
@@ -34,6 +36,16 @@ const num = (value: string) => value.replace("step-", "");
 const diffCommand = `bash tools/compare-step.sh ${num(compareFrom)} ${num(tag)}`;
 const mineCommand = `bash tools/compare-step.sh ${num(tag)}`;
 const showDiff = compareFrom !== tag;
+
+// "En esta página": the h2 and h3 of the chapter, plus the diff section the layout adds at the end.
+const toc = [
+    ...headings
+        .filter((h) => h.depth === 2 || h.depth === 3)
+        .map((h) => ({ depth: h.depth, slug: h.slug, text: h.text })),
+    ...(showDiff
+        ? [{ depth: 2, slug: "cambios", text: "Los cambios de este paso" }]
+        : []),
+];
 
 const canonical = `${SITE}${stepUrl(entry)}`;
 const pageTitle = `${stepLabel(entry)}: ${title} | Estrategia del Open | Renzo Damian`;
@@ -65,7 +77,31 @@ const jsonld = {
     canonical={canonical}
     ogType="article"
     jsonld={jsonld}
+    panel={false}
+    skipTo="paso-contenido"
 >
+  <div class="learn-doc">
+    <aside class="learn-doc-side">
+        <details class="learn-steps-mobile">
+            <summary>Todos los pasos</summary>
+            <nav aria-label="Todos los pasos de la guía">
+                <GuideSteps steps={steps} current={entry.data.slug} />
+            </nav>
+        </details>
+        <nav
+            class="learn-steps-desktop learn-panel"
+            aria-label="Todos los pasos de la guía"
+        >
+            <p class="learn-side-title">Estrategia del Open</p>
+            <GuideSteps steps={steps} current={entry.data.slug} />
+        </nav>
+    </aside>
+
+    <div
+        id="paso-contenido"
+        tabindex="-1"
+        class="learn-doc-main learn-panel p-4 md:p-8"
+    >
     <nav aria-label="Ruta" class="mb-6 text-sm text-white/70">
         <a class="hover:text-amber-300" href="/learn/">Learn</a>
         <span aria-hidden="true"> / </span>
@@ -192,4 +228,80 @@ const jsonld = {
             )
         }
     </nav>
+    </div>
+
+    {
+        toc.length > 1 && (
+            <aside class="learn-doc-toc">
+                <nav class="learn-toc learn-panel" aria-label="En esta página">
+                    <p class="learn-side-title">En esta página</p>
+                    <ol>
+                        {toc.map((h) => (
+                            <li class={h.depth === 3 ? "learn-toc-sub" : undefined}>
+                                <a href={`#${h.slug}`} data-toc-link>
+                                    {h.text}
+                                </a>
+                            </li>
+                        ))}
+                    </ol>
+                </nav>
+            </aside>
+        )
+    }
+  </div>
 </LearnLayout>
+
+<script>
+    // Mark the heading in view in the "En esta página" list: the last heading above 30% of the screen.
+    const links = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]"),
+    );
+    const byId = new Map<string, HTMLAnchorElement>();
+    for (const link of links) {
+        byId.set(decodeURIComponent(link.hash.slice(1)), link);
+    }
+    const headings = Array.from(byId.keys())
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el !== null);
+    const panel = document.querySelector<HTMLElement>(".learn-doc-toc");
+
+    if (headings.length > 0) {
+        let activeId = "";
+        let queued = false;
+        const mark = (id: string) => {
+            if (id === activeId) return;
+            activeId = id;
+            for (const [key, link] of byId) {
+                if (key === id) link.setAttribute("aria-current", "location");
+                else link.removeAttribute("aria-current");
+            }
+            const link = byId.get(id);
+            if (!link && panel) panel.scrollTop = 0;
+            if (panel && link && panel.scrollHeight > panel.clientHeight) {
+                const l = link.getBoundingClientRect();
+                const p = panel.getBoundingClientRect();
+                if (l.top < p.top + 40 || l.bottom > p.bottom - 40) {
+                    panel.scrollTop += l.top - p.top - p.height / 2;
+                }
+            }
+        };
+        const update = () => {
+            queued = false;
+            const limit = window.innerHeight * 0.3;
+            let current = "";
+            for (const h of headings) {
+                if (h.getBoundingClientRect().top <= limit) current = h.id;
+                else break;
+            }
+            mark(current);
+        };
+        const schedule = () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(update);
+        };
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule, { passive: true });
+        update();
+    }
+</script>

@@ -1,0 +1,27 @@
+---
+/** Compact list of every chapter of a guide (sidebar of the step pages). The current chapter is marked with aria-current. */
+import { stepLabel, stepUrl, type StepEntry } from "../../lib/learn";
+
+interface Props {
+    steps: StepEntry[];
+    current: string;
+}
+const { steps, current } = Astro.props;
+---
+
+<ol class="learn-steps-list">
+    {
+        steps.map((step) => (
+            <li>
+                <a
+                    href={stepUrl(step)}
+                    aria-current={step.data.slug === current ? "page" : undefined}
+                    class="learn-steps-link"
+                >
+                    <span class="learn-steps-label">{stepLabel(step)}</span>
+                    <span class="learn-steps-title">{step.data.title}</span>
+                </a>
+            </li>
+        ))
+    }
+</ol>

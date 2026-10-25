@@ -95,23 +95,22 @@ Por eso `island_end` es el número frágil, y por eso en el paso 6 la puerta de 
 
 ## Escríbelo
 
-1. **Crea `src/my_open/my_open/perception.py`** con `perceive`, `median_range`, `front_axis`, `island_end` y la ayuda `_near`. `perceive` y `_near` te los doy completos abajo; los tres ejercicios son los otros.
-2. **Edita `drive.py`** (el del paso 2): importa `LaserScan`, `Float32MultiArray`, `MarkerArray`, `Scene`, `scene_markers` y `perceive`; crea `self.scene`, `self.stamp` y los dos publicadores; suscríbete a `/scan` con `on_scan`; y en `control` añade el enclavamiento de `STOP_FRONT`.
+> **En este paso**
+> Escribes: `perception.py` (un archivo, 5 funciones pequeñas), con una prueba después de cada pasito.
+> Copias hecho: `drive.py`, el nodo que habla con ROS; no hace falta entenderlo todavía.
 
-**Pistas para `median_range`.** `_near(angles, ok, centre, SIDE_HALF)` te dice qué rayos son válidos y están cerca del ángulo `centre`. Devuelve la mediana de `ranges[chosen]`, o `math.inf` si no hay ninguno.
+Todos los comandos se corren desde la raíz del repositorio. Copia el nodo de la referencia del paso 3 (necesitas el `git fetch --tags` del paso 0) y dile a Python dónde están los paquetes, para los `python -c`:
 
-**Pistas para `front_axis`.**
+```bash
+git show step-3:src/my_open/my_open/drive.py > src/my_open/my_open/drive.py
+export PYTHONPATH=src/my_open:src/robotek_course      # una vez por terminal
+```
 
-1. Elige los rayos con `_near(angles, ok, forward_yaw, AXIS_HALF)`.
-2. Proyecta cada rango: `ranges[chosen] * np.cos(angles[chosen] - forward_yaw)`.
-3. Devuelve la mediana de las proyecciones, o `inf` si no hay rayos.
+### Paso 3.1: del escaneo a la escena
 
-**Pistas para `island_end`.** Sigue los cinco pasos de arriba, de uno en uno. Usa `np.errstate(invalid='ignore')` al calcular `x`, `y` y `on_wall`, porque los rayos perdidos son `inf`. Recorre los rayos con `np.argsort(-bearing)` y salta los que no estén entre `END_FROM` y 90°.
+`perceive` recibe un escaneo y devuelve la `Scene`. Hoy solo prepara los datos y llama a tres ayudantes que escribirás después.
 
-Antes de mirar la referencia, corre las pruebas.
-
-<details>
-<summary>Ver la referencia de perception.py: constantes, perceive, median_range y front_axis</summary>
+Crea `src/my_open/my_open/perception.py` y pega esto (imports y marcadores, ya hechos):
 
 ```python
 """Step 3 - Perception: from one LiDAR scan to the four numbers of a Scene."""
@@ -121,16 +120,35 @@ import numpy as np
 
 from robotek_course.minisim import LIDAR_X, Scene
 
-SIDE_HALF = 0.44                  # rad around +-90 deg for the side walls
-AXIS_HALF = math.radians(3.0)     # rad around the track axis for the wall ahead
-FIT_HALF = math.radians(20.0)     # the island wall is fitted to the beams within this of the side bearing
-END_FROM = math.radians(20.0)     # the island wall is followed from 90 deg down to this bearing
-WALL_TOLERANCE = 0.03             # m: a beam is on the wall within this of the fitted line
-MAX_GAP_BEAMS = 2                 # lost beams that do not end the wall
-MAX_SLOPE = math.tan(0.30)        # a line steeper than this (rad) is not a wall beside the car
-LATERAL_RANGE = (0.15, 0.90)      # m: plausible distance from the car to the island wall
 
+def median_range(angles, ranges, ok, centre): return math.inf  # marcador
+def front_axis(angles, ranges, ok, forward_yaw): return math.inf  # marcador
+def island_end(angles, ranges, ok, sign): return math.inf  # marcador
+```
 
+Y debajo, este esqueleto:
+
+```python
+def perceive(scan, forward_yaw=0.0, sign=1):
+    """One scan -> Scene."""
+    ranges = ...   # la distancia de cada rayo
+    angles = ...   # el ángulo de cada rayo
+    ok = ...       # verdadero en los rayos con una distancia válida
+    return Scene(left=..., right=..., front_axis=..., island_end=...)
+```
+
+**Qué va dentro:** `ranges` es `scan.ranges` como array de NumPy (`np.asarray`, decimales). El ángulo del rayo `i` es `scan.angle_min + i * scan.angle_increment`. Un rayo es válido si es finito y está entre `scan.range_min` y `scan.range_max`. `left` y `right` llaman a `median_range` con `math.pi / 2` y `-math.pi / 2`; los otros dos reciben `forward_yaw` y `sign`.
+
+```bash
+python -m pytest course/tests/test_step_3.py -q -k an_empty_scan
+```
+
+Debes ver `1 passed`. Todo vale `inf` todavía: solo comprobamos que `perceive` corre sin romperse.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
 def perceive(scan, forward_yaw=0.0, sign=1):
     """One scan -> Scene.
 
@@ -144,6 +162,37 @@ def perceive(scan, forward_yaw=0.0, sign=1):
                  right=median_range(angles, ranges, ok, -math.pi / 2),
                  front_axis=front_axis(angles, ranges, ok, forward_yaw),
                  island_end=island_end(angles, ranges, ok, sign))
+```
+
+</details>
+
+### Paso 3.2: la distancia a una pared del lado
+
+Para `left` y `right`: toma los rayos que apuntan a ese lado y quédate con el valor del medio (la mediana). Si un rayo se cuela por un hueco y mide 9 m, el valor del medio ni se entera. Los ángulos van en radianes (rad): 3,14 rad son 180°. Reemplaza el marcador `median_range` por:
+
+```python
+SIDE_HALF = 0.44    # rad (unos 25°): cuánto te abres a cada lado
+
+def _near(angles, ok, centre, half):
+    ...     # rayos válidos a `half` rad o menos de `centre`
+
+def median_range(angles, ranges, ok, centre):
+    ...     # la mediana de los rayos cercanos a `centre`
+```
+
+**Qué va dentro:** en `_near`, resta `centre` a cada ángulo con `np.arctan2(np.sin(...), np.cos(...))` (así la resta no se rompe cerca de 180°) y devuelve `ok` junto con que el valor absoluto de esa diferencia sea menor o igual que `half`. En `median_range`, guarda en `chosen` los rayos de `_near(..., SIDE_HALF)`; si hay alguno, devuelve la mediana de `ranges[chosen]` como `float`, y si no, `math.inf`.
+
+```bash
+python -m pytest course/tests/test_step_3.py -q -k "distances_to_the_walls or a_median"
+```
+
+Debes ver `2 passed`: `left` da 0,25 m, `right` 0,75 m, y la mediana ignora un rayo salvaje de 9 m.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+SIDE_HALF = 0.44                  # rad around +-90 deg for the side walls
 
 
 def _near(angles, ok, centre, half):
@@ -156,6 +205,36 @@ def median_range(angles, ranges, ok, centre):
     """Distance to the wall at the bearing ``centre``: the MEDIAN of the beams around it (inf when there are none)."""
     chosen = _near(angles, ok, centre, SIDE_HALF)
     return float(np.median(ranges[chosen])) if chosen.any() else math.inf
+```
+
+</details>
+
+### Paso 3.3: la pared de enfrente, a lo largo de la pista
+
+Para `front_axis`: toma solo los rayos que apuntan hacia donde va la pista y corrige cada distancia con el coseno de su ángulo, así una pared vista en diagonal no parece más lejos. `forward_yaw` es la dirección de la pista vista desde el coche (aquí vale 0). Reemplaza el marcador `front_axis` por:
+
+```python
+AXIS_HALF = math.radians(3.0)     # rad: solo los rayos a 3° o menos de la pista
+
+
+def front_axis(angles, ranges, ok, forward_yaw):
+    """Distance to the wall ahead measured ALONG the track: each beam's range times cos(its angle off the track)."""
+    ...
+```
+
+**Qué va dentro:** elige los rayos con `_near` alrededor de `forward_yaw` y `AXIS_HALF`. Si no hay ninguno, `math.inf`. Si hay, multiplica cada distancia por el coseno de (su ángulo menos `forward_yaw`) y devuelve la mediana.
+
+```bash
+python -m pytest course/tests/test_step_3.py -q -k wall_ahead
+```
+
+Debes ver `2 passed`: la pared de enfrente a 1,372 m, y la misma con el coche torcido 17°.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+AXIS_HALF = math.radians(3.0)     # rad around the track axis for the wall ahead
 
 
 def front_axis(angles, ranges, ok, forward_yaw):
@@ -168,8 +247,42 @@ def front_axis(angles, ranges, ok, forward_yaw):
 
 </details>
 
+### Paso 3.4: los rayos de la pared de la isla
+
+`island_end` es la parte difícil: dónde termina la pared de la isla. La haremos en cinco pasitos (3.4 a 3.8); hasta el último devuelve un número provisional, para poder comprobar cada uno. Primero, qué rayos caen en la pared que tienes al lado. Reemplaza el marcador `island_end` por:
+
+```python
+FIT_HALF = math.radians(20.0)     # solo los rayos a 20° o menos del lado
+
+
+def island_end(angles, ranges, ok, sign):
+    """x (m) where the island wall beside the car ends."""
+    bearing = ...
+    side = ...
+    ...
+    return float(side.sum())  # provisional
+```
+
+**Qué va dentro:** `bearing` es `sign * angles` (así el lado de la isla queda siempre en +90°; `sign` es +1 con la isla a la izquierda). `side` son los rayos válidos a `FIT_HALF` o menos de `math.pi / 2`. Si hay alguno, quita los que midan más de 1,5 veces la mediana de `ranges[side]` (ya pasaron el final de la pared). Si quedan menos de 10 rayos, devuelve `math.inf`.
+
+```bash
+python -c "
+from robotek_course.minisim import Field
+from my_open.perception import perceive
+for x in (0.0, 0.9):
+    print(x, round(perceive(Field().scan(x, -0.75, 0.0, noise=False, dropouts=False)).island_end, 2))"
+```
+
+Pone el coche en x = 0 y en x = 0,9; lo reutilizas hasta el 3.8. Debes ver `0.0 56.0` y `0.9 56.0`: los rayos con los que se ajustará la recta.
+
 <details>
-<summary>Ver la referencia de island_end (sigue en perception.py)</summary>
+<summary>Ver la solución de este paso</summary>
+
+```python
+FIT_HALF = math.radians(20.0)     # the island wall is fitted to the beams within this of the side bearing
+```
+
+Debajo de estas líneas sigue tu `return` provisional.
 
 ```python
 def island_end(angles, ranges, ok, sign):
@@ -184,13 +297,126 @@ def island_end(angles, ranges, ok, sign):
         side &= ranges <= 1.5 * np.median(ranges[side])      # not the beams that already passed the wall's end
     if side.sum() < 10:
         return math.inf
+```
+
+</details>
+
+### Paso 3.5: una recta por esos rayos
+
+Cada rayo es un punto: `x` hacia delante e `y` hacia el lado de la isla. Por los puntos de la pared pasamos una recta, y así da igual que el coche vaya un poco torcido. Cambia el `return` provisional por:
+
+```python
+    x, y = ...
+    slope, offset = ...
+    return float(offset)  # provisional
+```
+
+**Qué va dentro:** `x` es la distancia por el coseno de `bearing` e `y` por el seno. Los rayos perdidos valen `inf`: envuelve esa cuenta en `with np.errstate(invalid='ignore'):` para que NumPy no avise. La recta `y = slope * x + offset` sale de `np.polyfit(x[side], y[side], 1)`; `offset` es lo lejos que está la pared en x = 0.
+
+Corre otra vez el comando del 3.4. Debes ver `0.0 0.25` (la pared está a 0,25 m) y `0.9 2.12` (ya pasaste la isla y la recta se ajusta a la pared lejana).
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
     with np.errstate(invalid='ignore'):                      # lost beams are inf
         x, y = ranges * np.cos(bearing), ranges * np.sin(bearing)
     slope, offset = np.polyfit(x[side], y[side], 1)          # y = slope * x + offset
+```
+
+</details>
+
+### Paso 3.6: ¿de verdad es una pared de la isla?
+
+A veces la recta no es una pared a tu lado (como en x = 0,9). Si está muy inclinada o muy lejos, devolvemos `inf`. Pega las constantes arriba de `island_end` y el `if` antes del `return` provisional:
+
+```python
+MAX_SLOPE = math.tan(0.30)        # más inclinada que 0,30 rad (17°) no es una pared a un lado
+LATERAL_RANGE = (0.15, 0.90)      # m: entre estas distancias puede estar la pared de la isla
+
+    if ...:
+        return math.inf
+```
+
+**Qué va dentro:** la condición es verdadera si `abs(slope)` pasa de `MAX_SLOPE`, o si `offset` no está entre `LATERAL_RANGE[0]` y `LATERAL_RANGE[1]`.
+
+Corre otra vez el comando del 3.4. Debes ver `0.0 0.25` y `0.9 inf`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+MAX_SLOPE = math.tan(0.30)        # a line steeper than this (rad) is not a wall beside the car
+LATERAL_RANGE = (0.15, 0.90)      # m: plausible distance from the car to the island wall
+```
+
+```python
     if abs(slope) > MAX_SLOPE or not LATERAL_RANGE[0] < offset < LATERAL_RANGE[1]:
         return math.inf                                      # that is not an island wall beside the car
+```
+
+</details>
+
+### Paso 3.7: qué rayos caen sobre la recta
+
+Marcamos los rayos que están sobre la recta; los que quedan a más de 3 cm no son pared. Pega la constante arriba de `island_end` y cambia el `return` provisional por:
+
+```python
+WALL_TOLERANCE = 0.03             # m: hasta esta distancia a la recta, el rayo cuenta como pared
+
+    on_wall = ...
+    return float(on_wall.sum())  # provisional
+```
+
+**Qué va dentro:** un rayo está en `on_wall` si es válido (`ok`) y la distancia entre su `y` y la recta (`slope * x + offset`) es de `WALL_TOLERANCE` o menos. Envuélvelo otra vez en `np.errstate(invalid='ignore')`.
+
+Corre otra vez el comando del 3.4. Debes ver `0.0 109.0` (los rayos que caen sobre la pared) y `0.9 inf`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+WALL_TOLERANCE = 0.03             # m: a beam is on the wall within this of the fitted line
+```
+
+```python
     with np.errstate(invalid='ignore'):
         on_wall = ok & (np.abs(y - (slope * x + offset)) <= WALL_TOLERANCE)
+```
+
+</details>
+
+### Paso 3.8: seguir la pared hasta que se acaba
+
+Recorre los rayos desde el lado hacia el frente. Recuerda el último que sigue sobre la pared y para cuando fallan más de 2 seguidos (uno o dos rayos perdidos al azar no deben pararte). Pega las constantes arriba de `island_end` y cambia el `return` provisional por:
+
+```python
+END_FROM = math.radians(20.0)     # recorremos de 90° hasta este ángulo
+MAX_GAP_BEAMS = 2                 # rayos seguidos fuera de la pared que aguantamos
+
+    last, missing = None, 0       # el último rayo sobre la pared; cuántos fallan seguidos
+    for i in ...:
+        ...
+    return ...
+```
+
+**Qué va dentro:** recorre los índices con `np.argsort(-bearing)` (de mayor a menor ángulo) y salta los que no estén entre `END_FROM` y `math.pi / 2`. Si el rayo está en `on_wall`, guárdalo en `last` y pon `missing` en 0. Si no, suma 1 a `missing` y, si pasa de `MAX_GAP_BEAMS` y ya hay un `last`, sal con `break`. Al final, si no hay `last` o `bearing[last]` está a 0,05 rad o menos de `END_FROM` (la pared sigue hasta el borde de la vista), devuelve `math.inf`. Si no, devuelve `x[last] + LIDAR_X` como `float` (el LiDAR va 0,128 m delante del centro del coche).
+
+```bash
+python -m pytest course/tests/test_step_3.py -q
+```
+
+Debes ver `9 passed`. En x = 0 el comando del 3.4 ahora da `0.0 0.5`: el final de la isla está a 0,5 m menos lo que avanzó el coche.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+END_FROM = math.radians(20.0)     # the island wall is followed from 90 deg down to this bearing
+MAX_GAP_BEAMS = 2                 # lost beams that do not end the wall
+```
+
+```python
     last, missing = None, 0
     for i in np.argsort(-bearing):                           # from the side beams towards the front
         if not (END_FROM <= bearing[i] <= math.pi / 2):
@@ -208,154 +434,54 @@ def island_end(angles, ranges, ok, sign):
 
 </details>
 
-<details>
-<summary>Ver la referencia de los cambios en drive.py (solo lo que cambia)</summary>
+## Pruébalo en el simulador
 
-Imports y constante (lo nuevo: `LaserScan`, `Float32MultiArray`, `MarkerArray`, `Scene`, `scene_markers`, `perceive` y `STOP_FRONT`):
-
-```python
-from sensor_msgs.msg import Imu, LaserScan
-from std_msgs.msg import Bool, Float32MultiArray
-from visualization_msgs.msg import MarkerArray
-
-from robotek_common.vehicle import WHEELBASE
-from robotek_course.minisim import Scene
-from robotek_course.viz import scene_markers
-
-from .heading import GyroHeading, heading_steer
-from .perception import perceive
-
-STOP_FRONT = 0.5          # m: stop when the wall ahead is this near
-```
-
-En `__init__`, además de lo del paso 2:
-
-```python
-self.stopped = False                 # latched: a noisy reading must not restart the car
-self.scene = Scene()                 # the latest Scene (nothing seen yet)
-self.stamp = None                    # time stamp of the last scan we used
-self.cmd = self.create_publisher(Twist, '/cmd_vel_raw', 10)
-self.scene_pub = self.create_publisher(Float32MultiArray, '/scene', 10)      # left, right, front_axis, island_end
-self.markers_pub = self.create_publisher(MarkerArray, '/scene_markers', 10)  # the same, to see it in RViz
-self.create_subscription(LaserScan, '/scan', self.on_scan, qos_profile_sensor_data)
-```
-
-El método nuevo:
-
-```python
-def on_scan(self, msg):
-    stamp = (msg.header.stamp.sec, msg.header.stamp.nanosec)
-    if stamp == self.stamp:
-        return                           # the same scan can arrive more than once: use each time stamp once
-    self.stamp = stamp
-    scene = self.scene = perceive(msg, forward_yaw=0.0, sign=1)
-    numbers = [scene.left, scene.right, scene.front_axis, scene.island_end]
-    self.scene_pub.publish(Float32MultiArray(data=[float(n) for n in numbers]))
-    self.markers_pub.publish(scene_markers(scene, msg.header.stamp, msg.header.frame_id))
-```
-
-Y en `control`, la última parte del paso 2 se envuelve en el enclavamiento:
-
-```python
-yaw = self.heading.update(self.gyro, dt)
-self.stopped = self.stopped or self.scene.front_axis < STOP_FRONT
-if not self.stopped:
-    speed, steer = SPEED, heading_steer(0.0, yaw)
-```
-
-</details>
-
-## Pruébalo
-
-Pruebas sin ROS ni Gazebo:
+Ya tienes `9 passed` sin ROS. Ahora con Gazebo, sin ventana (en macOS mira el paso 0 para el prefijo de `colcon` y el `source`):
 
 ```bash
-python3 -m pytest course/tests/test_step_3.py -q
+colcon build --symlink-install --packages-select my_open && source install/setup.bash
 ```
 
-Son 9 pruebas: las distancias a los dos lados (0,25 y 0,75 m), la pared de enfrente, la pared de enfrente medida a lo largo de la pista con el coche torcido, el final de la isla en tres posiciones, que no haya final cuando no está a la vista o ya quedó atrás, que la vuelta horaria sea la imagen en espejo, que el ruido y los rayos perdidos muevan poco los números, que un escaneo vacío dé `inf` y que la mediana ignore un rayo salvaje.
-
-Para ver los números sin Gazebo, desde la raíz del repositorio:
+Debe terminar sin errores. Luego:
 
 ```bash
-PYTHONPATH=src/my_open:src/robotek_course python3 -c "
-from robotek_course.minisim import Field
-from my_open.perception import perceive
-for x in (-0.3, 0.0, 0.2, 0.8):
-    s = perceive(Field().scan(x, -0.75, 0.0))
-    print(f'x={x:+.1f} left={s.left:.2f} right={s.right:.2f} front={s.front_axis:.2f} island_end={s.island_end:.2f}')
-"
-```
-
-La referencia imprime esto (el coche va al este por el pasillo sur; la verdad es `island_end = 0,5 - x`):
-
-```text
-x=-0.3 left=0.25 right=0.77 front=1.67 island_end=inf
-x=+0.0 left=0.25 right=0.77 front=1.37 island_end=0.48
-x=+0.2 left=0.25 right=0.77 front=1.17 island_end=0.30
-x=+0.8 left=2.26 right=0.77 front=0.57 island_end=inf
-```
-
-Mira dos cosas. `right` da 0,77 y no 0,75: la mediana de rayos oblicuos, que son más largos, se pasa un 2 %; es normal. Y `island_end` es `inf` en los dos extremos: a x = -0,3 todavía está demasiado lejos y a x = 0,8 ya quedó atrás.
-
-Ahora en Gazebo, sin ventana:
-
-```bash
-colcon build --symlink-install --packages-select my_open
-source install/setup.bash        # en macOS: source tools/macos_env.sh ~/robotek-ros/jazzy
 python3 course/verify_step.py 3
 ```
 
-El comprobador lanza el simulador y tu nodo, publica Start, compara cada mensaje de `/scene` con el valor que daría el mismo `perceive` sobre un escaneo ideal (sin ruido ni rayos perdidos) tomado desde la pose real del coche, y comprueba que el coche se detiene ante la pared sin tocar nada. Debe terminar con `PASS`. La solución de referencia midió, en 8 ejecuciones en el campo normal:
-
-| Número | Peor diferencia con el valor ideal | Límite del comprobador |
-|---|---:|---:|
-| `left` | de 0,6 a 1,7 cm | 5 cm |
-| `right` | de 0,5 a 0,7 cm | 5 cm |
-| `front_axis` | de 0,6 a 1,1 cm | 5 cm |
-| `island_end` | de 0,7 a 1,2 cm | 10 cm |
-
-`island_end` solo se compara cuando se ve a la vez en el nodo y en la geometría. El comprobador deja fuera los escaneos de la frenada (con la pared a menos de 0,8 m el coche cabecea y el LiDAR ve el suelo como una pared) y los que llegan justo cuando el final de la isla pasa al lado del coche, donde la mediana de `left` salta.
-
-Para verlo con ventana y con las marcas de RViz:
-
-```bash
-ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true rviz:=true
-```
-
-El RViz de ese lanzador no trae las marcas: añade un display `MarkerArray` en `/scene_markers` y pon el marco fijo en `lidar_link`. Verás líneas verdes a los lados (`left` y `right`), una línea roja delante (`front_axis`) y un punto amarillo donde termina la isla. También puedes leer los números: `ros2 topic echo /scene`. El árbitro puntuará la ronda; ignora esos puntos, en este paso el coche solo avanza hasta la pared y se para.
+Debe terminar con `PASS`: compara cada `/scene` con los números ideales (sin ruido) y mira que el coche se pare ante la pared sin tocarla. La referencia quedó a menos de 2 cm del ideal en `left`, `right` y `front_axis`, y a menos de 1,2 cm en `island_end` (límites: 5 cm, y 10 cm para `island_end`). Con tu nodo en marcha, `ros2 topic echo /scene` muestra los números en vivo.
 
 ### Rómpelo
 
-1. En `median_range`, cambia `np.median` por `np.mean` y corre las pruebas. Solo falla `test_a_median_ignores_a_beam_that_goes_through_a_gap` (`left` da 0,396 en vez de 0,25): con ruido y rayos perdidos normales el promedio y la mediana se parecen, y solo un rayo salvaje los separa.
-2. Deshaz el cambio. En `front_axis`, en la línea del coseno, usa `0.0` en lugar de `forward_yaw` y corre `test_the_wall_ahead_is_measured_along_the_track_when_the_car_is_crooked`. Falla: con el coche torcido 0,3 rad la diferencia es de unos 6 cm (1,442 en vez de 1,378). Si cambias solo la elección de rayos (`_near`) y dejas el coseno, las pruebas siguen pasando: no lo detectan.
+1. En `median_range`, cambia `np.median` por `np.mean` y corre las pruebas. Solo falla `test_a_median_ignores_a_beam_that_goes_through_a_gap`: `left` da 0,396 en vez de 0,25.
+2. Deshaz el cambio. En `front_axis`, usa `0.0` en lugar de `forward_yaw` en la línea del coseno. Falla `test_the_wall_ahead_is_measured_along_the_track_when_the_car_is_crooked`: con el coche torcido da 1,315 m en vez de 1,378 m.
 
 ## Si algo falla
 
-- **`left` o `right` dan siempre `inf`.** Revisa que `_near` reciba `SIDE_HALF` (0,44 rad) y que compares ángulos con `arctan2(sin, cos)` y no con una resta: cerca de ±180° una resta se equivoca.
-- **`front_axis` es 0,128 m más corto de lo que esperas.** Es normal: se mide desde el LiDAR, no desde el centro del coche. `island_end` sí suma `LIDAR_X` para dar x en el sistema del coche.
-- **Al correr las pruebas salen avisos de `invalid value`.** Falta `np.errstate(invalid='ignore')`: los rayos perdidos son `inf` y `inf * cos(...)` produce `nan`.
-- **`island_end` da siempre `inf`.** Imprime `side.sum()` y la pendiente y el desfase del ajuste. El desfase debe estar entre 0,15 y 0,90 m; si no, lo estás rechazando por error.
-- **`island_end` aparece y desaparece entre escaneos.** Con ruido y rayos perdidos es normal: es el número más frágil. Si ocurre también sin ruido ni pérdidas, mira que `missing` se reinicie a 0 cada vez que un rayo cae sobre la pared.
-- **Pasan las pruebas pero `/scene` no sale en Gazebo.** Las pruebas no usan ROS. Revisa que `/scan` use `qos_profile_sensor_data` y que el nodo se llame `strategy`.
-- **El coche no para ante la pared.** Revisa que `stopped` se quede en `True` y que uses `front_axis`, no `left`.
+- **`left` o `right` dan siempre `inf`.** Revisa que `_near` reciba `SIDE_HALF` y que compare ángulos con `arctan2(sin, cos)` y no con una simple resta.
+- **`island_end` da siempre `inf`, o salen avisos de `invalid value`.** Corre el comando del 3.4 después de cada pasito para ver cuál lo rompe. Los avisos significan que falta `np.errstate(invalid='ignore')`.
 - **`verify_step.py` dice que ya hay un `gz sim` en marcha.** Cierra el otro simulador o usa `--wait 60` para esperar a que termine.
-
-## Compara
-
-```bash
-bash tools/compare-step.sh 2 3     # qué añade la referencia
-bash tools/compare-step.sh 3       # tu árbol contra el paso 3
-```
 
 ## Resumen
 
-- `perceive` convierte un escaneo de 306 rayos en cuatro números: `left`, `right`, `front_axis` (a lo largo de la pista, con `forward_yaw`) e `island_end`. Lo que no se ve vale `inf`.
-- Se usa la mediana y no el promedio porque un solo rayo salvaje arruina el promedio; `island_end` es el número frágil porque depende de una recta ajustada a unos pocos rayos y de que no falten tres seguidos.
-- En Gazebo los tres primeros números coinciden con los ideales a menos de 2 cm; el nodo publica `/scene` y se detiene ante la pared con enclavamiento.
+- `perceive` convierte un escaneo de 306 rayos en cuatro números: `left`, `right`, `front_axis` e `island_end`. Lo que no se ve vale `inf`.
+- Usa la mediana y no el promedio, porque un rayo salvaje arruina el promedio. `island_end` es el número frágil: depende de una recta ajustada a pocos rayos.
+- Para comparar tu `perception.py` con la referencia: `bash tools/compare-step.sh 3`.
 
 ## Antes de seguir
 
 - [ ] `pytest` marca `9 passed` y `verify_step.py 3` termina en `PASS`.
 - [ ] Sabes decir por qué `left` resiste un rayo salvaje y un promedio no.
 - [ ] Viste en el widget que `island_end` baila más que `left` cuando subes el ruido o los rayos perdidos.
+
+<details>
+<summary>Para curiosos: cómo funciona drive.py</summary>
+
+`drive.py` es el nodo de ROS (se llama `strategy`). Lo del paso 2 sigue igual: calibrar el giroscopio y avanzar recto. Lo nuevo es esto, y lo explica la sección «El nodo» de arriba:
+
+- Se suscribe a `/scan`. En `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los cuatro números en `/scene` (y las marcas de RViz en `/scene_markers`).
+- En `control`, que corre 50 veces por segundo, se detiene cuando `front_axis` baja de `STOP_FRONT` (0,5 m). Con enclavamiento: una vez parado, un rayo con ruido no lo arranca otra vez.
+- Publica la orden de marcha en `/cmd_vel_raw`.
+
+Para leerlo, abre `src/my_open/my_open/drive.py`; es el mismo que ya tenías con esas tres piezas añadidas.
+
+</details>

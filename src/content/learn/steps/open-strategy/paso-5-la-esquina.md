@@ -8,7 +8,7 @@ tag: "step-5"
 compareFrom: "step-4"
 ---
 
-Hasta ahora el coche sigue la pared de la isla y se detiene ante la pared de enfrente. En este paso le enseñas a **girar 90 grados a la izquierda** en esa pared y a seguir por el pasillo siguiente. Escribes `arc.py`, que decide el volante durante la esquina, y cambias `drive.py` para usarla **una sola vez**. Cuándo girar sigue siendo una regla fija (la pared de enfrente, `front_axis`, a 1,19 m o menos); decidirlo bien es el paso 6.
+Hasta ahora el coche sigue la pared de la isla y se detiene ante la pared de enfrente. En este paso le enseñas a **girar 90 grados a la izquierda** en esa pared y a seguir por el pasillo siguiente. Escribes `arc.py`, que decide el volante durante la esquina. `drive.py`, que la usa **una sola vez**, te lo damos hecho. Cuándo girar sigue siendo una regla fija (la pared de enfrente, `front_axis`, a 1,19 m o menos); decidirlo bien es el paso 6.
 
 ## Lo que vas a ver
 
@@ -102,31 +102,24 @@ Con el servo real, **todas** las variantes quedan por debajo de 1 grado: la esqu
 
 ## Escríbelo
 
-1. **Crea `src/my_open/my_open/arc.py`** con `ramp`, las constantes `DAMPING` y `EXIT_ANGLE` y `arc_steer`.
-2. **Edita `drive.py`** para dar una esquina a la izquierda y parar ante la pared siguiente.
+> **En este paso**
+> - **Escribes:** un solo archivo, `arc.py`, con 2 funciones pequeñas (`ramp` y `arc_steer`), en 5 mini pasos.
+> - **Copias hecho:** `drive.py`, la parte de ROS (nodos, tópicos, temporizadores). No hace falta entenderlo todavía.
+> - **Resultado:** el coche gira 90 grados a la izquierda sin pasarse.
 
-**Pistas para `arc.py`.** Importa `STEER_LIMIT`, `clamp` y `wrap` de `robotek_course.minisim`, y `KP` de `.heading`.
+Copia `drive.py` desde la raíz del repositorio (si no tienes las etiquetas, antes `git fetch --tags`):
 
-1. `ramp(ref, goal, rate, dt)`: calcula `gap = wrap(goal - ref)`. Si `abs(gap) <= rate * dt`, devuelve `goal` (llega y se detiene). Si no, avanza `rate * dt` hacia el lado de `gap` (`math.copysign`) y aplica `wrap`.
-2. La firma de `arc_steer` es `arc_steer(goal, ref, yaw, gyro, rate, dt, sign=1, feed=True, fade=True, damping=DAMPING)` y devuelve `(steer, ref)`. Las pruebas apagan piezas con `feed=False`, `fade=False` y `damping=0.0`, así que tienen que estar.
-3. Primero solo la rampa: `ramping = ref != goal` (**antes** de mover `ref`), `ref = ramp(...)` y `steer = KP * wrap(ref - yaw)` dentro del tope. Con eso pasan las primeras pruebas.
-4. Feed-forward: mientras `ramping` y `feed`, `steer_ff = sign * STEER_LIMIT` y `rate_ff = sign * rate`; si no, los dos valen 0.
-5. Aflojado: `scale = min(1.0, max(0.0, sign * wrap(goal - yaw)) / EXIT_ANGLE)` si `fade`, y 1.0 si no. Multiplica `steer_ff` y `rate_ff` por `scale`.
-6. Amortiguamiento: resta `damping * (gyro - rate_ff)` y limita el resultado con `clamp(steer, -STEER_LIMIT, STEER_LIMIT)`.
+```bash
+git show step-5:src/my_open/my_open/drive.py > src/my_open/my_open/drive.py
+```
 
-**Pistas para `drive.py`.**
+Cada mini paso termina con una prueba (en macOS con RoboStack pon `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` delante de `python`). Un **tick** es cada ejecución del control: 50 por segundo, o sea `dt = 0,02 s`.
 
-- Estado nuevo: `goal`, `ref` (los dos en 0), `arc` (hay una esquina en curso) y `corners` (esquinas hechas).
-- La escena se mide **a lo largo de la pista**: en `on_scan` pasa `forward_yaw=wrap(self.goal - self.heading.yaw)` a `perceive`. Así, con la meta nueva, la pared de enfrente es la del pasillo siguiente.
-- El giroscopio para amortiguar es `self.gyro - self.heading.bias`: el sesgo ya medido se quita.
-- Cuando `not arc` y la pared de enfrente está a `TURN_FRONT` (1,19 m) o menos: si `corners == 0`, suma π/2 a la meta y pon `arc = True`; si no, el coche se detiene (`stopped = True`, como en el paso 4).
-- En `arc`, calcula `rate` (la velocidad de giro con el volante al tope, la fórmula de «La idea»), llama a `arc_steer` y manda la velocidad `SPEED`. Cuando `abs(wrap(goal - yaw)) <= TURN_TOLERANCE` (0,12 rad), la esquina acaba: `arc = False`, `ref = goal` y `corners += 1`.
-- Fuera de la esquina y sin detenerse, la ley de carril del paso 4, pero apuntando a `self.goal` y no a 0.
+### Paso 5.1: la meta que se mueve (`ramp`)
 
-Antes de abrir la referencia, corre las pruebas y mira cuáles pasan con solo la rampa.
+Hacemos una función que acerca un número a otro poco a poco, como subir el volumen despacio en vez de pasar de 0 a 100 de golpe.
 
-<details>
-<summary>Ver la referencia de arc.py</summary>
+Crea `src/my_open/my_open/arc.py` y pega esto. Arriba van los imports (`wrap(a)`, del paso 2, deja un ángulo entre -π y π). `arc_steer` es un marcador para que las pruebas puedan importarlo: lo escribes en el 5.2. Abajo, el esqueleto de `ramp`, que aún no funciona.
 
 ```python
 import math
@@ -135,25 +128,149 @@ from robotek_course.minisim import STEER_LIMIT, clamp, wrap
 from .heading import KP
 
 
+def arc_steer(*args, **kwargs):  # marcador, lo escribes en el 5.2
+    ...
+
+
+def ramp(ref, goal, rate, dt):
+    """Move ref towards goal by at most rate * dt radians (the short way round)."""
+    return ref  # TODO
+```
+
+- **Qué va dentro:** calcula lo que falta (`gap`: `goal - ref` con `wrap`, para ir por el camino corto). Si falta menos que `rate * dt`, devuelve `goal`. Si no, avanza `rate * dt` hacia el lado de `gap` (`math.copysign` pone el signo) y aplica `wrap`.
+- **Compruébalo:** `python -m pytest course/tests/test_step_5.py -q -k reference` debe dar `2 passed`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
 def ramp(ref, goal, rate, dt):
     """Move the reference heading ``ref`` towards ``goal`` by at most ``rate * dt`` radians (the short way round)."""
     gap = wrap(goal - ref)
     if abs(gap) <= rate * dt:
         return goal
     return wrap(ref + math.copysign(rate * dt, gap))
+```
 
+</details>
 
+### Paso 5.2: el volante de la esquina
+
+El coche no persigue la meta final sino `ref`, que se mueve: como seguir a un amigo en bici que va un poco por delante.
+
+Borra el marcador y pega este esqueleto. `feed`, `fade` y `damping` aún no hacen nada.
+
+```python
+def arc_steer(goal, ref, yaw, gyro, rate, dt, sign=1, feed=True, fade=True, damping=0.0):
+    """One tick of a corner. Returns (steer, ref)."""
+    ref = ramp(ref, goal, rate, dt)
+    return 0.0, ref  # TODO: el volante
+```
+
+- **Qué va dentro:** el volante es `KP` (0,8, paso 2) por el error de rumbo `ref - yaw`, con `wrap`. Límítalo con `clamp(steer, -STEER_LIMIT, STEER_LIMIT)`.
+- **Compruébalo:** `python -m pytest course/tests/test_step_5.py -q -k "finished or wheels or also_mirrors"` debe dar `3 passed`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+Versión parcial: las líneas de la referencia que ya toca escribir (la función completa está en el 5.5).
+
+```python
+def arc_steer(goal, ref, yaw, gyro, rate, dt, sign=1, feed=True, fade=True, damping=0.0):
+    ref = ramp(ref, goal, rate, dt)
+    steer = KP * wrap(ref - yaw)
+    return clamp(steer, -STEER_LIMIT, STEER_LIMIT), ref
+```
+
+</details>
+
+### Paso 5.3: anticipar (feed-forward)
+
+Anticipar es pedir el volante al tope en cuanto empieza la esquina, como girar el manillar al entrar a una curva sin esperar a notar que te sales.
+
+Cambia estas líneas de `arc_steer` (la primera va **antes** de mover `ref`):
+
+```python
+    ramping = ref != goal   # TODO
+    ref = ramp(ref, goal, rate, dt)
+    steer_ff = 0.0          # TODO
+    steer = KP * wrap(ref - yaw) + steer_ff
+```
+
+- **Qué va dentro:** `ramping` es verdadero mientras `ref` no llegó a `goal`. `steer_ff` es `sign * STEER_LIMIT` si `ramping` y `feed`; si no, 0.0. `sign` es +1 a la izquierda y -1 a la derecha.
+- **Compruébalo:** `python -m pytest course/tests/test_step_5.py -q -k feed_forward` debe dar `1 passed`. Las pruebas del 5.2 siguen pasando.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+Versión parcial (la completa está en el 5.5):
+
+```python
+    ramping = ref != goal
+    ref = ramp(ref, goal, rate, dt)
+    steer_ff = sign * STEER_LIMIT if (ramping and feed) else 0.0
+    steer = KP * wrap(ref - yaw) + steer_ff
+```
+
+</details>
+
+### Paso 5.4: soltar el volante al llegar (fade)
+
+Si el coche gira más de lo esperado, el volante al tope lo pasa de largo. Se afloja el feed-forward al acercarse a la meta, como soltar el acelerador antes del semáforo.
+
+Pega encima de `arc_steer` esta constante (0,25 rad son unos 14 grados: el tramo final del giro) y cambia la línea de `steer_ff`:
+
+```python
+EXIT_ANGLE = 0.25
+
+    scale = 1.0  # TODO
+    steer_ff = sign * STEER_LIMIT * scale if (ramping and feed) else 0.0
+```
+
+- **Qué va dentro:** si `fade`, `scale` es lo que falta (`sign * wrap(goal - yaw)`) dividido entre `EXIT_ANGLE` y limitado entre 0 y 1 (`min(1.0, max(0.0, ...))`). Si no, vale 1.0. Usa `yaw`, no `ref`.
+- **Compruébalo:** `python -m pytest course/tests/test_step_5.py -q -k fade` debe dar `1 passed`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+Versión parcial (la completa está en el 5.5):
+
+```python
+EXIT_ANGLE = 0.25    # rad: the feed-forward fades out over the last quarter radian
+
+    scale = min(1.0, max(0.0, sign * wrap(goal - yaw)) / EXIT_ANGLE) if fade else 1.0
+    steer_ff = sign * STEER_LIMIT * scale if (ramping and feed) else 0.0
+```
+
+</details>
+
+### Paso 5.5: frenar el giro que sobra (amortiguamiento)
+
+Es un freno sobre la velocidad de giro, como el amortiguador de una moto: si el coche ya gira más de lo que la esquina pide, se suelta el volante.
+
+Pega `DAMPING` encima de `EXIT_ANGLE`, cambia `damping=0.0` de la firma por `damping=DAMPING` y cambia estas dos líneas:
+
+```python
+DAMPING = 0.1   # volante (rad) por cada rad/s de error en la velocidad de giro
+
+    steer_ff, rate_ff = 0.0, 0.0                   # TODO
+    steer = KP * wrap(ref - yaw) + steer_ff        # TODO
+```
+
+- **Qué va dentro:** `rate_ff` es el giro esperado (rad/s): `sign * rate * scale` en las mismas condiciones que `steer_ff`, y 0.0 si no. `gyro` es el giro medido. Al volante réstale `damping * (gyro - rate_ff)`.
+- **Compruébalo:** `python -m pytest course/tests/test_step_5.py -q -k damping` debe dar `1 passed`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+Es la función completa de la referencia (sin su docstring largo).
+
+```python
 DAMPING = 0.1        # steering (rad) per rad/s of yaw-rate error
 EXIT_ANGLE = 0.25    # rad: the feed-forward fades out over the last quarter radian
 
 
 def arc_steer(goal, ref, yaw, gyro, rate, dt, sign=1, feed=True, fade=True, damping=DAMPING):
-    """One tick of a corner: the ramp plus two terms. ``sign`` is +1 for a left turn, -1 for a right one.
-
-    * feed-forward: while the reference is still climbing, add full lock (``sign * STEER_LIMIT``) and expect the yaw
-      rate ``sign * rate``; with ``fade`` both shrink to zero over the last ``EXIT_ANGLE`` before the goal;
-    * damping: subtract ``damping`` times how far the measured yaw rate is from the expected one.
-    """
     ramping = ref != goal
     ref = ramp(ref, goal, rate, dt)
     scale = min(1.0, max(0.0, sign * wrap(goal - yaw)) / EXIT_ANGLE) if fade else 1.0
@@ -162,171 +279,54 @@ def arc_steer(goal, ref, yaw, gyro, rate, dt, sign=1, feed=True, fade=True, damp
     return clamp(steer, -STEER_LIMIT, STEER_LIMIT), ref
 ```
 
-`ramping` se calcula antes de mover `ref`: en el tick en que la referencia llega a la meta todavía cuenta como rampa. El aflojado usa el rumbo **verdadero** (`yaw`), no la referencia, porque lo que importa es cuánto falta de verdad.
-
 </details>
 
-<details>
-<summary>Ver la referencia de drive.py (versión de este paso)</summary>
-
-Conserva del paso 4 los publicadores, `on_imu`, `on_start` y `main`. Estas son las partes que cambian.
-
-Imports y constantes:
-
-```python
-from robotek_course.minisim import STEER_LIMIT, Scene, real_speed, wrap
-
-from .arc import arc_steer
-
-TURN_FRONT = 1.19         # m: the corner starts when the wall ahead is this near
-TURN_TOLERANCE = 0.12     # rad: the corner is done within this of the goal heading
-```
-
-En `__init__`, junto al estado del paso 4:
-
-```python
-self.goal = self.ref = 0.0           # the heading to hold, and the ramped reference of the corner
-self.arc = False                     # True while the corner is in progress
-self.corners = 0                     # corners finished
-```
-
-En `on_scan`, la escena se mide a lo largo de la meta:
-
-```python
-self.scene = perceive(msg, forward_yaw=wrap(self.goal - self.heading.yaw), sign=1)
-```
-
-Y en `control`, dentro de la rama que ya calibró el giroscopio, después de `yaw = self.heading.update(self.gyro, dt)`:
-
-```python
-gyro = self.gyro - self.heading.bias
-if not self.arc and self.scene.front_axis <= TURN_FRONT:
-    if self.corners == 0:
-        self.goal = wrap(self.goal + math.pi / 2)        # a left corner: the goal turns 90 degrees
-        self.arc = True
-        self.get_logger().info('Giro a la izquierda')
-    else:
-        self.stopped = True
-if self.arc:
-    rate = real_speed(SPEED) * math.tan(STEER_LIMIT) / WHEELBASE      # yaw rate at full lock
-    steer, self.ref = arc_steer(self.goal, self.ref, yaw, gyro, rate, dt, sign=1)
-    speed = SPEED
-    if abs(wrap(self.goal - yaw)) <= TURN_TOLERANCE:                  # the corner is done
-        self.arc, self.ref = False, self.goal
-        self.corners += 1
-elif not self.stopped:
-    inner = self.scene.left if math.isfinite(self.scene.left) else GAP
-    speed, steer = SPEED, lane_steer(self.goal, yaw, inner, sign=1)
-```
-
-La velocidad ordenada es `SPEED = 1.28`, la misma de la esquina y de la recta. En la recta, `lane_steer` apunta a `self.goal`: tras la esquina el coche mantiene el rumbo nuevo.
-
-</details>
-
-## Pruébalo
-
-Primero las pruebas, sin ROS ni Gazebo (en macOS con RoboStack añade `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` delante):
+## Pruébalo en el simulador
 
 ```bash
-python3 -m pytest course/tests/test_step_5.py -q
+python -m pytest course/tests/test_step_5.py -q
+colcon build --symlink-install --packages-select my_open && source install/setup.bash && python3 course/verify_step.py 5
 ```
 
-Debes ver `11 passed`. Son 11 pruebas sobre una esquina del mini simulador:
-
-- La referencia sube a la velocidad dada, llega y se detiene; baja o cruza ±π por el camino corto.
-- Con solo la rampa, la esquina izquierda cierra en menos de 1,6 s con menos de 3 grados de sobrepaso; la derecha es el espejo.
-- El volante nunca pasa del tope (0,30718 rad).
-- Con el servo real, la esquina final se pasa menos de 2 grados y no es más lenta que con solo la rampa.
-- Con el servo lento, sin amortiguar el sobrepaso supera 5 grados y con amortiguar baja de 2.
-- Si el coche gira más rápido de lo que cree la estrategia, sin aflojado el sobrepaso supera 10 grados y con aflojado baja de 2.
-- El feed-forward cierra la esquina antes que la rampa sola cuando la estrategia cree que el coche gira menos.
-- La rampa no es lo que evita el sobrepaso (sin rampa también baja de 2 grados), pero no hace la esquina más lenta.
-- La esquina a la derecha (`sign=-1`) es el espejo de la izquierda.
-
-Después, compila y comprueba el paso en Gazebo, sin ventana:
-
-```bash
-colcon build --symlink-install --packages-select my_open
-source install/setup.bash        # en macOS: source tools/macos_env.sh ~/robotek-ros/jazzy
-python3 course/verify_step.py 5
-```
-
-Arranca el simulador y tu nodo, publica Start, graba la pose real del coche (tu nodo no la ve) y escribe `PASS` o `FAIL` seguido de las comprobaciones. El rumbo verdadero debe quedar a menos de 0,12 rad de π/2. En la referencia salió:
-
-```text
-Paso 5: PASS
-  posicion final (...), rumbo verdadero +1.590 rad (pi/2 = 1.571)
-  [OK] tras la primera esquina el rumbo es pi/2 +0.019 rad (limite +-0.12)
-  ...
-```
-
-Las otras líneas `[OK]` dicen que el coche está en el pasillo del este, que se detuvo ante la pared siguiente y que no tocó ninguna pared. Una línea `[FALLA]` te dice cuál de esas condiciones no se cumplió.
-
-Si prefieres ver el coche, lanza el simulador con ventana, tu nodo y Start en tres terminales (con `source` en cada una):
-
-```bash
-ros2 launch robotek_course sim.launch.py
-ros2 run my_open drive --ros-args -p use_sim_time:=true
-ros2 topic pub --once --qos-durability transient_local --qos-reliability reliable /start std_msgs/msg/Bool "{data: true}"
-```
+- **Qué debes ver:** `11 passed` y después `Paso 5: PASS` con `[OK] tras la primera esquina el rumbo es pi/2 ...` a menos de 0,12 rad (en la referencia, +0.019). Una línea `[FALLA]` dice qué condición no se cumplió.
+- **En macOS** usa `source tools/macos_env.sh ~/robotek-ros/jazzy` en vez de `source install/setup.bash`.
+- **Con ventana:** usa las tres terminales del paso 4 (simulador, tu nodo y Start). En la del nodo sale `Giro a la izquierda`.
 
 ### Rómpelo
 
-Antes de correr, **predice**: con el servo lento, ¿cuántos grados se pasa la esquina si quitas el amortiguamiento? Esta prueba de laboratorio (desde la raíz del repositorio) lo mide:
+**Predice** qué prueba falla, cambia `arc.py`, corre las pruebas y devuelve el cambio:
 
-```bash
-PYTHONPATH=course/tests:src/my_open:src/robotek_course:src/robotek_common python3 - <<'EOF'
-import math
-from functools import partial
-from helpers import run_arc
-from my_open.arc import arc_steer
-
-slow = dict(servo_delay=0.15, servo_tau=0.10)
-for name, fn in [('sin amortiguar', partial(arc_steer, damping=0.0)), ('completo', arc_steer)]:
-    r = run_arc(fn, **slow)
-    print(name, round(math.degrees(r['overshoot']), 1), 'grados', round(r['t_close'], 2), 's')
-EOF
-```
-
-Con la referencia salió `sin amortiguar 10.6 grados 1.2 s` y `completo 0.2 grados 1.2 s`: el tiempo es el mismo y el sobrepaso, no. Ahora cambia la situación: usa `rate_factor=0.7` en `run_arc` con `partial(arc_steer, fade=False, damping=0.0)` (sale 17,5 grados) y luego con `partial(arc_steer, damping=0.0)` (sale 0,3). ¿Qué pieza arregla cada caso?
-
-<details>
-<summary>Ver la respuesta</summary>
-
-El amortiguamiento arregla el servo lento (10,6 a 0,2 grados) y el aflojado arregla el coche que gira más rápido de lo que cree la estrategia (17,5 a 0,3). Ninguna de las dos piezas arregla el problema de la otra.
-
-</details>
-
-Otro intento, en tu `arc.py`: pon `DAMPING = 0.0` y corre las pruebas. Deben fallar dos: la del servo lento y la que compara con el salto de golpe. Y si pones `EXIT_ANGLE = 0`, `arc_steer` divide entre cero; para apagar el aflojado usa `fade=False`. Devuelve los valores antes de seguir.
+1. `DAMPING = 0.0`: fallan dos pruebas, la del servo lento y la del salto de golpe.
+2. `fade=True` por `fade=False` en la firma: falla la del coche que gira más rápido de lo que cree la estrategia.
 
 ## Si algo falla
 
-- **El coche gira a la derecha o nunca termina la esquina.** El signo: una esquina a la izquierda suma π/2 a la meta y llama a `arc_steer` con `sign=1`. Revisa que `wrap` se aplique a `goal - yaw` y que la tolerancia use `abs`.
-- **Gira, pero se pasa de 90 grados y roza la isla.** Revisa el signo del amortiguamiento: se **resta** `damping * (gyro - rate_ff)`. Y que el aflojado use `sign * wrap(goal - yaw)`, no la referencia.
-- **Gira antes de tiempo o no gira.** Mira `front_axis` en la escena: debe medirse con `forward_yaw=wrap(self.goal - self.heading.yaw)`. Si usas siempre 0, tras la esquina el coche mide la pared equivocada.
-- **Tras la esquina el coche se va de lado.** `lane_steer` debe apuntar a `self.goal`, no a 0.
-- **`[FALLA] no hay poses` o el coche no se mueve.** No le llegó Start. Revisa que `on_start` esté suscrito al tópico `start`, como en el paso 1.
-- **`[FALLA]` con el rumbo lejos de π/2 pero sin contacto.** Mira el rumbo que imprime el comprobador y compara con la tabla de arriba: un sobrepaso grande apunta al amortiguamiento (servo lento) o al aflojado (el coche gira más de lo esperado).
+- **Gira a la derecha o nunca termina.** Una esquina a la izquierda usa `sign=1`; revisa `wrap` y el signo del volante.
+- **Se pasa de 90 grados.** El amortiguamiento se **resta**, y el aflojado usa `yaw`, no `ref`.
+- **`[FALLA]` y el coche no se mueve.** No llegó Start, o `drive.py` no es el de `step-5`: cópialo otra vez y recompila.
 
-## Compara
-
-Lo que cambia la referencia respecto al paso 4, y tu árbol contra el paso 5:
-
-```bash
-bash tools/compare-step.sh 4 5
-bash tools/compare-step.sh 5
-```
-
-Importa comparar `arc.py`. En `drive.py` el bloque de la esquina debe ser equivalente; las diferencias de nombres o de formato no importan.
+Para comparar tu `arc.py` con la referencia usa el cuadro «Compara» al final de la página.
 
 ## Resumen
 
-- Girar es mover `goal` 90 grados, pero la ley sigue a `ref`, una rampa que sube a la velocidad de giro real (1,62 rad/s).
-- El feed-forward adelanta el volante, el aflojado lo apaga cerca de la meta y el amortiguamiento frena la velocidad de giro que sobra.
-- Cada pieza arregla un problema distinto (servo lento, estimación equivocada); con el servo real, la esquina es fácil.
+- Girar es mover `goal` 90 grados, pero el coche sigue a `ref`, una rampa a la velocidad de giro real (1,62 rad/s).
+- El feed-forward adelanta el volante, el aflojado lo suelta cerca de la meta y el amortiguamiento frena el giro que sobra.
+- Cada pieza arregla un problema distinto; con el servo real, la esquina es fácil.
 
 ## Antes de seguir
 
-- [ ] `pytest course/tests/test_step_5.py` da `11 passed`.
-- [ ] `python3 course/verify_step.py 5` da `PASS`, con el rumbo a menos de 0,12 rad de π/2.
+- [ ] `python -m pytest course/tests/test_step_5.py -q` da `11 passed`.
+- [ ] `python3 course/verify_step.py 5` da `PASS`.
 - [ ] Puedes explicar qué pasa con el sobrepaso si quitas el amortiguamiento y qué si quitas el aflojado.
+
+<details>
+<summary>Para curiosos: cómo funciona drive.py</summary>
+
+`drive.py` es un nodo de ROS: un programa pequeño que habla con otros por canales con nombre (tópicos).
+
+- Se suscribe a `/scan` (LiDAR), `/imu` (giroscopio) y `start`, y publica la velocidad en `/cmd_vel_raw`.
+- Un temporizador llama a `control` 50 veces por segundo. Tras Start espera 0,6 s quieto midiendo el sesgo del giroscopio.
+- Sigue la isla con `lane_steer` (paso 4). Con la pared de enfrente a 1,19 m o menos (`TURN_FRONT`) y en la primera esquina, suma π/2 a `goal` y activa `arc`.
+- Mientras `arc`, llama a `arc_steer` con `rate = real_speed(SPEED) * math.tan(STEER_LIMIT) / WHEELBASE`. Acaba a menos de 0,12 rad de la meta. En la segunda pared se detiene.
+
+</details>

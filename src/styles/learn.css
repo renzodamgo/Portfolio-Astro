@@ -336,3 +336,266 @@ html[data-theme="light"] .prose-learn .astro-code span {
     outline-offset: 2px;
     border-radius: 2px;
 }
+
+
+/* ---- Page width: the whole viewport minus the side padding, capped at --learn-max on Full HD, 2K and 4K ---- */
+.learn-container {
+    --learn-max: 1536px;
+    --learn-pad: 16px;
+    width: min(100% - 2 * var(--learn-pad), var(--learn-max));
+    margin-inline: auto;
+}
+@media (min-width: 640px) {
+    .learn-container {
+        --learn-pad: 24px;
+    }
+}
+@media (min-width: 1024px) {
+    .learn-container {
+        --learn-pad: 32px;
+    }
+}
+
+/* The glass panel of the site cards */
+.learn-panel {
+    border: 1px solid color-mix(in oklab, var(--color-white) 15%, transparent);
+    background: color-mix(in oklab, var(--color-black) 60%, transparent);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+}
+html[data-theme="light"] .learn-panel {
+    box-shadow:
+        0 8px 32px rgba(60, 45, 20, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ---- Step pages: sidebar of chapters | main column | table of contents ---- */
+.learn-doc {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+.learn-doc-main {
+    min-width: 0;
+}
+.learn-doc-main:focus {
+    outline: none;
+}
+.learn-doc-toc {
+    display: none;
+}
+
+/* Below lg the chapters are a closed <details> above the content */
+.learn-steps-desktop {
+    display: none;
+}
+.learn-steps-mobile {
+    border: 1px solid color-mix(in oklab, var(--color-white) 15%, transparent);
+    background: color-mix(in oklab, var(--color-black) 60%, transparent);
+}
+.learn-steps-mobile > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    color: var(--color-white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+.learn-steps-mobile > summary::-webkit-details-marker {
+    display: none;
+}
+.learn-steps-mobile > summary::before {
+    content: "";
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid var(--ctl-accent);
+    border-bottom: 2px solid var(--ctl-accent);
+    transform: rotate(-45deg);
+    transition: transform 0.15s;
+}
+.learn-steps-mobile[open] > summary::before {
+    transform: rotate(45deg);
+}
+.learn-steps-mobile > summary:hover {
+    background: var(--btn-bg-hover);
+}
+.learn-steps-mobile > summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+.learn-steps-mobile[open] > summary {
+    border-bottom: 1px solid var(--color-line);
+}
+.learn-steps-mobile .learn-steps-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 0.4rem;
+}
+
+.learn-side-title {
+    margin: 0 0 0.5rem;
+    padding: 0 0.6rem;
+    color: color-mix(in oklab, var(--color-white) 72%, transparent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* Chapter list (GuideSteps) */
+.learn-steps-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.learn-steps-link {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    border-left: 2px solid transparent;
+    border-radius: 0 4px 4px 0;
+    color: color-mix(in oklab, var(--color-white) 85%, transparent);
+    font-size: 0.85rem;
+    line-height: 1.3;
+    text-decoration: none;
+    transition: color 0.15s, background-color 0.15s;
+}
+.learn-steps-link:hover {
+    background: var(--btn-bg-hover);
+    color: var(--color-white);
+}
+.learn-steps-link:active {
+    background: var(--btn-bg-active);
+}
+.learn-steps-link:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+.learn-steps-link[aria-current="page"] {
+    border-left-color: var(--color-amber-400);
+    background: var(--btn-bg);
+    color: var(--color-white);
+    font-weight: 600;
+}
+.learn-steps-label {
+    display: block;
+    color: var(--color-amber-400);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.learn-steps-title {
+    display: block;
+}
+
+/* "En esta página" */
+.learn-toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.learn-toc a {
+    display: block;
+    padding: 0.3rem 0.6rem;
+    border-left: 2px solid transparent;
+    color: color-mix(in oklab, var(--color-white) 72%, transparent);
+    font-size: 0.8rem;
+    line-height: 1.35;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: color 0.15s, border-color 0.15s;
+}
+.learn-toc .learn-toc-sub a {
+    padding-left: 1.3rem;
+    font-size: 0.76rem;
+}
+.learn-toc a:hover {
+    color: var(--color-white);
+}
+.learn-toc a:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+.learn-toc a[aria-current="location"] {
+    border-left-color: var(--color-amber-400);
+    color: var(--color-white);
+    font-weight: 600;
+}
+
+/* lg: sidebar of chapters */
+@media (min-width: 1024px) {
+    .learn-doc {
+        grid-template-columns: 15rem minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+    .learn-steps-mobile {
+        display: none;
+    }
+    .learn-steps-desktop {
+        display: block;
+        padding: 0.9rem 0.5rem;
+    }
+    /* Sticky, scrolling by itself when taller than the screen. The TOC is on the right, so its bottom 4.5rem stay free for the theme switch */
+    .learn-doc-side,
+    .learn-doc-toc {
+        position: sticky;
+        top: 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+    }
+    .learn-doc-toc {
+        max-height: calc(100vh - 5.5rem);
+    }
+}
+
+/* xl: table of contents on the right */
+@media (min-width: 1280px) {
+    .learn-doc {
+        grid-template-columns: 14rem minmax(0, 1fr) 13rem;
+        gap: 1.25rem;
+    }
+    .learn-doc-toc {
+        display: block;
+    }
+    .learn-toc {
+        padding: 0.9rem 0.5rem;
+    }
+}
+
+/* ---- Content measure: paragraphs and lists stay readable; code, tables, details, widgets and replays use the whole column ---- */
+.prose-learn :is(p, ul, ol, blockquote):not(:where([data-widget] *, .lw *)) {
+    max-width: 75ch;
+}
+@media (min-width: 768px) {
+    .prose-learn table {
+        display: table;
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* Index pages: cards for the chapters */
+.learn-step-card {
+    display: block;
+    height: 100%;
+    padding: 0.8rem 1rem;
+}
+
+/* Wide screens: a little more room for the side columns */
+@media (min-width: 1536px) {
+    .learn-doc {
+        grid-template-columns: 15rem minmax(0, 1fr) 15rem;
+        gap: 1.5rem;
+    }
+}

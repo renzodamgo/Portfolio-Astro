@@ -126,126 +126,111 @@ Para comparar con tu ejecución del lab, las 12 rondas con sus tiempos, todas v�
 
 12 de 12 válidas, tiempo medio 40,75 s (Open lab, semilla 0). Las dos rondas de Gazebo (`ccw` 34,80 s y `cw` 34,90 s, ambas 30 puntos y válidas) están en la tabla de arriba.
 
-## Escríbelo
+## Hazlo: correr, leer, anotar
 
-Aquí no hay código de estrategia nuevo. Haz esto en orden:
+> **En este paso**
+> - **Escribes:** nada de código. Solo corres rondas, lees el resultado y lo anotas en `RESULTADOS.md`.
+> - **Copias hecho:** `RESULTADOS.md`, con las rondas medidas de la solución y una tabla vacía para las tuyas; no hace falta entenderlo todavía.
 
-1. **Corre las 12 rondas** del Open lab con tu `Strategy` y compara con la tabla de arriba. Si algo da menos de 30 puntos, lee la fila de la tabla «Qué ves» y vuelve al paso que corresponda (la calibración del paso 2 o la última esquina del paso 7 son los sospechosos habituales).
-2. **Corre una ronda `ccw` y otra `cw` en Gazebo** con GUI y copia el resultado de `score` a tu tabla.
-3. **Crea `RESULTADOS.md`** en `src/my_open/` (la referencia trae el suyo) y anota una fila por intento: puntos primero y tiempo después.
-
-<details>
-<summary>Ver la referencia: la tabla de RESULTADOS.md para llenar</summary>
-
-```markdown
-| Fecha | Cambio | Sentido | Puntos | Tiempo | Válida |
-|---|---|---|---:|---:|:---:|
-| | | | | | |
+```bash
+git fetch --tags
+git show step-9:src/my_open/RESULTADOS.md > src/my_open/RESULTADOS.md
 ```
 
-Una fila por ronda. En «Cambio» escribe lo único que modificaste desde la fila anterior. Cambia **una cosa a la vez**: si cambias dos, no sabrás cuál ayudó.
+### Paso 9.1: correr el laboratorio
 
-</details>
+Corre las 12 rondas del Open lab con tu `Strategy`. Tarda cerca de un minuto. Es el filtro rápido: te dice si algo se rompió antes de gastar tiempo en Gazebo.
 
-### Cómo llevar tu registro
+```bash
+python -m robotek_evaluation.open_lab --strategy my_open.strategy:Strategy
+```
 
-La plantilla de la referencia es mínima. Te recomiendo añadir una columna **Dónde** (`lab` o `Gazebo`), porque los tiempos de los dos no se comparan, y una de **Nota** para lo que veas. Así se ve con una primera fila (la línea base de la solución, antes de cambiar nada) y la fila de tu primer experimento sin rellenar:
+Debes ver 12 líneas con `pts=30` y `valid=True`, y al final `12/12 valid, mean time 40.75 s`. Compara cada tiempo con la tabla de arriba. Si alguna da menos de 30, mira la lista de motivos y vuelve al paso que corresponda (la calibración del paso 7.1 o la última esquina del 7.6 son los sospechosos habituales).
+
+Para comprobarlo con el juez de las pruebas:
+
+```bash
+python -m pytest course/tests/test_step_9.py -q -k square100
+```
+
+Debes ver `2 passed, 1 deselected` (unos 10 s).
+
+### Paso 9.2: leer una ronda de Gazebo
+
+Corre una ronda `ccw` con ventana. El resultado aparece unos 31 s de tiempo simulado después de que el coche pare.
+
+```bash
+colcon build --symlink-install --packages-select my_open
+source install/setup.bash
+ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=ccw
+```
+
+Debes ver el resumen de «Cómo leer lo que imprime `score`»: `Puntos: 30 de 30` y `Válida: sí`, con un tiempo cerca de 34,80 s. Si ves otra cosa, busca tu línea en esa lista. Para volver a leer la última ronda sin repetirla, usa `ros2 run robotek_course score`. Repite con `direction:=cw` (la solución dio 34,90 s).
+
+### Paso 9.3: anotar
+
+Cada ronda es una fila de tu tabla. Abre `src/my_open/RESULTADOS.md` y, al final, rellena tu primera fila con la ronda de 9.2. Es tu **línea base**: lo que vas a intentar mejorar.
+
+Te recomiendo dos columnas más que la plantilla: **Dónde** (`lab` o `Gazebo`), porque sus tiempos no se comparan, y **Nota**. Así se ve con la línea base de la solución y la fila de tu primer experimento sin rellenar:
 
 | Fecha | Cambio | Dónde | Sentido | Puntos | Tiempo | Válida | Nota |
 |---|---|---|---|---:|---:|:---:|---|
 | AAAA-MM-DD | ninguno (línea base de la solución) | Gazebo | ccw | 30 | 34,80 s | sí | vueltas 10,9 / 10,6 / 11,0 |
 | AAAA-MM-DD | (lo único que cambiaste) | | | | | | |
 
-Cómo usarla bien:
+Reglas para que la tabla sirva: **un cambio por fila**, con el valor anterior y el nuevo (`TURN_FRONT 1.19 a 1.10`); compara dentro del mismo «Dónde» y sentido; repite tres rondas antes de concluir (en esta guía no se midió cuánto varía el tiempo entre repeticiones en Gazebo); y descarta un cambio que baje puntos o validez, aunque sea más rápido.
 
-- **Primero la línea base**: tu propia ronda sin cambios, en el mismo sitio. Es lo que vas a intentar mejorar.
-- **Un cambio por fila** y anota el valor anterior y el nuevo (`TURN_FRONT 1.19 a 1.10`).
-- **Compara dentro del mismo «Dónde» y el mismo sentido.** Un 33 s del lab no «mejora» un 34,8 s de Gazebo.
-- **Repite** (tres rondas) antes de concluir: hay ruido en los sensores y un solo intento puede engañar. En esta guía no se midió cuánto varía el tiempo entre repeticiones en Gazebo.
-- **Un cambio que baja los puntos o la validez se descarta**, aunque sea más rápido.
+<details>
+<summary>Ver la plantilla de la referencia</summary>
+
+```markdown
+## Tu tabla
+
+Anota aquí tus rondas (`ros2 run robotek_course score`): puntos primero, tiempo desde Start después.
+
+| Fecha | Cambio | Sentido | Puntos | Tiempo | Válida |
+|---|---|---|---:|---:|:---:|
+| | | | | | |
+```
+
+</details>
 
 ## Pruébalo
 
-Las pruebas de este paso son el examen. Necesitan los paquetes de ROS instalados (sin ellos se saltan solas) y tardan unos 20 a 30 s, porque corren rondas completas del Open lab:
+Las pruebas de este paso son el examen. Necesitan los paquetes de ROS cargados (sin ellos se saltan solas) y tardan unos 25 s, porque corren rondas completas del Open lab:
 
 ```bash
-source /opt/ros/jazzy/setup.bash && source install/setup.bash
-python3 -m pytest course/tests/test_step_9.py -q
+python -m pytest course/tests/test_step_9.py -q
 ```
 
-Esperado: `3 passed`. Comprueban que `square100` da 30 puntos, es válida y tarda menos de 34 s en los dos sentidos, y que `square180` ccw y `rect100x180` cw también dan 30 puntos válidos.
-
-En Gazebo, las dos rondas de siempre:
-
-```bash
-ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=ccw
-ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=cw
-```
-
-Esperado: 30 de 30 y ronda válida en las dos.
+Debes ver `3 passed`: `square100` da 30 puntos válidos en menos de 34 s en los dos sentidos, y `square180` ccw con `rect100x180` cw también.
 
 ## Si algo falla
 
-- **`score` dice «No hay rondas en ~/robotek_runs».** No terminó ninguna ronda con carpeta. Corre antes `round.launch.py`. Si el árbitro no pudo puntuar, deja los archivos y te dice cómo repetirlo con `score <carpeta>`.
-- **Pasa en el lab pero no en Gazebo.** Es el caso esperado de un lab más simple. Gazebo manda.
-- **30 puntos pero «Válida: no».** Mira la lista entre paréntesis (tabla «Qué ves»): puede ser un contacto con un muro, un margen menor de 1 cm o que la parada no se observó 30 s.
-- **Tu tiempo difiere unas décimas.** Hay ruido en los sensores. Para decidir si un cambio mejora, repite varias rondas antes de concluir.
-- **Las pruebas de este paso se saltan.** Falta cargar ROS: `source /opt/ros/jazzy/setup.bash && source install/setup.bash`.
+- **`score` dice «No hay rondas en ~/robotek_runs».** No terminó ninguna ronda. Corre antes `round.launch.py`.
+- **Pasa en el lab pero no en Gazebo.** Es lo esperado de un lab más simple. Gazebo manda.
+- **Las pruebas se saltan.** Falta cargar ROS: `source /opt/ros/jazzy/setup.bash && source install/setup.bash` (o tu entorno del paso 0).
 
 ## Qué probar para ir más rápido
 
-La regla es **puntos primero, tiempo después**. Cada cambio tiene que mantener los 30 puntos y la validez antes de acortar el tiempo. Prueba ideas una a la vez y anótalas en tu tabla. Esto es lo que mide el Open lab con la solución, **sin confirmar en Gazebo**:
+La regla es **puntos primero, tiempo después**: un cambio debe mantener los 30 puntos y la validez antes de acortar el tiempo. Esto mide el Open lab en una ronda de `square100` `ccw` con la semilla 0, cambiando una cosa a la vez. **Ninguno está confirmado en Gazebo.**
 
-| Cambio, de uno en uno | Una ronda | Media de las 12 |
-|---|---:|---:|
-| Línea base de la solución | 32,58 s | 40,75 s |
-| `CRUISE_SPEED` 1,28 a 1,00 | 35,78 s (+3,2) | 44,92 s |
-| `CRUISE_SPEED` 1,28 a 1,20 | 33,88 s (+1,3) | 41,91 s |
-| `CRUISE_SPEED` 1,28 a 1,40 | 32,58 s | 40,73 s |
-| `CRUISE_SPEED` 1,28 a 1,60 | 32,58 s | 40,61 s |
-| `TURN_FRONT` 1,19 a 0,90 | 38,68 s (+6,1) | 42,86 s |
-| `TURN_FRONT` 1,19 a 0,60 | 49,88 s (+17,3) | 50,00 s |
-| `TURN_FRONT` 1,19 a 1,30 | 32,68 s (+0,1) | 40,80 s |
-| `LOOKAHEAD` 0,35 a 0,05 | 34,98 s (+2,4) | 42,69 s |
-| `FINISH_SPEED` 0,15 a 0,30 | 32,28 s (-0,3) | 40,12 s |
-| `FINISH_SPEED` 0,15 a 0,50 | 32,08 s (-0,5) | 39,73 s |
+| Cambio | Tiempo de la ronda |
+|---|---:|
+| Línea base de la solución | 32,58 s |
+| `CRUISE_SPEED` 1,28 a 1,00 (`mission.py`) | 35,78 s |
+| `TURN_FRONT` 1,19 a 0,90 (`turn_gate.py`) | 38,68 s |
+| `FINISH_SPEED` 0,15 a 0,50 (`mission.py`) | 32,08 s |
 
-«Una ronda» es `square100` en `ccw`; la media es de las 12 rondas del set. `CRUISE_SPEED` y `FINISH_SPEED` están en `mission.py`; `TURN_FRONT` y `LOOKAHEAD`, en `turn_gate.py`. En todas estas pruebas del lab las 12 rondas siguen dando 30 puntos y válidas, una ronda por cambio y con la semilla 0 (con ruido, repite). Qué leer ahí:
-
-1. **`CRUISE_SPEED` pide, no entrega.** La velocidad que alcanza el coche sale de una tabla medida (1,28 de comando da 0,60 m/s) que llega hasta 1,28. Por encima, el lab casi no cambia; no se investigó por qué. Bajarla sí cuesta tiempo, así que la estrategia ya va en el techo de lo medido.
-2. **`TURN_FRONT` y `LOOKAHEAD` tienen un punto bueno.** Girar tarde cuesta mucho tiempo, no puntos; girar antes que 1,19 m no gana nada. La solución ya está cerca de lo mejor que ve el lab.
-3. **Lo único que baja el tiempo en el lab es el final**: avanzar más rápido hasta la pared de salida ahorra 0,3 a 0,5 s. Es poco, y es justo lo que el lab modela peor (el motor bajo carga y el frenado). Si lo pruebas en Gazebo, mira que la parada siga dando los 3 puntos.
-4. **La última esquina.** Es lenta a propósito (protege 3 puntos, ver «Rómpelo» del paso 7). Se podría acortar la rampa de frenado, pero cuida la parada dentro de la sección de salida.
-
-Estos números son del Open lab: ninguna de estas mejoras está confirmada en Gazebo. Y el lab puede engañar en las dos direcciones: quitar el amortiguamiento de la esquina (`DAMPING = 0` en `arc.py`) o pedir una sola confirmación a la puerta (`CONFIRMATIONS = 1` en `turn_gate.py`) no rompe nada en el lab y hasta gana entre 0,1 y 1,4 s en las tres rondas que probé, y sin embargo, según los registros del equipo, hicieron falta en Gazebo. Hay también ideas que nadie ha medido aquí, por ejemplo una trayectoria de esquina más abierta.
-
-Un límite más: esta estrategia no tiene **recuperación de atascos**: si el coche se atasca, no hace nada.
+Girar tarde o ir más lento cuesta tiempo, no puntos. Subir `CRUISE_SPEED` por encima de 1,28 no cambia nada (el coche solo entrega lo que dice su tabla medida). Lo único que bajó el tiempo fue el final, y es lo que el lab modela peor: si lo pruebas en Gazebo, mira que la parada siga dando los 3 puntos. El lab puede engañar: según los registros del equipo, el amortiguamiento de la esquina (`DAMPING` en `arc.py`) y la confirmación de la puerta (`CONFIRMATIONS` en `turn_gate.py`) hicieron falta en Gazebo aunque quitarlos no rompa nada en el lab. Y esta estrategia no tiene recuperación de atascos.
 
 ## El coche real
 
-El mismo nodo está pensado para correr en el coche (una Raspberry Pi). El paquete `robotek_hardware` traduce `/scan`, `/imu`, `/camera/image` y `/start` a los nombres de la placa y el LiDAR del coche, y tu `/cmd_vel_raw` al servo y al motor. Se lanza con:
-
-```bash
-ros2 launch robotek_course car.launch.py strategy:=my_open
-```
-
-Los pasos para preparar el Pi, los drivers y la calibración están en `src/robotek_hardware/README.md` y, paso a paso, en el capítulo 10. Cuando los LED de la placa están en verde, **una pulsación del botón** es Start (`/start`). **Otra pulsación** detiene el coche (`/robotek/stop`): el nodo llama a `operator_stop()` y la misión pasa a `OPERATOR_STOP`, sin volver a arrancar hasta lanzar de nuevo.
-
-Cosas que debes saber antes de poner el coche en la pista:
-
-- **Esta guía no verificó este código en el coche real.** Todo lo medido aquí es de simulación. El coche del equipo corrió otra estrategia.
-- **El color cambia.** Los rangos de `line_lengths` son los del simulador (paso 8).
-- **La velocidad real hay que medirla.** El README del hardware dice que el motor se calibró con la batería baja y solo hasta unos 0,32 m/s. Empieza con velocidades bajas.
-- **Prueba con las ruedas en el aire** antes de la pista.
+El mismo nodo está pensado para el coche (`ros2 launch robotek_course car.launch.py strategy:=my_open`); los pasos están en el capítulo 10. **Esta guía no verificó este código en el coche real**: todo lo medido aquí es de simulación. El color de las líneas cambia (paso 8) y el motor se calibró solo hasta unos 0,32 m/s, así que empieza despacio y con las ruedas en el aire.
 
 ## Qué sigue
 
-Cuatro ideas, de menor a mayor esfuerzo:
-
-1. **Repite y anota.** Cambia una cosa a la vez, tres rondas por cambio, y mira la tabla de arriba cada vez.
-2. **Prueba un campo nuevo.** Copia un `.sdf` de `robotek_gazebo/worlds`, córrelo en el lab con `run_round` (mira cómo lo hace `test_step_9.py`; `--field` solo elige entre los 6 del set estándar) y en Gazebo con `world:=ruta/al/campo.sdf`.
-3. **Escribe la recuperación de atascos.** Por ejemplo: «si en 1,5 s avancé menos de 2 cm, retrocede 0,8 s». ¿Necesita un estado nuevo o basta un dato dentro de `RUN`? Piénsalo antes de escribir código: es la misma pregunta del paso 7.
-4. **Mejora la visión para el color real del coche** y corre con velocidades bajas en el coche, comparando con Gazebo. Eso lo continúan los capítulos 10 a 12.
+Repite y anota (una cosa a la vez, tres rondas por cambio). Escribe una recuperación de atascos: ¿necesita un estado nuevo o basta un dato dentro de `RUN`? Y pasa al coche real en los capítulos 10 a 12.
 
 ## Resumen
 
@@ -255,14 +240,6 @@ Cuatro ideas, de menor a mayor esfuerzo:
 
 ## Antes de seguir
 
-- [ ] `python3 -m pytest course/tests/test_step_9.py -q` da `3 passed`.
-- [ ] Corriste una ronda `ccw` y otra `cw` en Gazebo y copiaste el resultado de `score` a tu tabla.
-- [ ] Tu `RESULTADOS.md` tiene una fila de línea base y sabes qué columna dice «Dónde».
+- [ ] `python -m pytest course/tests/test_step_9.py -q` da `3 passed`.
+- [ ] Corriste una ronda `ccw` y una `cw` en Gazebo y anotaste la línea base en `RESULTADOS.md`.
 - [ ] Sabes explicar por qué 32,58 s (lab) y 34,80 s (Gazebo) no se comparan.
-
-## Compara
-
-```bash
-bash tools/compare-step.sh 8 9     # solo añade RESULTADOS.md
-bash tools/compare-step.sh 9       # tu árbol contra el paso 9
-```

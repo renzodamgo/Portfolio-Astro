@@ -101,58 +101,105 @@ Se descartan las imágenes que llegan a menos de 0,09 s de la anterior, para no 
 
 ## Escríbelo
 
-Son dos cambios: un archivo nuevo y seis retoques en `drive.py`.
+> **En este paso**
+> - **Escribes:** `direction.py`, un archivo nuevo con la clase `DirectionVote` y una sola función, `update`, en 2 trocitos.
+> - **Copias hecho:** `drive.py` (el nodo que lee la cámara y le pasa los dos números a `DirectionVote`); no hace falta entenderlo todavía.
 
-### Etapa 1: `direction.py`
-
-Crea `src/my_open/my_open/direction.py` con la clase `DirectionVote`. Tiene `candidate` (por qué votó la última imagen), `hits` (cuántas seguidas), `direction` (la decisión) y `update(blue_length, orange_length)`, que devuelve `+1`, `-1` o `0`.
-
-**Pistas para `update`.**
-
-1. Calcula `longest = max(blue_length, orange_length)` y `confidence = abs(blue_length - orange_length) / max(longest, 1.0)`. El `max(..., 1.0)` evita dividir entre cero cuando no hay líneas.
-2. La imagen vota `+1` si `blue_length > orange_length`, `-1` si no, pero solo cuando `longest >= MIN_LENGTH` y `confidence >= MIN_CONFIDENCE`. Si no, vota 0.
-3. Si vota y coincide con `candidate`, suma 1 a `hits`; si vota algo distinto, `hits = 1`; si no vota, `hits = 0`. Después guarda `candidate = vote`.
-4. `direction` es el voto si `hits >= CONFIRMATIONS` y 0 en otro caso. Devuélvelo.
-
-Corre las pruebas antes de mirar la referencia:
+Primero copia el nodo. Ejecuta esto desde la raíz del repositorio:
 
 ```bash
-python3 -m pytest course/tests/test_step_8.py -q
+git fetch --tags
+git show step-8:src/my_open/my_open/drive.py > src/my_open/my_open/drive.py
 ```
 
-Esperado: `7 passed`.
+Ahora crea el archivo vacío `src/my_open/my_open/direction.py` y sigue con los dos trocitos.
 
-<details>
-<summary>Ver la referencia de direction.py</summary>
+### Paso 8.1: una imagen vota
+
+Cada imagen de la cámara llega convertida en dos números: el largo en píxeles de la línea azul y de la naranja. Si una es claramente más larga, la imagen vota por ella. Es una votación de una sola persona: puede equivocarse, y por eso en 8.2 pedirás cinco.
+
+Escribe este **esqueleto** en `direction.py`. Las dos constantes son: `MIN_LENGTH`, el largo mínimo para que una línea cuente (menos es ruido), y `MIN_CONFIDENCE`, cuánto más larga debe ser una línea que la otra.
 
 ```python
-"""Step 8 - The direction of the lap: which coloured line is longer, confirmed over several frames."""
-
-MIN_LENGTH = 40.0        # px: shorter lines are noise
-MIN_CONFIDENCE = 0.25    # how much longer one line must be than the other: |blue - orange| / the longest
-CONFIRMATIONS = 5        # consecutive frames that must agree
+MIN_LENGTH = 40.0        # px
+MIN_CONFIDENCE = 0.25
 
 
 class DirectionVote:
-    """Turns the length of the blue and orange lines seen in each camera frame into a decision.
-
-    Blue longer -> +1 (counter-clockwise lap); orange longer -> -1 (clockwise); unsure -> 0. A frame only counts when
-    the longest line is at least ``MIN_LENGTH`` pixels and the lines differ by at least ``MIN_CONFIDENCE``; the
-    decision needs ``CONFIRMATIONS`` such frames in a row that name the same direction.
-    """
-
-    def __init__(self):
-        self.candidate = 0       # what the last frame voted for (0: nothing clear)
-        self.hits = 0            # consecutive frames that voted for it
-        self.direction = 0
-
     def update(self, blue_length, orange_length):
-        """Feed one frame's two line lengths (pixels). Returns the decision so far: +1, -1 or 0."""
+        ...                  # TU CÓDIGO: calcular longest, confidence y vote
+        return vote          # provisional: el voto de esta imagen
+```
+
+**Pista.** `longest` es el mayor de los dos largos. La confianza es la diferencia entre los dos largos (sin signo, con `abs`) dividida entre `max(longest, 1.0)`; el `max` evita dividir entre cero cuando no hay líneas. `vote` empieza en 0, y solo si `longest >= MIN_LENGTH` y la confianza llega a `MIN_CONFIDENCE` vale `1` (azul más larga) o `-1` (naranja más larga).
+
+```bash
+python -m pytest course/tests/test_step_8.py -q -k "orange_means or similar_lines or short_lines or no_lines"
+```
+
+Debes ver `4 passed, 3 deselected`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+MIN_LENGTH = 40.0        # px: shorter lines are noise
+MIN_CONFIDENCE = 0.25    # how much longer one line must be than the other: |blue - orange| / the longest
+```
+
+```python
         longest = max(blue_length, orange_length)
         confidence = abs(blue_length - orange_length) / max(longest, 1.0)
         vote = 0
         if longest >= MIN_LENGTH and confidence >= MIN_CONFIDENCE:
             vote = 1 if blue_length > orange_length else -1
+```
+
+</details>
+
+### Paso 8.2: cinco votos seguidos
+
+Un reflejo o una sombra pueden engañar a una sola imagen. Por eso la decisión necesita cinco imágenes seguidas que voten lo mismo. Si una falla, la cuenta vuelve a empezar. Es como un jurado: hasta que cinco seguidos no dicen lo mismo, no hay veredicto.
+
+Añade `CONFIRMATIONS = 5` (las imágenes seguidas que deben coincidir) bajo las otras constantes. Pega este `__init__` dentro de la clase, antes de `update`: son tres datos que la clase recuerda.
+
+```python
+    def __init__(self):
+        self.candidate = 0       # por qué votó la última imagen
+        self.hits = 0            # cuántas seguidas votaron lo mismo
+        self.direction = 0       # la decisión: +1, -1 o 0
+```
+
+En `update`, **sustituye** la línea `return vote` por este esqueleto:
+
+```python
+        ...                      # TU CÓDIGO: contar las seguidas y decidir
+        return self.direction
+```
+
+**Pista.** Si la imagen votó y su voto es igual a `self.candidate`, suma 1 a `self.hits`. Si votó otra cosa, `hits` vale 1. Si no votó, vale 0. Guarda `self.candidate = vote`. Por último, `self.direction` es el voto si `hits >= CONFIRMATIONS` y 0 si no.
+
+```bash
+python -m pytest course/tests/test_step_8.py -q
+```
+
+Debes ver `7 passed`.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+CONFIRMATIONS = 5        # consecutive frames that must agree
+```
+
+```python
+    def __init__(self):
+        self.candidate = 0       # what the last frame voted for (0: nothing clear)
+        self.hits = 0            # consecutive frames that voted for it
+        self.direction = 0
+```
+
+```python
         self.hits = self.hits + 1 if vote and vote == self.candidate else (1 if vote else 0)
         self.candidate = vote
         self.direction = vote if self.hits >= CONFIRMATIONS else 0
@@ -161,171 +208,51 @@ class DirectionVote:
 
 </details>
 
-### Etapa 2: `drive.py`
-
-Haz estos seis cambios sobre el `drive.py` del paso 7:
-
-1. **Imports:** `CvBridge` (de `cv_bridge`), `Image` (junto a `Imu` y `LaserScan`), `line_lengths` (de `robotek_course.vision`) y `DirectionVote` (de `.direction`).
-2. **El sentido:** cambia el valor por defecto del parámetro `direction` de `'ccw'` a `'auto'`, y borra el comentario que decía que la cámara llegaba en el paso 8.
-3. **Atributos nuevos** en `__init__`: `self.vote = DirectionVote()`, `self.bridge = CvBridge()`, `self.image_time = None` y `self.image_stamp = None`.
-4. **Suscripción** a `/camera/image` con `on_image` (calidad de servicio de sensor, como `/scan`).
-5. **El método `on_image`** de arriba.
-6. **`control`:** calcula la edad de la imagen (`age = self.now() - self.image_time`, o `math.inf` si no ha llegado ninguna) y pásala a `self.strategy.control(1.0 / CONTROL_RATE, age)`.
-
-Sin imágenes la edad es infinita, el voto se anula y la misión espera. La referencia, además, agrupa en `main` las dos últimas líneas bajo `if rclpy.ok():`; es un cambio cosmético.
-
 <details>
-<summary>Ver la referencia de drive.py (versión de este paso, completa)</summary>
+<summary>Para curiosos: qué cambió en drive.py</summary>
 
-```python
-"""The ROS node: sensors in, /cmd_vel_raw out. The decisions are in strategy.py."""
-import math
-
-from cv_bridge import CvBridge
-from geometry_msgs.msg import Twist
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
-from sensor_msgs.msg import Image, Imu, LaserScan
-from std_msgs.msg import Bool, String
-
-from robotek_common.vehicle import WHEELBASE
-from robotek_course.watchdog import SensorWatchdog
-from robotek_course.vision import line_lengths
-
-from .direction import DirectionVote
-from .strategy import Strategy
-
-CONTROL_RATE = 50.0       # Hz, on the simulation clock
-
-
-class Drive(Node):
-    def __init__(self):
-        super().__init__('strategy')
-        self.strategy = Strategy(self.declare_parameter('direction', 'auto').value)
-        self.watchdog = SensorWatchdog()                   # brake if the LiDAR or the gyroscope go quiet
-        self.strategy.auto_start = False                 # the referee (or the button on the car) publishes /start
-        self.vote = DirectionVote()
-        self.bridge = CvBridge()
-        self.image_time = None
-        self.image_stamp = None
-        self.cmd = self.create_publisher(Twist, '/cmd_vel_raw', 10)
-        self.create_subscription(LaserScan, '/scan', self.on_scan, qos_profile_sensor_data)
-        self.create_subscription(Imu, '/imu', self.on_imu, qos_profile_sensor_data)
-        self.state = self.create_publisher(
-            String, '/robotek/state', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
-        self.state_sent = None
-        self.create_subscription(Image, '/camera/image', self.on_image, qos_profile_sensor_data)
-        self.create_subscription(Bool, '/robotek/stop', self.on_stop, 10)      # the button again: stop the car
-        self.create_subscription(Bool, 'start', self.on_start, 10)   # plain QoS: works with the referee and with the car's button
-        self.create_timer(1.0 / CONTROL_RATE, self.control)
-
-    def on_scan(self, msg):
-        self.watchdog.scan(self.now())
-        self.strategy.on_scan(msg)
-
-    def on_imu(self, msg):
-        self.watchdog.imu(self.now())
-        self.strategy.on_imu(self.now(), msg.angular_velocity.z)
-
-    def on_image(self, msg):
-        stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-        if self.image_stamp is not None and stamp - self.image_stamp < 0.09:
-            return                                       # one frame in two is enough
-        self.image_stamp, self.image_time = stamp, self.now()
-        blue, orange = line_lengths(self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8'))
-        self.strategy.on_camera(self.vote.update(blue, orange))
-
-    def on_start(self, msg):
-        if msg.data and not self.strategy.started:
-            self.get_logger().info('Start')
-            self.strategy.request_start()
-
-    def on_stop(self, msg):
-        if msg.data:
-            self.get_logger().info('Operator stop')
-            self.strategy.operator_stop()
-
-    def now(self):
-        return self.get_clock().now().nanoseconds * 1e-9
-
-    def control(self):
-        if self.watchdog.stale(self.now()):
-            self.get_logger().warning('A sensor went quiet: braking until it is back', throttle_duration_sec=2.0)
-            speed, steer = 0.0, 0.0
-        else:
-            age = self.now() - self.image_time if self.image_time is not None else math.inf
-            speed, steer = self.strategy.control(1.0 / CONTROL_RATE, age)
-        cmd = Twist()
-        cmd.linear.x = float(speed)
-        cmd.angular.z = float(speed * math.tan(steer) / WHEELBASE)
-        self.cmd.publish(cmd)
-        if self.strategy.label != self.state_sent:
-            self.state_sent = self.strategy.label
-            self.state.publish(String(data=self.state_sent))
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = Drive()
-    try:
-        rclpy.spin(node)
-    except (KeyboardInterrupt, RuntimeError):
-        pass
-    finally:
-        if rclpy.ok():
-            node.cmd.publish(Twist())
-            rclpy.shutdown()
-```
+El `drive.py` del paso 8 es el del paso 7 con seis cambios. Importa `CvBridge`, `Image`, `line_lengths` y `DirectionVote`. El parámetro `direction` pasa de `'ccw'` a `'auto'`. Crea `self.vote`, `self.bridge`, `self.image_time` y `self.image_stamp`. Se suscribe a `/camera/image`. Añade `on_image` (el método de «La idea»). Y `control` calcula la edad de la última imagen y se la pasa a `self.strategy.control(1.0 / CONTROL_RATE, age)`; sin imágenes la edad es infinita, el voto se anula y la misión espera. Además, la referencia agrupa en `main` las dos últimas líneas bajo `if rclpy.ok():`: es un cambio cosmético.
 
 </details>
 
-## Pruébalo
+## Pruébalo en el simulador
 
-Pruebas sin ROS ni Gazebo:
+Primero las pruebas, sin ROS ni Gazebo:
 
 ```bash
-python3 -m pytest course/tests/test_step_8.py -q
+python -m pytest course/tests/test_step_8.py -q
 ```
 
-Son 7 pruebas: cinco imágenes claras seguidas deciden, naranja es `cw`, líneas parecidas no deciden, líneas cortas no deciden, una imagen mala reinicia la cuenta, cambiar de opinión necesita cinco imágenes otra vez y sin líneas no hay decisión.
-
-Ahora las dos direcciones en Gazebo, una tras otra:
+Debes ver `7 passed`. Ahora las dos direcciones en Gazebo, una tras otra:
 
 ```bash
 colcon build --symlink-install --packages-select my_open
 source install/setup.bash
 ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=ccw
-ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=cw
 ```
 
-El argumento `direction` de `round.launch.py` solo hace que el coche **aparezca** mirando a un lado u otro; el nodo no lo recibe, así que lo decide la cámara. Qué mirar en cada ronda: en la terminal, `Start`; con la ventana abierta, que el coche espera un instante quieto y luego arranca hacia el lado correcto; y al final el resultado del árbitro. La solución de referencia midió, en **Gazebo**:
+Debes ver `Start` en la terminal, el coche quieto un instante y luego arrancando hacia la izquierda; al final, el resultado del árbitro. Después repite con `direction:=cw`: el coche debe arrancar hacia el otro lado.
+
+El argumento `direction` de `round.launch.py` solo hace que el coche **aparezca** mirando a un lado u otro; el nodo no lo recibe, así que lo decide la cámara. La solución de referencia midió, en **Gazebo**:
 
 | Sentido | Puntos | Tiempo desde Start | Vueltas (s) | Margen mínimo | Válida |
 |---|---:|---:|---|---:|:---:|
 | `ccw` | 30 de 30 | 34,80 s | 10,9 / 10,6 / 11,0 | 11,9 cm | sí |
 | `cw` | 30 de 30 | 34,90 s | 10,9 / 10,6 / 11,0 | 11,1 cm | sí |
 
-Son estimaciones de simulación, no puntuación oficial. Para el tiempo, lo importante es la diferencia entre sentidos: en Gazebo son 0,1 s; en el Open lab, 0 s en `square100` (32,58 s los dos). Si el coche va bien en un sentido y en el otro no, mira el apartado de abajo.
+Son estimaciones de simulación, no puntuación oficial. Entre sentidos solo cambian 0,1 s en Gazebo; en el Open lab, 0 s en `square100` (32,58 s los dos).
 
 ### Rómpelo
 
-Antes de correr, **predice** y apunta tu respuesta. Pon `CONFIRMATIONS = 1` en `direction.py`.
+Antes de correr, **predice** y apunta tu respuesta. Pon `CONFIRMATIONS = 1` en `direction.py` y mira la secuencia de la tabla de «La idea». ¿En qué imagen decide ahora? Y si envías `(300, 60)` tres veces, un solo cuadro `(60, 300)` y otra vez `(300, 60)` tres veces, ¿qué decisión sale en cada imagen? Corre también `test_step_8.py`.
 
-1. Con la secuencia de la tabla de arriba, ¿en qué imagen decide ahora?
-2. Envía `(300, 60)` tres veces, después **un solo cuadro** `(60, 300)` (naranja claro) y otra vez `(300, 60)` tres veces. ¿Qué decisión sale en cada imagen?
-3. Corre `test_step_8.py`: ¿cuántas pruebas fallan?
-
-Qué se mide con el `DirectionVote` de la referencia: con `CONFIRMATIONS = 1` la secuencia de la tabla decide ya en la imagen 1 (`+1, +1, +1, 0, +1, +1, +1, +1, +1`); con 5, hasta la imagen 9. En la segunda secuencia, con 1 la decisión salta a `-1` en ese cuadro y vuelve a `+1` (`+1, +1, +1, -1, +1, +1, +1`); con 5, la decisión se queda en `0` en las siete imágenes: el cuadro raro reinicia la cuenta y nunca llega a cinco. Y fallan 3 de las 7 pruebas (`test_five_clear_frames_in_a_row_decide`, `test_one_bad_frame_restarts_the_count` y `test_changing_its_mind_needs_five_frames_again`). En el coche, con 1 una imagen suelta sería un reflejo que empieza la ronda al revés.
-
-Una pregunta abierta: con `CONFIRMATIONS` más alto el coche tarda más en decidir, y mientras tanto está parado y el reloj de la ronda corre. Cada imagen más son al menos 0,09 s. ¿Cuánto vale esa espera en una ronda de unos 35 s, y cuánta seguridad te compra?
+Lo que se mide con el `DirectionVote` de referencia: con `CONFIRMATIONS = 1` la secuencia de la tabla decide ya en la imagen 1 (`+1, +1, +1, 0, +1, +1, +1, +1, +1`), y con 5, hasta la imagen 9. En la segunda secuencia, con 1 la decisión salta a `-1` en ese cuadro (`+1, +1, +1, -1, +1, +1, +1`); con 5 se queda en `0` las siete veces. Fallan 3 de las 7 pruebas (`test_five_clear_frames_in_a_row_decide`, `test_one_bad_frame_restarts_the_count` y `test_changing_its_mind_needs_five_frames_again`). En el coche, una imagen suelta sería un reflejo que empieza la ronda al revés.
 
 ## Si algo falla
 
-- **Se queda en `DETECT_DIRECTION` y a los 15 s sale `DIRECTION_FAULT`.** La misión no recibe votos. Comprueba que llegan imágenes (`ros2 topic hz /camera/image`) y que `on_image` llama a `on_camera`. Imprime `blue, orange`: deben ser números grandes y distintos.
+- **Se queda en `DETECT_DIRECTION` y a los 15 s sale `DIRECTION_FAULT`.** La misión no recibe votos. Comprueba que llegan imágenes (`ros2 topic hz /camera/image`) y que `on_image` llama a `on_camera`.
 - **Da la vuelta al revés.** El signo del voto está invertido: azul más larga debe dar `+1`, y la misión traduce `+1` a `'ccw'`.
-- **Decide mal solo en `cw`.** Revisa que usas `abs(...)` en la confianza y que el voto depende de qué línea es mayor, no del orden en que llegan.
-- **Las pruebas pasan pero Gazebo no decide.** Las pruebas no usan imágenes. Revisa la conexión del nodo (la suscripción a `/camera/image`, el `Strategy(...)` con `'auto'`), no `DirectionVote`.
+- **Las pruebas pasan pero Gazebo no decide.** Las pruebas no usan imágenes. Revisa que copiaste `drive.py` del paso 8 (la suscripción a `/camera/image` y el `'auto'`), no `DirectionVote`.
 
 ## Una advertencia sobre el coche real
 
@@ -333,22 +260,15 @@ Estos rangos de color son los del **simulador**. En la vida real la «naranja» 
 
 Algo parecido pasa con el Open lab (paso 9): su cámara simulada **no genera imágenes**, entrega el sentido directamente tras un retardo. Solo Gazebo prueba `line_lengths` y tu votación juntos.
 
+
 ## Resumen
 
-- Una imagen vota (`+1`, `-1` o `0`) comparando el largo en píxeles de la línea azul y la naranja; para votar, la más larga mide 40 px o más y la confianza llega a 0,25.
-- La decisión necesita cinco votos seguidos iguales; una imagen mala reinicia la cuenta. Sin decisión en 15 s, la misión se detiene en vez de adivinar.
+- Una imagen vota `+1`, `-1` o `0` según qué línea sea más larga (40 px o más y confianza de 0,25 o más).
+- La decisión necesita cinco votos seguidos iguales; sin decisión en 15 s, la misión se detiene en vez de adivinar.
 - El sentido se decide una sola vez, en `SETUP`; el nodo solo traduce `/camera/image` a votos.
 
 ## Antes de seguir
 
-- [ ] `python3 -m pytest course/tests/test_step_8.py -q` da `7 passed`.
+- [ ] `python -m pytest course/tests/test_step_8.py -q` da `7 passed`.
 - [ ] Hiciste una ronda `ccw` y otra `cw` en Gazebo y las dos dan 30 de 30.
 - [ ] Sabes por qué con `CONFIRMATIONS = 1` el coche decide antes pero es más frágil.
-- [ ] Sabes que el lab no prueba la cámara y Gazebo sí.
-
-## Compara
-
-```bash
-bash tools/compare-step.sh 7 8     # qué añade la referencia
-bash tools/compare-step.sh 8       # tu árbol contra el paso 8
-```

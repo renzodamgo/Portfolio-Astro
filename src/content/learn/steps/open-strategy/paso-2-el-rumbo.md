@@ -67,29 +67,24 @@ Hay un detalle con los ángulos. 3 rad y -3 rad parecen estar a 6 rad de distanc
 
 ## Escríbelo
 
-Dos archivos en `src/my_open/my_open/`:
+> **En este paso**
+> - Escribes: un archivo, `heading.py`, con 3 funciones pequeñas.
+> - Copias hecho: `drive.py`, el nodo que habla con ROS; no hace falta entenderlo todavía.
 
-- **`heading.py`** (nuevo): es el ejercicio. Importa `STEER_LIMIT`, `clamp` y `wrap` de `robotek_course.minisim`.
-- **`drive.py`**: reemplázalo por el de abajo (el nodo, completo).
+### Antes de empezar
 
-**Pistas, por partes.**
+Copia el nodo ya hecho desde la referencia. Ejecuta esta línea desde la raíz del repositorio (los tags existen después de `git fetch --tags`):
 
-1. **`GyroHeading.__init__`.** Dos números: `bias = 0.0` y `yaw = 0.0`.
-2. **`calibrate(samples)`.** El sesgo es el promedio de las lecturas: `sum(samples) / len(samples)`.
-3. **`update(gyro, dt)`.** Suma `(gyro - self.bias) * dt` a `self.yaw` y devuelve `self.yaw`.
-4. **`heading_steer(goal, yaw)`.** `KP * wrap(goal - yaw)`, recortado entre `-STEER_LIMIT` y `STEER_LIMIT` con `clamp`.
+```bash
+git fetch --tags && git show step-2:src/my_open/my_open/drive.py > src/my_open/my_open/drive.py
+```
 
-Antes de abrir la referencia, ejecuta las pruebas y mira cuáles pasan (`python3 -m pytest course/tests/test_step_2.py -q`).
-
-<details>
-<summary>Ver la referencia de heading.py</summary>
+Ahora crea `src/my_open/my_open/heading.py` con este arranque. `GyroHeading` es una libreta con dos números en cero: el sesgo (`bias`) y el rumbo (`yaw`). Las líneas con `...` son huecos que rellenas abajo. Las ayudas `STEER_LIMIT`, `clamp` y `wrap` ya vienen hechas.
 
 ```python
 """Step 2 - The heading: integrate the gyroscope and steer back to a goal heading."""
 
 from robotek_course.minisim import STEER_LIMIT, clamp, wrap
-
-KP = 0.8     # steering (rad) per radian of heading error
 
 
 class GyroHeading:
@@ -99,16 +94,119 @@ class GyroHeading:
         self.bias = 0.0      # the gyroscope's constant error (rad/s), measured while the car is still
         self.yaw = 0.0       # rad, zero at Start
 
+    def calibrate(self, samples): ...
+
+    def update(self, gyro, dt): ...
+
+
+def heading_steer(goal, yaw): ...
+```
+
+### Paso 2.1: medir el sesgo
+
+Primero, que la libreta mida el sesgo del giroscopio. Es como una báscula que marca 2 kg de más con nada encima: la miras vacía y luego restas esos 2 kg. Aquí «vacía» es el coche quieto. Sustituye la línea `def calibrate...: ...` por este esqueleto (con la sangría de dentro de la clase):
+
+```python
+    def calibrate(self, samples):
+        """``samples``: gyroscope readings taken with the car standing still. Their mean is the bias."""
+        pass  # TODO
+```
+
+**Pista.** `samples` es una lista de lecturas con el coche quieto. El sesgo es su promedio: súmalas con `sum`, divide entre cuántas son (`len`) y guarda el resultado en `self.bias`.
+
+**Compruébalo** (debes ver `1 passed`; en macOS con RoboStack pon `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` delante):
+
+```bash
+python -m pytest course/tests/test_step_2.py -q -k calibration_measures
+```
+
+<details><summary>Ver la solución de este paso</summary>
+
+```python
     def calibrate(self, samples):
         """``samples``: gyroscope readings taken with the car standing still. Their mean is the bias."""
         self.bias = sum(samples) / len(samples)
+```
 
+</details>
+
+### Paso 2.2: sumar el giro
+
+Ahora, que la libreta sume cuánto ha girado el coche. Es el cuentakilómetros del giro: en cada instante suma lo que gira por segundo (`gyro`) por el tiempo que pasa (`dt`). Sustituye la línea `def update...: ...` por este esqueleto (con la misma sangría):
+
+```python
+    def update(self, gyro, dt):
+        """Add the rotation of this tick (the reading without the bias) to the heading; returns the heading."""
+        return self.yaw  # TODO
+```
+
+**Pista.** A la lectura `gyro` réstale el sesgo, multiplica por `dt` y súmalo a `self.yaw`. Después devuelve `self.yaw`.
+
+**Compruébalo** (debes ver `1 passed`):
+
+```bash
+python -m pytest course/tests/test_step_2.py -q -k integral
+```
+
+<details><summary>Ver la solución de este paso</summary>
+
+```python
     def update(self, gyro, dt):
         """Add the rotation of this tick (the reading without the bias) to the heading; returns the heading."""
         self.yaw += (gyro - self.bias) * dt
         return self.yaw
+```
+
+</details>
+
+### Paso 2.3: el volante, proporcional al error
+
+Ahora, la función que decide cuánto girar el volante. Cuanto más desviado estás del rumbo que quieres, más lo giras: igual que con el manillar de una bici. La constante `KP = 0,8` dice cuántos radianes de volante das por cada radián de error. Sustituye la línea `def heading_steer...: ...` por este esqueleto:
+
+```python
+KP = 0.8     # steering (rad) per radian of heading error
 
 
+def heading_steer(goal, yaw):
+    """Steering angle that brings the heading ``yaw`` towards ``goal``: proportional to the error, within full lock."""
+    return 0.0  # TODO
+```
+
+**Pista.** El error es la meta menos el rumbo (`goal - yaw`). Multiplícalo por `KP`. Los límites vienen en el paso siguiente, así que la solución de abajo es a medias.
+
+**Compruébalo** (debes ver `1 passed`):
+
+```bash
+python -m pytest course/tests/test_step_2.py -q -k points_towards
+```
+
+<details><summary>Ver la solución de este paso</summary>
+
+```python
+    return KP * (goal - yaw)
+```
+
+</details>
+
+### Paso 2.4: que la orden sea posible
+
+Por último, que la orden sea posible. Camino corto: 3 rad y -3 rad están a solo 0,28 rad si cruzas ±π, y `wrap` lleva el error a ese intervalo. Tope: el volante no pasa de 17,6° (`STEER_LIMIT`), y `clamp(valor, mínimo, máximo)` corta el valor a ese rango. Cambia la última línea de `heading_steer` por este esqueleto, y rellena el hueco `...`:
+
+```python
+    return clamp(..., -STEER_LIMIT, STEER_LIMIT)  # TODO
+```
+
+**Pista.** En el hueco va el error de antes multiplicado por `KP`, pero con el error pasado por `wrap` primero.
+
+**Compruébalo** (debes ver `1 passed`):
+
+```bash
+python -m pytest course/tests/test_step_2.py -q -k short_way
+```
+
+<details><summary>Ver la solución de este paso</summary>
+
+```python
 def heading_steer(goal, yaw):
     """Steering angle that brings the heading ``yaw`` towards ``goal``: proportional to the error, within full lock."""
     return clamp(KP * wrap(goal - yaw), -STEER_LIMIT, STEER_LIMIT)
@@ -116,145 +214,34 @@ def heading_steer(goal, yaw):
 
 </details>
 
-<details>
-<summary>Ver la referencia de drive.py (versión de este paso)</summary>
+## Pruébalo en el simulador
 
-El nodo escucha el IMU (el sensor de movimiento del coche, que publica el giroscopio en `/imu`) y Start. Tiene tres fases:
-
-```text
-antes de Start: quieto  ->  tras Start, 0,6 s quieto guardando lecturas  ->  calibra una vez y conduce
-```
-
-En cada tick de conducción integra el giroscopio y manda `SPEED` con el volante que pide `heading_steer(0.0, yaw)`. El parámetro `calibrate` (por defecto `True`) permite saltarse la calibración para ver la deriva.
-
-```python
-"""Step 2: stand still to measure the gyroscope bias, then drive straight holding heading 0."""
-import math
-
-from geometry_msgs.msg import Twist
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
-from sensor_msgs.msg import Imu
-from std_msgs.msg import Bool
-
-from robotek_common.vehicle import WHEELBASE
-
-from .heading import GyroHeading, heading_steer
-
-CONTROL_RATE = 50.0       # Hz, on the simulation clock
-SPEED = 0.6               # m/s commanded
-CALIBRATE_SECONDS = 0.6   # standing still after Start, measuring the gyroscope bias
-
-
-class Drive(Node):
-    def __init__(self):
-        super().__init__('strategy')
-        self.calibrate = self.declare_parameter('calibrate', True).value    # False: see the drift
-        self.heading = GyroHeading()
-        self.gyro = 0.0                      # the latest reading of the gyroscope, rad/s
-        self.samples = []                    # readings taken while standing still
-        self.time = None                     # seconds since Start (None before Start)
-        self.cmd = self.create_publisher(Twist, '/cmd_vel_raw', 10)
-        self.create_subscription(Imu, '/imu', self.on_imu, qos_profile_sensor_data)
-        self.create_subscription(Bool, 'start', self.on_start, 10)   # plain QoS: works with the referee and with the car's button
-        self.create_timer(1.0 / CONTROL_RATE, self.control)
-
-    def on_imu(self, msg):
-        self.gyro = msg.angular_velocity.z
-
-    def on_start(self, msg):
-        if msg.data and self.time is None:
-            self.get_logger().info('Start: quieto %.1f s para medir el sesgo del giroscopio' % CALIBRATE_SECONDS)
-            self.time = 0.0
-
-    def control(self):
-        dt = 1.0 / CONTROL_RATE
-        speed, steer = 0.0, 0.0
-        if self.time is not None:
-            self.time += dt
-            if self.time < CALIBRATE_SECONDS:
-                self.samples.append(self.gyro)
-            else:
-                if self.samples:
-                    if self.calibrate:
-                        self.heading.calibrate(self.samples)
-                    self.get_logger().info('Sesgo del giroscopio: %.4f rad/s' % self.heading.bias)
-                    self.samples = []
-                yaw = self.heading.update(self.gyro, dt)
-                speed, steer = SPEED, heading_steer(0.0, yaw)
-        cmd = Twist()
-        cmd.linear.x = float(speed)
-        cmd.angular.z = float(speed * math.tan(steer) / WHEELBASE)
-        self.cmd.publish(cmd)
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = Drive()
-    try:
-        rclpy.spin(node)
-    except (KeyboardInterrupt, RuntimeError):
-        pass
-    finally:
-        if rclpy.ok():
-            node.cmd.publish(Twist())       # leave the car stopped
-        rclpy.try_shutdown()
-```
-
-Los tópicos y el nodo son los del paso 1. El bucle de control va a 50 Hz con el reloj de simulación (`use_sim_time`), y por eso `dt` es fijo, `1/50`. La estrategia final espera solo 0,3 s en el paso 7; aquí son 0,6 s para tener unas 30 lecturas (el nodo guarda 29: el último tick cae justo en 0,6 s y ya no cuenta).
-
-</details>
-
-## Pruébalo
-
-Primero las pruebas, sin ROS ni Gazebo:
+Primero las siete pruebas juntas, sin ROS ni Gazebo (debes ver `7 passed`):
 
 ```bash
-python3 -m pytest course/tests/test_step_2.py -q
+python -m pytest course/tests/test_step_2.py -q
 ```
 
-En macOS con RoboStack pon `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` delante. Debes ver `7 passed`. Las siete pruebas comprueban que:
-
-- la calibración mide el sesgo;
-- el rumbo es la integral del giroscopio sin el sesgo;
-- sin calibrar, el sesgo se convierte en deriva (0,06 rad en 10 s quieto);
-- el volante apunta a la meta con `KP = 0,8`;
-- nunca pasa del tope y toma el camino corto al cruzar ±π;
-- el coche vuelve al rumbo de la meta;
-- la calibración es lo que lo mantiene recto en el mini simulador, con el servo y el giroscopio reales: sin calibrar termina a unos 3,3° del rumbo, calibrado a 0,1°.
-
-Después, compila y comprueba el paso en Gazebo, sin ventana y con el campo vacío:
+Después compila y comprueba el paso en Gazebo, sin ventana y con un campo vacío. En macOS, antes haz `source tools/macos_env.sh ~/robotek-ros/jazzy`.
 
 ```bash
-colcon build --symlink-install --packages-select my_open
-source install/setup.bash        # en macOS: source tools/macos_env.sh ~/robotek-ros/jazzy
+colcon build --symlink-install --packages-select my_open && source install/setup.bash
 python3 course/verify_step.py 2 --compare
 ```
 
-`--compare` corre el paso dos veces: con calibración (esa decide PASS o FAIL: el error de rumbo debe ser menor que 0,03 rad) y con `calibrate:=false` (solo informa la deriva). Los números de la referencia, con el rumbo **real** del coche al final de los 10 s:
+La compilación debe terminar sin errores. `--compare` corre el paso dos veces: con calibración (esa decide `PASS` o `FAIL`: el error de rumbo real debe ser menor que 0,03 rad) y con `calibrate:=false` (solo informa la deriva). En la referencia, el error del rumbo **real** al final de los 10 s fue de menos de 0,005 rad (0,3°) con calibración, y de 0,053 a 0,060 rad (3,0° a 3,4°) sin calibrar. El valor calibrado cambia de una ejecución a otra porque el ruido del giroscopio no se repite.
 
-| Caso | Error de rumbo real |
-|---|---:|
-| con calibración | menos de 0,005 rad (0,3°) |
-| sin calibrar (`calibrate:=false`) | 0,053 a 0,060 rad (3,0° a 3,4°) |
-
-Con calibración, el valor exacto cambia de una ejecución a otra porque el ruido del giroscopio no se repite (en cuatro ejecuciones: −0,0021, −0,0012, 0,0000 y +0,0045 rad). El signo de la deriva depende del signo del sesgo; lo que importa es su tamaño.
-
-Cuando termines, compara con la referencia con la caja «Los cambios de este paso», al final de la página. Lo que importa comparar es `heading.py`; en `drive.py` es normal ver diferencias de formato, pero lo esencial es que el coche espere, calibre una sola vez y luego integre en cada tick.
+Cuando termines, compara tu `heading.py` con la referencia en la caja «Los cambios de este paso» (el `drive.py` es idéntico: lo copiaste).
 
 ### Rómpelo
 
-1. **Pocas muestras.** En `course/tests/helpers.py`, dentro de `drive_straight`, cambia `resting_gyro(30)` por `resting_gyro(1)` y ejecuta `test_calibration_is_what_keeps_the_car_straight`. Con una sola lectura el error calibrado sube de 0,1° a 1,0° y la prueba **falla** (su límite es 0,01 rad, unos 0,57°). Con 3 lecturas pasa, pero el error medio con 8 semillas es de **0,46°** (máximo 0,91°) en lugar de **0,10°** (máximo 0,25°). Sigue siendo mucho mejor que sin calibrar (3,3°), pero 5 veces peor. ¿Por qué sale mejor cuantas más muestras? El ruido del giroscopio también entra en el promedio, y un promedio de más lecturas lo reduce. Deshaz el cambio al terminar.
-2. **Sin `wrap`.** Quita `wrap` de `heading_steer` y corre `test_steering_never_exceeds_full_lock_and_takes_the_short_way_round`. Debe fallar en la última línea: con la meta en 3 rad y el coche en −3, sin `wrap` el volante gira al tope hacia la izquierda (el camino largo) en lugar de a la derecha. Es lo que viste en la figura de arriba.
+1. **Sin `wrap`.** Quita `wrap` de `heading_steer` y corre `test_steering_never_exceeds_full_lock_and_takes_the_short_way_round`. Falla en la última línea: con la meta en 3 rad y el coche en -3, el volante gira al tope a la izquierda (el camino largo), como viste en la figura.
 
 ## Si algo falla
 
-- **El coche no se mueve nunca.** No le llegó Start. Revisa que el nodo se llame `strategy`, que `on_start` esté suscrito al tópico `start` y que en `drive.log` aparezca `Start: quieto 0.6 s...`.
-- **Con calibración el error es grande (más de 0,03 rad).** Mira que `calibrate` use el promedio de las lecturas y que `update` **reste** el sesgo. También que el nodo guarde lecturas del IMU (`on_imu`) antes de calibrar: sin muestras no hay sesgo.
-- **El coche gira en círculos en vez de ir recto.** Casi siempre es el signo: `heading_steer(goal, yaw)` debe ser `goal - yaw`, no al revés.
-- **El registro dice `Sesgo del giroscopio: 0.0000`.** No llegan lecturas del IMU (o corriste con `calibrate:=false`). Revisa la suscripción a `/imu`.
-- **`ya hay un gz sim en marcha`.** Cierra el otro simulador, o usa `--wait`.
+- **El coche no se mueve nunca.** No le llegó Start. Busca `Start: quieto 0.6 s...` en `drive.log`.
+- **Con calibración el error es grande (más de 0,03 rad), o el registro dice `Sesgo del giroscopio: 0.0000`.** Revisa que `calibrate` use el promedio de las lecturas y que `update` **reste** el sesgo. Si el sesgo sale 0, no llegan lecturas del IMU: revisa la suscripción a `/imu`.
+- **El coche gira en círculos en vez de ir recto.** Casi siempre es el signo: el error es `goal - yaw`.
 
 ## Resumen
 
@@ -267,3 +254,13 @@ Cuando termines, compara con la referencia con la caja «Los cambios de este pas
 - [ ] `pytest` marca `7 passed`.
 - [ ] `verify_step.py 2 --compare` da PASS con calibración y una deriva cercana a 0,06 rad sin ella.
 - [ ] Puedes explicar por qué el coche sin calibrar «cree» ir recto.
+
+<details><summary>Para curiosos: cómo funciona drive.py</summary>
+
+`drive.py` es el nodo de ROS que usa tu `heading.py`. No lo has escrito, pero esto es lo que hace:
+
+- Escucha el IMU (el sensor de movimiento del coche, que publica el giroscopio en `/imu`) y Start. Tiene tres fases: antes de Start está quieto; tras Start espera 0,6 s quieto guardando lecturas; después calibra una vez y conduce.
+- En cada tick llama a `update` con el giroscopio y manda `SPEED` con el volante que pide `heading_steer(0.0, yaw)`. El parámetro `calibrate` (por defecto `True`) permite saltarse la calibración para ver la deriva.
+- El bucle va a 50 Hz con el reloj de simulación, así que `dt` es fijo, `1/50`. La estrategia final espera solo 0,3 s en el paso 7; aquí son 0,6 s para tener unas 30 lecturas (el nodo guarda 29: el último tick cae justo en 0,6 s y ya no cuenta).
+
+</details>

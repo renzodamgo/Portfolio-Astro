@@ -1296,3 +1296,19 @@ html[data-theme="light"] .lw-replay-legend .lw-swatch {
     margin-top: 0.6rem;
     font-size: 0.78rem;
 }
+
+/* ---- wide layout (full-width /learn): the stages use the column, never taller than 70% of the screen ---- */
+.lw-replay-stage {
+    max-height: 70vh;
+}
+.lw-square {
+    max-width: min(100%, 30rem, 70vh);
+}
+@media (min-width: 1024px) {
+    .lw-square {
+        max-width: min(100%, 36rem, 70vh);
+    }
+}
+.lw-imu-svg {
+    max-width: min(100%, 48rem);
+}
