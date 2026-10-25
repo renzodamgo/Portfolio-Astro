@@ -1,0 +1,139 @@
+---
+import { getEntry } from "astro:content";
+import LearnLayout from "../../../layouts/LearnLayout.astro";
+import { SITE, getGuideSteps, guideBase, stepLabel, stepUrl } from "../../../lib/learn";
+
+const GUIDE = "obstacle-strategy";
+const GUIDE_BASE = guideBase(GUIDE);
+const guide = await getEntry("guides", GUIDE);
+if (!guide) throw new Error(`Missing guide "${GUIDE}"`);
+const steps = await getGuideSteps(GUIDE);
+
+const canonical = `${SITE}${GUIDE_BASE}`;
+const title = `${guide.data.title} | Learn | Renzo Damian`;
+const description = guide.data.summary;
+const hours = Math.round(guide.data.minutes / 60);
+
+const jsonld = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "@id": `${canonical}#course`,
+    url: canonical,
+    name: guide.data.title,
+    description,
+    inLanguage: "es",
+    educationalLevel: guide.data.level,
+    timeRequired: `PT${guide.data.minutes}M`,
+    provider: { "@type": "Person", name: "Renzo Damian", url: `${SITE}/` },
+    hasPart: steps.map((step) => ({
+        "@type": "LearningResource",
+        name: step.data.title,
+        url: `${SITE}${stepUrl(step)}`,
+    })),
+};
+---
+
+<LearnLayout
+    title={title}
+    description={description}
+    canonical={canonical}
+    jsonld={jsonld}
+>
+    <nav aria-label="Ruta" class="mb-6 text-sm text-white/70">
+        <a class="hover:text-amber-300" href="/learn/">Learn</a>
+        <span aria-hidden="true"> / </span>
+        <span>Estrategia del Obstacle</span>
+    </nav>
+
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
+        <div class="min-w-0">
+            <header>
+                <h1 class="text-4xl font-semibold">{guide.data.title}</h1>
+                <p class="mt-4 text-lg text-white/80">{guide.data.summary}</p>
+                <p class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/70">
+                    <span>Nivel: {guide.data.level}</span>
+                    <span>Unas {hours} horas</span>
+                    <span>{steps.length} pasos</span>
+                </p>
+            </header>
+
+            <div class="prose-learn mt-8">
+                <h2>Qué vas a construir</h2>
+                <p>
+                    Un programa que conduce el mismo coche del Open por el campo
+                    del reto Obstacle: tres vueltas pasando cada señal roja por la
+                    derecha y cada verde por la izquierda, sin tocarlas, y después
+                    un aparcamiento en paralelo en un hueco de 35 × 20 cm. Solo con
+                    lo que tiene el coche real: LiDAR, giroscopio y cámara, con
+                    ruido y con los retrasos medidos del servo y del motor.
+                </p>
+                <p>
+                    Cada paso aporta una pieza con números medidos, ejercicios con
+                    pruebas automáticas y una solución de referencia que puedes
+                    comparar con la tuya.
+                </p>
+
+                <h2>Antes de empezar</h2>
+                <ul>
+                    <li>
+                        Haz antes la
+                        <a href="/learn/open-strategy/">guía del Open</a>: aquí se
+                        dan por sabidos ROS 2, el modelo del coche, el giroscopio y
+                        el LiDAR.
+                    </li>
+                    <li>Python con NumPy: arreglos, funciones y clases.</li>
+                    <li>El mismo entorno del Open (Ubuntu, WSL2 o macOS con RoboStack).</li>
+                </ul>
+
+                <h2>Qué tan buena es la solución</h2>
+                <p>
+                    Esta guía enseña la estrategia v2 del equipo tal como está hoy,
+                    no una versión terminada. En el laboratorio da tres vueltas
+                    válidas en 88 de 100 campos y aparca con 55 puntos en 11 de 20
+                    rondas; en Gazebo ya hizo 40 puntos en 115,6 s, pero el
+                    aparcamiento todavía no termina dentro de los 3 minutos. El
+                    paso 9 cuenta qué falla y por qué. La guía se irá actualizando
+                    con cada mejora.
+                </p>
+
+                <h2>Código y herramientas</h2>
+                <p>
+                    El código vive en
+                    <a
+                        href={guide.data.repo}
+                        target="_blank"
+                        rel="noopener noreferrer">{guide.data.repo.replace("https://", "")}</a
+                    >. La rama <code>solutions-obstacle</code> tiene una etiqueta por
+                    paso (<code>obstacle-step-1</code>, <code>obstacle-step-2</code>…)
+                    para que veas en un diff qué cambia de un paso al siguiente.
+                </p>
+            </div>
+        </div>
+
+        <section aria-labelledby="los-pasos" class="min-w-0">
+            <h2 id="los-pasos" class="text-2xl font-semibold">Los pasos</h2>
+            <ol class="mt-4 grid gap-3 sm:grid-cols-2">
+                {
+                    steps.map((step) => (
+                        <li>
+                            <a
+                                href={stepUrl(step)}
+                                class="group learn-card learn-step-card"
+                            >
+                                <span class="block text-xs font-medium tracking-wide text-amber-400 uppercase">
+                                    {stepLabel(step)}
+                                </span>
+                                <span class="mt-1 block font-medium group-hover:text-amber-300">
+                                    {step.data.title}
+                                </span>
+                                <span class="mt-1 block text-sm text-white/70">
+                                    {step.data.summary}
+                                </span>
+                            </a>
+                        </li>
+                    ))
+                }
+            </ol>
+        </section>
+    </div>
+</LearnLayout>

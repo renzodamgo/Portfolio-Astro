@@ -1,0 +1,303 @@
+---
+/** The page of one chapter of a guide: sidebar, content, the diff of the step, previous / next. */
+import { render } from "astro:content";
+import LearnLayout from "../../layouts/LearnLayout.astro";
+import GuideSteps from "./GuideSteps.astro";
+import {
+    REPO,
+    SITE,
+    guideBase,
+    guideConfig,
+    stepLabel,
+    stepUrl,
+    type StepEntry,
+} from "../../lib/learn";
+
+interface Props {
+    entry: StepEntry;
+    steps: StepEntry[];
+    prev?: StepEntry;
+    next?: StepEntry;
+}
+
+const { entry, steps, prev, next } = Astro.props;
+const guide = guideConfig(entry.data.guide);
+const GUIDE_BASE = guideBase(guide.id);
+const LAST_STEP = guide.lastStep;
+const total = LAST_STEP;
+const { Content, headings } = await render(entry);
+const { title, summary, tag, compareFrom, order } = entry.data;
+
+const compareUrl = `${REPO}/compare/${compareFrom}...${tag}`;
+const diffCommand = guide.diffCommand(compareFrom, tag);
+const mineCommand = guide.mineCommand(tag);
+const showDiff = compareFrom !== tag;
+
+// "En esta página": the h2 and h3 of the chapter, plus the diff section the layout adds at the end.
+const toc = [
+    ...headings
+        .filter((h) => h.depth === 2 || h.depth === 3)
+        .map((h) => ({ depth: h.depth, slug: h.slug, text: h.text })),
+    ...(showDiff
+        ? [{ depth: 2, slug: "cambios", text: "Los cambios de este paso" }]
+        : []),
+];
+
+const canonical = `${SITE}${stepUrl(entry)}`;
+const pageTitle = `${stepLabel(entry)}: ${title} | ${guide.short} | Renzo Damian`;
+
+const jsonld = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": `${canonical}#article`,
+    mainEntityOfPage: canonical,
+    url: canonical,
+    headline: `${stepLabel(entry)}: ${title}`,
+    description: summary,
+    inLanguage: "es",
+    proficiencyLevel: "Intermediate",
+    author: { "@type": "Person", name: "Renzo Damian", url: `${SITE}/` },
+    publisher: { "@type": "Person", name: "Renzo Damian", url: `${SITE}/` },
+    isPartOf: {
+        "@type": "Course",
+        name: guide.course,
+        url: `${SITE}${GUIDE_BASE}`,
+    },
+    position: order,
+};
+---
+
+<LearnLayout
+    title={pageTitle}
+    description={summary}
+    canonical={canonical}
+    ogType="article"
+    jsonld={jsonld}
+    panel={false}
+    skipTo="paso-contenido"
+>
+  <div class="learn-doc">
+    <aside class="learn-doc-side">
+        <details class="learn-steps-mobile">
+            <summary>Todos los pasos</summary>
+            <nav aria-label="Todos los pasos de la guía">
+                <GuideSteps steps={steps} current={entry.data.slug} />
+            </nav>
+        </details>
+        <nav
+            class="learn-steps-desktop learn-panel"
+            aria-label="Todos los pasos de la guía"
+        >
+            <p class="learn-side-title">{guide.short}</p>
+            <GuideSteps steps={steps} current={entry.data.slug} />
+        </nav>
+    </aside>
+
+    <div
+        id="paso-contenido"
+        tabindex="-1"
+        class="learn-doc-main learn-panel p-4 md:p-8"
+    >
+    <nav aria-label="Ruta" class="mb-6 text-sm text-white/70">
+        <a class="hover:text-amber-300" href="/learn/">Learn</a>
+        <span aria-hidden="true"> / </span>
+        <a class="hover:text-amber-300" href={GUIDE_BASE}>{guide.short}</a>
+        <span aria-hidden="true"> / </span>
+        <span>{stepLabel(entry)}</span>
+    </nav>
+
+    <header>
+        <p class="flex flex-wrap items-center gap-3 text-sm">
+            <span class="font-medium tracking-wide text-amber-400 uppercase">
+                {stepLabel(entry)}{order > 0 && order <= LAST_STEP && ` de ${total}`}
+            </span>
+            <code
+                class="border border-white/15 bg-white/10 px-2 py-0.5 font-mono text-xs text-amber-300"
+                >{tag}</code
+            >
+        </p>
+        <h1 class="mt-2 text-3xl font-semibold md:text-4xl">{title}</h1>
+        <p class="mt-3 text-white/80">{summary}</p>
+    </header>
+
+    <article class="prose-learn mt-8">
+        <Content />
+    </article>
+
+    {
+        showDiff && (
+            <section
+                aria-labelledby="cambios"
+                class="mt-12 border border-white/15 bg-black/50 p-5"
+            >
+                <h2 id="cambios" class="text-lg font-semibold">
+                    Los cambios de este paso
+                </h2>
+                <p class="mt-2 text-sm text-white/80">
+                    Compara tu código con la solución: de{" "}
+                    <code class="text-amber-300">{compareFrom}</code> a{" "}
+                    <code class="text-amber-300">{tag}</code>.
+                </p>
+                <p class="mt-3">
+                    <a
+                        class="text-amber-300 underline underline-offset-4 hover:text-amber-400"
+                        href={compareUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Ver los cambios de este paso
+                    </a>
+                </p>
+                <p class="mt-3 text-sm text-white/80">
+                    O en tu terminal, dentro del repositorio. Lo que cambia la
+                    referencia en este paso:
+                </p>
+                <pre
+                    class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
+                    tabindex="0"
+                >
+                    <code>{diffCommand}</code>
+                </pre>
+                <p class="mt-3 text-sm text-white/80">
+                    Tu árbol contra la referencia de este paso:
+                </p>
+                <pre
+                    class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
+                    tabindex="0"
+                >
+                    <code>{mineCommand}</code>
+                </pre>
+            </section>
+        )
+    }
+
+    <nav
+        aria-label="Pasos"
+        class="mt-10 grid gap-4 border-t border-white/15 pt-6 sm:grid-cols-2"
+    >
+        {
+            prev ? (
+                <a
+                    href={stepUrl(prev)}
+                    rel="prev"
+                    class="group learn-card p-4"
+                >
+                    <span class="block text-xs text-white/70">Anterior</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        {stepLabel(prev)}: {prev.data.title}
+                    </span>
+                </a>
+            ) : (
+                <a
+                    href={GUIDE_BASE}
+                    class="group learn-card p-4"
+                >
+                    <span class="block text-xs text-white/70">Volver</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        Índice de la guía
+                    </span>
+                </a>
+            )
+        }
+        {
+            next ? (
+                <a
+                    href={stepUrl(next)}
+                    rel="next"
+                    class="group learn-card p-4 text-left sm:text-right"
+                >
+                    <span class="block text-xs text-white/70">Siguiente</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        {stepLabel(next)}: {next.data.title}
+                    </span>
+                </a>
+            ) : (
+                <a
+                    href="/learn/"
+                    class="group learn-card p-4 text-left sm:text-right"
+                >
+                    <span class="block text-xs text-white/70">Fin</span>
+                    <span class="block font-medium group-hover:text-amber-300">
+                        Más guías
+                    </span>
+                </a>
+            )
+        }
+    </nav>
+    </div>
+
+    {
+        toc.length > 1 && (
+            <aside class="learn-doc-toc">
+                <nav class="learn-toc learn-panel" aria-label="En esta página">
+                    <p class="learn-side-title">En esta página</p>
+                    <ol>
+                        {toc.map((h) => (
+                            <li class={h.depth === 3 ? "learn-toc-sub" : undefined}>
+                                <a href={`#${h.slug}`} data-toc-link>
+                                    {h.text}
+                                </a>
+                            </li>
+                        ))}
+                    </ol>
+                </nav>
+            </aside>
+        )
+    }
+  </div>
+</LearnLayout>
+
+<script>
+    // Mark the heading in view in the "En esta página" list: the last heading above 30% of the screen.
+    const links = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]"),
+    );
+    const byId = new Map<string, HTMLAnchorElement>();
+    for (const link of links) {
+        byId.set(decodeURIComponent(link.hash.slice(1)), link);
+    }
+    const headings = Array.from(byId.keys())
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el !== null);
+    const panel = document.querySelector<HTMLElement>(".learn-doc-toc");
+
+    if (headings.length > 0) {
+        let activeId = "";
+        let queued = false;
+        const mark = (id: string) => {
+            if (id === activeId) return;
+            activeId = id;
+            for (const [key, link] of byId) {
+                if (key === id) link.setAttribute("aria-current", "location");
+                else link.removeAttribute("aria-current");
+            }
+            const link = byId.get(id);
+            if (!link && panel) panel.scrollTop = 0;
+            if (panel && link && panel.scrollHeight > panel.clientHeight) {
+                const l = link.getBoundingClientRect();
+                const p = panel.getBoundingClientRect();
+                if (l.top < p.top + 40 || l.bottom > p.bottom - 40) {
+                    panel.scrollTop += l.top - p.top - p.height / 2;
+                }
+            }
+        };
+        const update = () => {
+            queued = false;
+            const limit = window.innerHeight * 0.3;
+            let current = "";
+            for (const h of headings) {
+                if (h.getBoundingClientRect().top <= limit) current = h.id;
+                else break;
+            }
+            mark(current);
+        };
+        const schedule = () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(update);
+        };
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule, { passive: true });
+        update();
+    }
+</script>

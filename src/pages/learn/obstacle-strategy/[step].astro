@@ -1,0 +1,21 @@
+---
+import GuideStepPage from "../../../components/learn/GuideStepPage.astro";
+import { getGuideSteps, type StepEntry } from "../../../lib/learn";
+
+export async function getStaticPaths() {
+    const steps = await getGuideSteps("obstacle-strategy");
+    return steps.map((entry, index) => ({
+        params: { step: entry.data.slug },
+        props: {
+            entry,
+            steps,
+            prev: steps[index - 1] as StepEntry | undefined,
+            next: steps[index + 1] as StepEntry | undefined,
+        },
+    }));
+}
+
+const { entry, steps, prev, next } = Astro.props;
+---
+
+<GuideStepPage entry={entry} steps={steps} prev={prev} next={next} />

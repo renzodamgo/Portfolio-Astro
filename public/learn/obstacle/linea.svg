@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 290" role="img" aria-label="La línea: un desplazamiento lateral por señal, sostenido alrededor de ella y con rampas entre señales" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13"><title>La línea: un desplazamiento lateral por señal, sostenido alrededor de ella y con rampas entre señales</title><rect width="640" height="290" fill="#0c0a07"/>
+<line x1="40.0" y1="25.0" x2="600.0" y2="25.0" stroke="#f5f5f4" stroke-width="3"/>
+<text x="44.0" y="39.0" fill="#f5f5f4" font-size="12">isla</text>
+<line x1="40.0" y1="245.0" x2="600.0" y2="245.0" stroke="#f5f5f4" stroke-width="3"/>
+<text x="44.0" y="239.0" fill="#f5f5f4" font-size="12">muro exterior</text>
+<line x1="40.0" y1="135" x2="600.0" y2="135" stroke="rgba(245,245,244,0.35)" stroke-dasharray="6 5"/>
+<rect x="173.0" y="106.0" width="14" height="14" fill="#ee2737"/>
+<rect x="453.0" y="150.0" width="14" height="14" fill="#44d62c"/>
+<polyline points="40.0,168.9 138.0,168.9 222.0,168.9 418.0,101.1 502.0,101.1 600.0,101.1" fill="none" stroke="#fbbf24" stroke-width="3"/>
+<text x="140.8" y="186.88" fill="#fbbf24" font-size="12">-0.154 m</text>
+<text x="420.8" y="93.12" fill="#fbbf24" font-size="12">+0.154 m</text>
+<text x="258.4" y="127" fill="#f5f5f4" font-size="12">rampa</text>
+<text x="40" y="280" fill="#f5f5f4" font-size="12">progreso → · sostenido ±0,15 junto a cada señal · 0,18 m de margen + 0,074 m de medio coche</text>
+</svg>
