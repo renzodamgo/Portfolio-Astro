@@ -56,6 +56,30 @@ export function createSideWatch(pillars: readonly Pillar[], direction: Direction
   };
 }
 
+/** Laps and signs counted in both directions at once: the race goes whichever way the driver goes (a student who
+ * turns the other way at the start still gets their laps). The direction with more section exits is the one driven. */
+export function createTracker(pillars: readonly Pillar[], preferred: Direction) {
+  const rounds: Record<Direction, Round> = { ccw: createRound('ccw'), cw: createRound('cw') };
+  const watches = { ccw: createSideWatch(pillars, 'ccw'), cw: createSideWatch(pillars, 'cw') };
+  const driven = (): Direction => {
+    const a = rounds.ccw.snapshot().sections, b = rounds.cw.snapshot().sections;
+    return a === b ? preferred : a > b ? 'ccw' : 'cw';
+  };
+  return {
+    /** Returns true when a sign was just passed on the wrong side (in the direction of that crossing). */
+    step(state: CarState): boolean {
+      rounds.ccw.step(state);
+      rounds.cw.step(state);
+      const a = watches.ccw.update(state.x, state.y), b = watches.cw.update(state.x, state.y);
+      return a || b;
+    },
+    get direction() { return driven(); },
+    snapshot() { return rounds[driven()].snapshot(); },
+    get wrong() { return watches[driven()].wrong; },
+  };
+}
+type Tracker = ReturnType<typeof createTracker>;
+
 export function rankingKey(field: string, direction: Direction) { return `robotek-race-v1-${field}-${direction}`; }
 export function loadRanking(field: string, direction: Direction): Entry[] {
   try {
@@ -136,8 +160,7 @@ export function startRace(host: RaceHost): () => void {
   // ---- the race ----
   type Phase = 'setup' | 'countdown' | 'racing' | 'done';
   let phase: Phase = 'setup';
-  let round: Round = createRound(direction);
-  let sides = createSideWatch(sim.pillars, direction);
+  let tracker: Tracker = createTracker(sim.pillars, direction);
   let goClock: number | null = null;
   let finishClock: number | null = null;
   let lastCrashes = 0;
@@ -163,8 +186,7 @@ export function startRace(host: RaceHost): () => void {
     set('driver', name);
     sim.setStartYaw(direction === 'cw' ? Math.PI : 0);
     sim.reset();
-    round = createRound(direction);
-    sides = createSideWatch(sim.pillars, direction);
+    tracker = createTracker(sim.pillars, direction);
     goClock = finishClock = null;
     lastCrashes = 0;
     setPhase('countdown');
@@ -192,9 +214,8 @@ export function startRace(host: RaceHost): () => void {
 
   function onStep(state: CarState) {
     if (phase !== 'racing') return;
-    round.step(state);
-    if (sides.update(state.x, state.y)) { announce('Señal mal pasada: +5 s'); flash('+5 s'); }
-    const s = round.snapshot();
+    if (tracker.step(state)) { announce('Señal mal pasada: +5 s'); flash('+5 s'); }
+    const s = tracker.snapshot();
     if (s.crashes !== lastCrashes) { lastCrashes = s.crashes; flash('+2 s'); }
     if (s.sections >= LAPS * SECTIONS_PER_LAP) {
       finishClock = state.clock;
@@ -219,8 +240,9 @@ export function startRace(host: RaceHost): () => void {
 
   function finish() {
     const time = elapsed();
-    const s = round.snapshot();
-    const wrong = sides.wrong;
+    const s = tracker.snapshot();
+    const wrong = tracker.wrong;
+    direction = tracker.direction; // the way the driver actually went
     const total = raceTotal(time, s.crashes, wrong);
     const entry: Entry = { name, total, time, crashes: s.crashes, wrong, look: { ...look }, at: Date.now() };
     const { list, place } = saveRanking(field, direction, entry);
@@ -273,12 +295,13 @@ export function startRace(host: RaceHost): () => void {
 
   // ---- live numbers ----
   const offTick = host.onTick(() => {
-    const s = round.snapshot();
+    const s = tracker.snapshot();
     const lap = Math.min(LAPS, Math.floor(s.sections / SECTIONS_PER_LAP) + 1);
     set('lap', phase === 'done' ? `${LAPS} de ${LAPS}` : `${lap} de ${LAPS}`);
     set('time', fmtSeconds(elapsed()));
     set('crashes', String(s.crashes));
-    set('wrong', String(sides.wrong));
+    set('wrong', String(tracker.wrong));
+    set('sections', `${Math.min(s.sections, LAPS * SECTIONS_PER_LAP)}/${LAPS * SECTIONS_PER_LAP}`);
   });
 
   setPhase('setup');
