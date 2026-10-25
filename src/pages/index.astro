@@ -3,7 +3,6 @@ import ExperienceItem from "../components/ExperienceItem.astro";
 import ProjectItem from "../components/ProjectItem.astro";
 import EducationItem from "../components/EducationItem.astro";
 import Layout from "../layouts/Layout.astro";
-import LiquidBackground from "../components/LiquidBackground.astro";
 import Renzo from "../assets/renzodamian-anatolianroverchallenge.webp";
 import { Github, Linkedin, FileText, Mail, MapPin } from "lucide-astro";
 
@@ -126,11 +125,9 @@ const socials = [
     </a>
 
     <main class="relative min-h-screen text-white">
-        <LiquidBackground />
         <div
-            class="pointer-events-none fixed inset-0 z-0"
+            class="page-veil pointer-events-none fixed inset-0 z-0"
             aria-hidden="true"
-            style="background: radial-gradient(70% 55% at 50% 38%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.72) 100%), rgba(0,0,0,0.18);"
         >
         </div>
         <div
@@ -257,6 +254,13 @@ const socials = [
                                 head, and I read a lot of science fiction.
                                 Asimov's stories are what first sparked my
                                 interest in AI and robotics.
+                            </p>
+                            <p>
+                                <a
+                                    href="/learn/"
+                                    class="underline transition-colors duration-200 hover:text-amber-300"
+                                    >Learn</a
+                                >: robotics guides I write, in Spanish.
                             </p>
                         </div>
                     </div>

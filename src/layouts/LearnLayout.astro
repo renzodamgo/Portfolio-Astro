@@ -1,0 +1,78 @@
+---
+import Layout from "./Layout.astro";
+import "../styles/learn.css";
+import "../styles/learn-widgets.css";
+
+interface Props {
+    title: string;
+    description: string;
+    canonical: string;
+    ogImage?: string;
+    ogType?: string;
+    jsonld: Record<string, unknown> | Record<string, unknown>[];
+    /** Width of the content column. */
+    width?: "narrow" | "wide";
+    /** Wrap the content in one glass panel (the cards of the homepage). */
+    panel?: boolean;
+}
+
+const { width = "narrow", panel = true, ...rest } = Astro.props;
+---
+
+<Layout lang="es" background={false} bodyClass="learn" {...rest}>
+    <a
+        href="#contenido"
+        class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-sm focus:bg-[var(--btn-primary-bg)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--btn-primary-fg)]"
+    >
+        Saltar al contenido
+    </a>
+    <main class="relative min-h-screen text-white">
+        <div
+            class:list={[
+                "relative z-10 mx-auto w-full px-6 py-8 md:py-10",
+                width === "wide" ? "max-w-[1200px]" : "max-w-4xl",
+            ]}
+        >
+            <nav
+                aria-label="Navegación principal"
+                class="mb-4 flex items-center justify-between gap-4 border border-white/15 bg-black/60 px-4 py-3 text-sm shadow-[0_8px_32px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl"
+            >
+                <a
+                    href="/"
+                    class="font-medium transition-colors duration-200 hover:text-amber-300"
+                    >Renzo Damian</a
+                >
+                <a
+                    href="/learn/"
+                    class="transition-colors duration-200 hover:text-amber-300"
+                    >Learn</a
+                >
+            </nav>
+            <div
+                id="contenido"
+                class:list={[
+                    panel &&
+                        "border border-white/15 bg-black/60 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl md:p-8",
+                ]}
+            >
+                <slot />
+            </div>
+            <footer
+                class="mt-4 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-white/70"
+            >
+                <span>Renzo Damian, Lima</span>
+                <a
+                    class="underline transition-colors duration-200 hover:text-amber-300"
+                    href="https://github.com/renzodamgo"
+                    target="_blank"
+                    rel="noopener noreferrer">GitHub</a
+                >
+            </footer>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    import "../scripts/learn/os-tabs";
+    import "../scripts/learn/widgets";
+</script>
