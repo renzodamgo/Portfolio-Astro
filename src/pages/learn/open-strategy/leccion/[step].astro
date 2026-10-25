@@ -1,0 +1,58 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import "../../../../styles/learn.css";
+import LessonApp from "../../../../components/learn/LessonApp.astro";
+import { LESSONS } from "../../../../scripts/learn/lesson/lessons";
+import { SITE, guideConfig } from "../../../../lib/learn";
+
+export function getStaticPaths() {
+    const lessons = LESSONS["open-strategy"];
+    return lessons.map((lesson, i) => ({
+        params: { step: String(lesson.step) },
+        props: {
+            step: lesson.step,
+            title: lesson.title,
+            summary: lesson.summary,
+            guideUrl: lesson.guideUrl,
+            prevUrl: i > 0 ? `/learn/open-strategy/leccion/${lessons[i - 1].step}/` : undefined,
+            nextUrl: i < lessons.length - 1 ? `/learn/open-strategy/leccion/${lessons[i + 1].step}/` : undefined,
+        },
+    }));
+}
+
+const { step, title, summary, guideUrl, prevUrl, nextUrl } = Astro.props;
+const guide = guideConfig("open-strategy");
+const canonical = `${SITE}/learn/open-strategy/leccion/${step}/`;
+const jsonld = {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: `Lección interactiva, paso ${step}: ${title}`,
+    description: summary,
+    url: canonical,
+    inLanguage: "es",
+    learningResourceType: "Interactive exercise",
+    isPartOf: { "@type": "Course", name: guide.course, url: `${SITE}/learn/open-strategy/` },
+};
+---
+
+<Layout
+    lang="es"
+    title={`Lección interactiva, paso ${step}: ${title} | ${guide.short} | Renzo Damian`}
+    description={`Programa el paso ${step} de la guía en el navegador: editor, terminal y el coche en 3D. ${summary}`}
+    canonical={canonical}
+    ogType="article"
+    jsonld={jsonld}
+    background={false}
+    bodyClass="learn"
+>
+    <LessonApp
+        guide="open-strategy"
+        step={step}
+        title={title}
+        summary={summary}
+        guideUrl={guideUrl}
+        guideName={guide.short}
+        prevUrl={prevUrl}
+        nextUrl={nextUrl}
+    />
+</Layout>

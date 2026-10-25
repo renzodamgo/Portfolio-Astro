@@ -4,6 +4,7 @@ import { render } from "astro:content";
 import LearnLayout from "../../layouts/LearnLayout.astro";
 import GuideSteps from "./GuideSteps.astro";
 import CarSim from "./CarSim.astro";
+import { findLesson } from "../../scripts/learn/lesson/lessons";
 import {
     REPO,
     SITE,
@@ -33,6 +34,9 @@ const compareUrl = `${REPO}/compare/${compareFrom}...${tag}`;
 const diffCommand = guide.diffCommand(compareFrom, tag);
 const mineCommand = guide.mineCommand(tag);
 const showDiff = compareFrom !== tag;
+// The interactive lesson of this step (editor, terminal and the 3D car), when there is one.
+const lesson = findLesson(guide.id, order);
+const lessonUrl = lesson ? `${GUIDE_BASE}leccion/${lesson.step}/` : null;
 
 // "En esta página": the h2 and h3 of the chapter, plus the diff section the layout adds at the end.
 const toc = [
@@ -119,6 +123,19 @@ const jsonld = {
         </p>
         <h1 class="mt-2 text-3xl font-semibold md:text-4xl">{title}</h1>
         <p class="mt-3 text-white/80">{summary}</p>
+        {
+            lessonUrl && lesson && (
+                <a class="learn-lesson-cta" href={lessonUrl}>
+                    <span class="learn-lesson-cta-icon" aria-hidden="true">▶</span>
+                    <span>
+                        <strong>Lección interactiva</strong>
+                        <span class="learn-lesson-cta-sub">
+                            Programa este paso en el navegador: editor, terminal y el coche en 3D ({lesson.tasks.length} tareas)
+                        </span>
+                    </span>
+                </a>
+            )
+        }
     </header>
 
     {

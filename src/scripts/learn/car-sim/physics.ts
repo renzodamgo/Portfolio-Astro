@@ -16,7 +16,7 @@ export interface Pose {
 export function createSim(opts: { pillars?: readonly Pillar[] } = {}) {
   /** Walls plus the traffic signs (Obstacle race): the same boxes for collisions and for the LiDAR. */
   const pillars = opts.pillars ?? [];
-  const walls: readonly Wall[] = [...WALLS, ...pillars.map((p) => [p.x, p.y, PILLAR_SIZE, PILLAR_SIZE] as const)];
+  let walls: readonly Wall[] = [...WALLS, ...pillars.map((p) => [p.x, p.y, PILLAR_SIZE, PILLAR_SIZE] as const)];
   const state: CarState = {
     x: START.x, y: START.y, yaw: START.yaw, v: 0, steer: 0, wheelSpin: 0, contacts: 0, time: 0, moved: false, clock: 0,
   };
@@ -168,6 +168,9 @@ export function createSim(opts: { pillars?: readonly Pillar[] } = {}) {
       stepHook = hooks.step ?? null;
       resetHook = hooks.reset ?? null;
     },
+    /** Replace every box the car and the LiDAR see (the interactive lessons: their own walls and rocks). */
+    setWalls(list: readonly Wall[]) { walls = list; lastHit = { index: -1, at: -1e9 }; scan(); },
+    get walls() { return walls; },
     toggleSteerLimit() { steerLimit = steerLimit === STEER_LIMITS.real ? STEER_LIMITS.rule : STEER_LIMITS.real; },
     get steerLimit() { return steerLimit; },
     get lastHit() { return lastHit; },

@@ -15,13 +15,16 @@ interface Props {
     /** Race mode (step 0 of the guides): driver and car colour, countdown, 3 laps against the clock, local ranking.
      * "obstacle" adds the traffic signs of the Obstacle guide (layout 4). See scripts/learn/car-sim/race.ts. */
     race?: "open" | "obstacle";
+    /** Interactive lesson: only the 3D view; the lesson page drives it (scripts/learn/lesson/sim.ts), no auto mount. */
+    lesson?: boolean;
 }
-const { compact = false, autostart = false, challenge = false, race } = Astro.props;
+const { compact = false, autostart = false, challenge = false, race, lesson = false } = Astro.props;
 ---
 
 <div
     class="car-sim"
-    data-car-sim
+    data-car-sim={lesson ? undefined : ""}
+    data-lesson-sim={lesson ? "" : undefined}
     data-compact={compact ? "true" : "false"}
     data-autostart={autostart ? "true" : "false"}
     data-challenge={challenge ? "true" : "false"}

@@ -1,0 +1,507 @@
+---
+/**
+ * Interactive lesson of one guide step: instructions (right), code editor and terminal (left) and the 3D car on top
+ * when the task drives it. The logic is in scripts/learn/lesson/app.ts; the lessons in scripts/learn/lesson/lessons/.
+ */
+import CarSim from "./CarSim.astro";
+
+interface Props {
+    guide: string;
+    step: number;
+    title: string;
+    summary: string;
+    guideUrl: string;
+    guideName: string;
+    prevUrl?: string;
+    nextUrl?: string;
+}
+const { guide, step, title, summary, guideUrl, guideName, prevUrl, nextUrl } = Astro.props;
+---
+
+<div class="lsn" data-lesson data-guide={guide} data-step={step} data-sim="false">
+    <header class="lsn-head">
+        <a class="lsn-back" href={guideUrl}>← Volver al paso {step}</a>
+        <div class="lsn-titles">
+            <p class="lsn-kicker">{guideName} · Lección interactiva</p>
+            <h1 class="lsn-title">Paso {step}: {title}</h1>
+        </div>
+        <div class="lsn-progress" aria-label="Progreso">
+            <span data-l="progress-text">0 de 0</span>
+            <div class="lsn-progress-track"><div class="lsn-progress-bar" data-l="progress-bar"></div></div>
+        </div>
+    </header>
+
+    <div class="lsn-main">
+        <section class="lsn-work" aria-label="Espacio de trabajo">
+            <div class="lsn-sim" data-l="sim" hidden>
+                <CarSim lesson autostart />
+                <div class="lsn-simbar">
+                    <span class="lsn-simstatus" data-l="sim-status">El coche espera en la salida.</span>
+                    <button type="button" class="lsn-mini" data-l="view">Cambiar vista</button>
+                </div>
+                <p class="lsn-banner" data-l="banner" hidden></p>
+            </div>
+            <div class="lsn-code">
+                <div class="lsn-editor-panel" data-l="editor-panel">
+                    <div class="lsn-panel-head">
+                        <span>Editor · ~/robotek-learn/src/my_open/my_open/</span>
+                        <button type="button" class="lsn-mini" data-l="reset-file" title="Volver el archivo a como empezaba">Reiniciar archivo</button>
+                    </div>
+                    <div class="lsn-editor" data-l="editor"></div>
+                    <p class="lsn-editor-empty" data-l="editor-empty" hidden>
+                        Todavía no hay paquete. Cuando lo crees con <code>ros2 pkg create</code>, su código aparecerá aquí.
+                    </p>
+                </div>
+                <div class="lsn-term-panel">
+                    <div class="lsn-panel-head"><span>Terminal · Ubuntu 24.04 · ROS 2 Jazzy</span></div>
+                    <div class="lsn-term" data-l="terminal"></div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="lsn-side" aria-label="Instrucciones">
+            <p class="lsn-summary">{summary}</p>
+            <ol class="lsn-steps" data-l="tasks"></ol>
+            <article class="lsn-card" data-l="card" aria-live="polite">
+                <h2 class="lsn-task-title" data-l="task-title"></h2>
+                <div class="lsn-task-body" data-l="task-body"></div>
+                <div class="lsn-choice" data-l="choice" hidden></div>
+                <div class="lsn-actions" data-l="actions"></div>
+                <p class="lsn-feedback" data-l="feedback" hidden></p>
+                <div class="lsn-hint" data-l="hint" hidden></div>
+            </article>
+            <div class="lsn-finish" data-l="finish" hidden>
+                <h2>¡Lección completa!</h2>
+                <p>Escribiste el código de este paso y lo probaste en el coche. Lo mismo corre en Gazebo y en el coche real.</p>
+                <div class="lsn-finish-links">
+                    {nextUrl && <a class="lsn-btn lsn-primary" href={nextUrl}>Siguiente lección →</a>}
+                    <a class="lsn-btn" href={guideUrl}>Leer el paso en la guía</a>
+                </div>
+            </div>
+            <footer class="lsn-sidefoot">
+                {prevUrl && <a href={prevUrl}>← Lección anterior</a>}
+                <button type="button" class="lsn-mini" data-l="restart">Empezar de cero</button>
+            </footer>
+        </aside>
+    </div>
+</div>
+
+<script>
+    import { startLesson } from "../../scripts/learn/lesson/app";
+
+    const root = document.querySelector<HTMLElement>("[data-lesson]");
+    if (root) void startLesson(root);
+</script>
+
+<style>
+    .lsn {
+        --l-bg: var(--stage-bg, #0b0b0c);
+        --l-panel: rgb(255 255 255 / 0.04);
+        --l-line: rgb(255 255 255 / 0.14);
+        --l-text: #f2ede4;
+        --l-muted: #a99f8f;
+        --l-amber: #e8a33d;
+        --l-green: #3fbf5a;
+        --l-red: #e5484d;
+        --l-code-bg: #0e1116;
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        color: var(--l-text);
+        background: var(--l-bg);
+        font-size: 15px;
+    }
+    :global(html[data-theme="light"]) .lsn {
+        --l-panel: rgb(0 0 0 / 0.03);
+        --l-line: rgb(0 0 0 / 0.14);
+        --l-text: #1d2430;
+        --l-muted: #5d6573;
+        --l-bg: #ffffff;
+    }
+    .lsn-head {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--l-line);
+    }
+    .lsn-back {
+        font-size: 0.85rem;
+        color: var(--l-muted);
+        white-space: nowrap;
+    }
+    .lsn-back:hover { color: var(--l-amber); }
+    .lsn-titles { flex: 1; min-width: 0; }
+    .lsn-kicker {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--l-amber);
+    }
+    .lsn-title {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .lsn-progress {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--l-muted);
+    }
+    .lsn-progress-track {
+        width: 140px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--l-line);
+        overflow: hidden;
+    }
+    .lsn-progress-bar {
+        height: 100%;
+        width: 0;
+        background: var(--l-green);
+        transition: width 0.4s;
+    }
+
+    .lsn-main {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 380px;
+    }
+    .lsn-work {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--l-line);
+    }
+    .lsn-sim {
+        position: relative;
+        flex: 0 0 44%;
+        min-height: 220px;
+        border-bottom: 1px solid var(--l-line);
+        display: flex;
+        flex-direction: column;
+    }
+    .lsn-sim :global(.car-sim) { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .lsn-sim :global(.cs-viewport) {
+        flex: 1;
+        aspect-ratio: auto;
+        max-height: none;
+        min-height: 0;
+        border-radius: 0;
+        border: 0;
+    }
+    .lsn-sim :global(.cs-keys) { display: none; }
+    /* The "click to drive" chip only matters when the student drives (keyboard tasks). */
+    .lsn:not([data-keyboard="true"]) .lsn-sim :global(.cs-cover) { display: none; }
+    .lsn-simbar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0.7rem;
+        font: 0.78rem/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--l-muted);
+        border-top: 1px solid var(--l-line);
+    }
+    .lsn-simstatus { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .lsn-banner {
+        position: absolute;
+        left: 50%;
+        top: 0.8rem;
+        transform: translateX(-50%);
+        margin: 0;
+        max-width: 90%;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--l-red);
+        box-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
+        z-index: 5;
+    }
+    .lsn-banner[data-kind="ok"] { background: #238a3c; }
+
+    .lsn-code {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr);
+    }
+    .lsn[data-sim="false"] .lsn-code { grid-template-rows: minmax(0, 1.3fr) minmax(0, 1fr); }
+    .lsn-editor-panel, .lsn-term-panel {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .lsn-term-panel { border-top: 1px solid var(--l-line); }
+    .lsn-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.75rem;
+        color: var(--l-muted);
+        background: var(--l-panel);
+    }
+    .lsn-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .lsn-editor-empty { margin: 1rem; color: var(--l-muted); }
+    .lsn-term {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 0.5rem 0.7rem 0.8rem;
+        background: var(--l-code-bg);
+        color: #d8dee9;
+        font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        outline: none;
+    }
+
+    /* terminal (built by terminal.ts) */
+    .lsn-term :global(.lt-screen) { white-space: pre-wrap; word-break: break-word; }
+    .lsn-term :global(.lt-err) { color: #ff8b8b; }
+    .lsn-term :global(.lt-ok) { color: #7ee08f; }
+    .lsn-term :global(.lt-info) { color: #f2c46d; }
+    .lsn-term :global(.lt-dim) { color: #8792a2; }
+    .lsn-term :global(.lt-prompt) { color: #7ee08f; }
+    .lsn-term :global(.lt-cmd) { color: #ffffff; }
+    .lsn-term :global(.lt-inputline) { display: flex; align-items: baseline; white-space: pre; }
+    .lsn-term :global(.lt-input) {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: 0;
+        outline: none;
+        color: #ffffff;
+        font: inherit;
+        padding: 0;
+        caret-color: #7ee08f;
+    }
+
+    /* editor (built by editor.ts) */
+    .lsn-editor :global(.le-tabs) { display: flex; gap: 2px; overflow-x: auto; background: var(--l-panel); }
+    .lsn-editor :global(.le-tab) {
+        padding: 0.3rem 0.7rem;
+        font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--l-muted);
+        background: transparent;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .lsn-editor :global(.le-tab[aria-selected="true"]) { color: var(--l-text); border-bottom-color: var(--l-amber); }
+    .lsn-editor :global(.le-note) { margin: 0; padding: 0.25rem 0.7rem; font-size: 0.75rem; color: var(--l-muted); background: var(--l-panel); }
+    .lsn-editor :global(.le-body) {
+        --le-line: 20px;
+        --le-pad: 8px;
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        background: var(--l-code-bg);
+        font: 13px/20px ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .lsn-editor :global(.le-gutter) {
+        margin: 0;
+        padding: var(--le-pad) 0.5rem var(--le-pad) 0.7rem;
+        min-width: 3.2em;
+        text-align: right;
+        color: #556070;
+        overflow: hidden;
+        user-select: none;
+        font: inherit;
+    }
+    .lsn-editor :global(.le-stack) { position: relative; flex: 1; min-width: 0; }
+    .lsn-editor :global(.le-colour), .lsn-editor :global(.le-area) {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        padding: var(--le-pad) 0.7rem;
+        font: inherit;
+        white-space: pre;
+        overflow: auto;
+        tab-size: 4;
+        border: 0;
+    }
+    .lsn-editor :global(.le-colour) { color: #d8dee9; pointer-events: none; overflow: hidden; }
+    .lsn-editor :global(.le-area) {
+        color: transparent;
+        background: transparent;
+        caret-color: #ffffff;
+        resize: none;
+        outline: none;
+    }
+    .lsn-editor :global(.le-area::selection) { background: rgb(232 163 61 / 0.35); }
+    .lsn-editor :global(.le-errline) {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: var(--le-line);
+        background: rgb(229 72 77 / 0.22);
+        border-left: 3px solid var(--l-red);
+        pointer-events: none;
+    }
+    .lsn-editor :global(.tk-kw) { color: #c792ea; }
+    .lsn-editor :global(.tk-str) { color: #c3e88d; }
+    .lsn-editor :global(.tk-com) { color: #6b7686; font-style: italic; }
+    .lsn-editor :global(.tk-num) { color: #f78c6c; }
+    .lsn-editor :global(.tk-fn) { color: #82aaff; }
+    .lsn-editor :global(.tk-bi) { color: #ffcb6b; }
+    .lsn-editor :global(.tk-const) { color: #f2b95c; }
+
+    /* instructions */
+    .lsn-side {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 0.9rem 1rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    .lsn-summary { margin: 0; color: var(--l-muted); font-size: 0.88rem; }
+    .lsn-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    .lsn-steps :global(.lsn-step) {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.3rem 0.45rem;
+        text-align: left;
+        font-size: 0.85rem;
+        color: var(--l-text);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .lsn-steps :global(.lsn-step[aria-current="true"]) { border-color: var(--l-amber); background: var(--l-panel); }
+    .lsn-steps :global(.lsn-step:disabled) { opacity: 0.45; cursor: default; }
+    .lsn-steps :global(.lsn-dot) {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 1.45rem;
+        height: 1.45rem;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border: 1px solid var(--l-line);
+    }
+    .lsn-steps :global(.lsn-step[data-state="done"] .lsn-dot) { background: var(--l-green); border-color: var(--l-green); color: #fff; }
+    .lsn-steps :global(.lsn-step[data-state="open"] .lsn-dot) { border-color: var(--l-amber); color: var(--l-amber); }
+
+    .lsn-card {
+        padding: 0.9rem;
+        border: 1px solid var(--l-line);
+        border-radius: 10px;
+        background: var(--l-panel);
+    }
+    .lsn-task-title { margin: 0 0 0.5rem; font-size: 1.1rem; }
+    .lsn-task-body { line-height: 1.55; }
+    .lsn-task-body :global(p) { margin: 0 0 0.6rem; }
+    .lsn-task-body :global(ul) { margin: 0 0 0.6rem; padding-left: 1.2rem; list-style: disc; }
+    .lsn-task-body :global(code), .lsn-hint :global(code) {
+        font: 0.85em ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding: 0.05em 0.3em;
+        border-radius: 4px;
+        background: rgb(127 127 127 / 0.18);
+    }
+    .lsn-task-body :global(pre), .lsn-hint :global(pre) {
+        margin: 0 0 0.6rem;
+        padding: 0.55rem 0.7rem;
+        border-radius: 6px;
+        background: var(--l-code-bg);
+        color: #e6e1d6;
+        font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre-wrap;
+        user-select: all;
+    }
+    .lsn-task-body :global(kbd) {
+        font: 0.8em ui-monospace, monospace;
+        padding: 0.05em 0.35em;
+        border: 1px solid var(--l-line);
+        border-radius: 4px;
+    }
+    .lsn-question { font-weight: 600; margin: 0.4rem 0 0.5rem; }
+    .lsn-choice { display: flex; flex-direction: column; gap: 0.4rem; }
+    .lsn-choice :global(.lsn-option) { text-align: left; }
+    .lsn-choice :global(.lsn-option[data-state="right"]) { border-color: var(--l-green); background: rgb(63 191 90 / 0.18); }
+    .lsn-choice :global(.lsn-option[data-state="wrong"]) { border-color: var(--l-red); background: rgb(229 72 77 / 0.14); animation: lsn-shake 0.35s; }
+    @keyframes lsn-shake {
+        25% { transform: translateX(-4px); }
+        75% { transform: translateX(4px); }
+    }
+    .lsn-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.7rem; }
+    .lsn-tip { margin: 0; font-size: 0.82rem; color: var(--l-muted); }
+    .lsn :global(.lsn-btn) {
+        padding: 0.45rem 0.85rem;
+        border-radius: 7px;
+        border: 1px solid var(--l-line);
+        background: transparent;
+        color: var(--l-text);
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .lsn :global(.lsn-btn:hover) { border-color: var(--l-amber); }
+    .lsn :global(.lsn-primary) { background: var(--l-amber); border-color: var(--l-amber); color: #1b1408; font-weight: 600; }
+    .lsn :global(.lsn-next) { background: var(--l-green); border-color: var(--l-green); color: #fff; font-weight: 600; }
+    .lsn-mini {
+        padding: 0.15rem 0.5rem;
+        font-size: 0.72rem;
+        border-radius: 5px;
+        border: 1px solid var(--l-line);
+        background: transparent;
+        color: var(--l-muted);
+        cursor: pointer;
+    }
+    .lsn-mini:hover { color: var(--l-amber); border-color: var(--l-amber); }
+    .lsn-feedback {
+        margin: 0.7rem 0 0;
+        padding: 0.55rem 0.7rem;
+        border-radius: 7px;
+        font-size: 0.9rem;
+        border: 1px solid var(--l-line);
+    }
+    .lsn-feedback[data-kind="ok"] { border-color: var(--l-green); background: rgb(63 191 90 / 0.13); }
+    .lsn-feedback[data-kind="bad"] { border-color: var(--l-red); background: rgb(229 72 77 / 0.12); }
+    .lsn-feedback[data-kind="info"] { border-color: var(--l-amber); }
+    .lsn-hint { margin-top: 0.7rem; }
+    .lsn-hint :global(.lsn-hint-title) { margin: 0 0 0.3rem; font-weight: 600; color: var(--l-amber); font-size: 0.85rem; }
+    .lsn-finish {
+        padding: 0.9rem;
+        border: 1px solid var(--l-green);
+        border-radius: 10px;
+        background: rgb(63 191 90 / 0.1);
+    }
+    .lsn-finish h2 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+    .lsn-finish p { margin: 0 0 0.7rem; }
+    .lsn-finish-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .lsn-sidefoot {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.82rem;
+        color: var(--l-muted);
+    }
+    .lsn-sidefoot a:hover { color: var(--l-amber); }
+
+    @media (max-width: 900px) {
+        .lsn { height: auto; min-height: 100dvh; }
+        .lsn-main { grid-template-columns: 1fr; }
+        .lsn-side { order: -1; border-bottom: 1px solid var(--l-line); }
+        .lsn-work { border-right: 0; }
+        .lsn-sim { flex-basis: 50vh; }
+        .lsn-code { grid-template-rows: 55vh 40vh; }
+        .lsn-title { white-space: normal; }
+        .lsn-progress-track { width: 80px; }
+    }
+</style>

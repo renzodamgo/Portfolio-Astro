@@ -19,7 +19,23 @@ export interface Engine {
   setVisible(visible: boolean): void;
   /** Show or hide the LiDAR fan and the car-camera picture (the keys L and C do the same). */
   setOverlays(overlays: { lidar?: boolean; camera?: boolean }): void;
+  /** The interactive lessons: their own walls, rocks and floor marks (sim frame, metres); null start hides the start box. */
+  setWorld(world: LessonWorld): void;
+  /** 'chase' follows the car (key V toggles), 'top' looks down on the whole field. */
+  setView(view: 'chase' | 'top'): void;
+  /** Draw the path the car drives (cleared by clearTrail). */
+  setTrail(on: boolean): void;
+  clearTrail(): void;
   dispose(): void;
+}
+export type Box = readonly [number, number, number, number]; // centre x, centre y, size x, size y
+/** A flat mark on the floor: a disc of radius r (a ring with `ring`), or a w x h rectangle when both are given. */
+export interface LessonMark { x: number; y: number; r: number; color: string; ring?: boolean; w?: number; h?: number }
+export interface LessonWorld {
+  walls: readonly Box[];
+  rocks?: readonly Box[];
+  marks?: readonly LessonMark[];
+  start?: { x: number; y: number; yaw: number } | null;
 }
 
 const DT = 1 / 240;
@@ -83,13 +99,87 @@ export function startEngine(opts: EngineOptions): Engine {
     scene.add(sign);
   }
 
-  const wallMeshes = WALLS.map(([cx, cy, sx, sy]) => {
+  const makeWall = ([cx, cy, sx, sy]: Box) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.1, sy), new THREE.MeshStandardMaterial({ color: palette.wall, roughness: 0.7 }));
     mesh.position.set(cx, 0.06, -cy);
     mesh.castShadow = mesh.receiveShadow = true;
     scene.add(mesh);
     return mesh;
-  });
+  };
+  let wallMeshes = WALLS.map(makeWall);
+
+  // ---- Lesson world: rocks (a rough grey stone filling each collision box) and flat marks on the floor ----
+  const lessonGroup = new THREE.Group();
+  scene.add(lessonGroup);
+  const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x8a8378, roughness: 0.95, flatShading: true });
+  function makeRock([cx, cy, sx, sy]: Box, seed: number) {
+    const geometry = new THREE.IcosahedronGeometry(0.5, 1);
+    const position = geometry.attributes.position;
+    for (let i = 0; i < position.count; i++) {            // the same jitter for the same vertex: a stone, not a ball
+      const v = new THREE.Vector3().fromBufferAttribute(position, i);
+      const k = 0.82 + 0.18 * Math.abs(Math.sin(v.x * 12.9898 + v.y * 78.233 + v.z * 37.719 + seed));
+      position.setXYZ(i, v.x * k, Math.max(v.y * k, -0.25), v.z * k);
+    }
+    geometry.computeVertexNormals();
+    const rock = new THREE.Mesh(geometry, rockMaterial);
+    const height = Math.min(0.14, Math.max(0.06, Math.min(sx, sy)));
+    rock.scale.set(sx * 1.04, height, sy * 1.04);
+    rock.position.set(cx, height * 0.25, -cy);
+    rock.rotation.y = seed;
+    rock.castShadow = rock.receiveShadow = true;
+    return rock;
+  }
+  function makeMark({ x, y, r, color, ring, w, h }: LessonMark) {
+    const geometry = w && h ? new THREE.PlaneGeometry(w, h) : ring ? new THREE.RingGeometry(r * 0.86, r, 48) : new THREE.CircleGeometry(r, 48);
+    const mark = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: ring ? 0.9 : 0.42, depthWrite: false }));
+    mark.rotation.x = -Math.PI / 2;
+    mark.position.set(x, 0.004, -y);
+    return mark;
+  }
+  function clearGroup(group: THREE.Group) {
+    for (const child of [...group.children]) {
+      group.remove(child);
+      const m = child as THREE.Mesh;
+      m.geometry?.dispose();
+      if (m.material !== rockMaterial) (m.material as THREE.Material | undefined)?.dispose();
+    }
+  }
+  function setWorld(world: LessonWorld) {
+    wallMeshes.forEach((m) => { scene.remove(m); m.geometry.dispose(); (m.material as THREE.Material).dispose(); });
+    wallMeshes = world.walls.map(makeWall);
+    clearGroup(lessonGroup);
+    (world.rocks ?? []).forEach((box, i) => lessonGroup.add(makeRock(box, i * 1.7 + 0.3)));
+    (world.marks ?? []).forEach((mark) => lessonGroup.add(makeMark(mark)));
+    startZone.visible = world.start !== null;
+    if (world.start) {
+      startZone.position.set(world.start.x, 0.002, -world.start.y);
+      startZone.rotation.y = world.start.yaw;
+    }
+    trailCount = 0;
+    renderFrame();
+  }
+
+  // ---- Trail: the path the car drove (lessons) ----
+  const TRAIL_MAX = 4000;
+  const trailPositions = new Float32Array(TRAIL_MAX * 3);
+  const trailGeometry = new THREE.BufferGeometry();
+  trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+  trailGeometry.setDrawRange(0, 0);
+  const trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: 0xe8a33d }));
+  trail.frustumCulled = false;
+  trail.visible = false;
+  scene.add(trail);
+  let trailCount = 0;
+  function updateTrail() {
+    if (!trail.visible) return;
+    const last = trailCount - 1;
+    if (last >= 0 && Math.hypot(trailPositions[last * 3] - state.x, trailPositions[last * 3 + 2] + state.y) < 0.01) return;
+    if (trailCount >= TRAIL_MAX) { trailPositions.copyWithin(0, 3); trailCount--; }
+    trailPositions.set([state.x, 0.006, -state.y], trailCount * 3);
+    trailCount++;
+    trailGeometry.setDrawRange(0, trailCount);
+    trailGeometry.attributes.position.needsUpdate = true;
+  }
 
   // ---- Car model (robotek.urdf.xacro). `car` sits at base_link (y up, z = -sim y); `urdf` is rotated
   // -90 deg about x so the parts are written in the URDF frame: +x forward, +y left, +z up. ----
@@ -434,6 +524,7 @@ export function startEngine(opts: EngineOptions): Engine {
     while (accumulator >= DT) { sim.step(DT); accumulator -= DT; }
     if (state.contacts !== lastContacts) { lastContacts = state.contacts; flash(); }
     updateVisuals(dt);
+    updateTrail();
     updateLidar();
     if (now - lastHud > 100) { lastHud = now; updateHud(); }
     onTick();
@@ -505,6 +596,10 @@ export function startEngine(opts: EngineOptions): Engine {
       renderFrame();
     },
     setVisible(v: boolean) { visible = v; if (v) kick(); else { cancelAnimationFrame(raf); raf = 0; } },
+    setWorld,
+    setView(view) { cameraMode = view === 'top' ? 1 : 0; },
+    setTrail(on) { trail.visible = on; if (!on) trailCount = 0; },
+    clearTrail() { trailCount = 0; trailGeometry.setDrawRange(0, 0); },
     dispose,
   };
 }
