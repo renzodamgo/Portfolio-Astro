@@ -1,17 +1,20 @@
 // Widget "gyro-drift": a gyroscope bias makes the heading drift; the start calibration removes most of it.
-// Same closed loop as drive_straight() in step_02_heading.py (heading from the gyro, KP 0.8, real servo and motor).
+// Same closed loop as drive_straight() in course/tests/helpers.py (GyroHeading + heading_steer from my_open/heading.py,
+// KP 0.8, real servo and motor). Variables and units are the ones of the page: bias and noise in rad/s, yaw in rad.
 import { button, createPlot, fmt, guarded, h, legend, mulberry32, readout, slider, svgEl, toggle } from './lib/common';
 import { GyroHeading, MiniCar, headingSteer } from './lib/sim';
 
 const SECONDS = 10, DT = 0.02, SPEED_CMD = 0.6, LOOK_AHEAD = 6.0;
 const DEG = 180 / Math.PI;
+const REAL_BIAS = 0.006, REAL_NOISE = 0.0019; // rad/s, GYRO_BIAS and GYRO_NOISE of the real car
 
 interface Run {
   t: number[];
   trueDeg: number[];
   estDeg: number[];
   path: [number, number][];
-  yaw: number;
+  yaw: number; // true heading at the end (rad)
+  est: number; // heading the car believes at the end (rad)
   calBias: number;
 }
 
@@ -19,7 +22,7 @@ function simulate(bias: number, noise: number, calibrated: boolean, seed: number
   const car = new MiniCar(0, 0, 0, { bias, noise, rng: mulberry32(seed) });
   const heading = new GyroHeading();
   if (calibrated) heading.calibrate(car.restingGyro(30)); // 0.6 s standing still
-  const run: Run = { t: [], trueDeg: [], estDeg: [], path: [], yaw: 0, calBias: heading.bias };
+  const run: Run = { t: [], trueDeg: [], estDeg: [], path: [], yaw: 0, est: 0, calBias: heading.bias };
   const n = Math.round(SECONDS / DT);
   for (let k = 0; k < n; k++) {
     const est = heading.update(car.gyro(), DT);
@@ -32,12 +35,13 @@ function simulate(bias: number, noise: number, calibrated: boolean, seed: number
     }
   }
   run.yaw = car.yaw;
+  run.est = heading.yaw;
   return run;
 }
 
 export default function mount(el: HTMLElement): void {
   guarded(el, (root) => {
-    let bias = 0.006, noise = 0.0019, calibrated = false, seed = 1;
+    let bias = REAL_BIAS, noise = REAL_NOISE, calibrated = false, seed = 1;
 
     const plot = createPlot({
       xmin: 0,
@@ -55,6 +59,7 @@ export default function mount(el: HTMLElement): void {
     path.append(pathG);
 
     const rd = readout();
+    const note = h('p', { class: 'lw-note' });
 
     function update(): void {
       const run = simulate(bias, noise, calibrated, seed);
@@ -90,19 +95,29 @@ export default function mount(el: HTMLElement): void {
         `Vista desde arriba: tras 6 metros el coche queda a ${fmt(sideways, 2)} metros de la recta que quería seguir`,
       );
 
-      const learned = calibrated ? `${fmt(run.calBias, 4)} rad/s (real ${fmt(bias, 4)})` : 'sin calibrar (0)';
+      const learned = calibrated ? `${fmt(run.calBias, 4)} rad/s (real ${fmt(bias, 4)})` : '0 (sin calibrar)';
+      const real = `${fmt(run.yaw, 3)} rad (${fmt(run.yaw * DEG, 1)}°)`;
       rd.set(
         [
-          ['Sesgo que cree el coche', learned],
-          ['Rumbo real a los 10 s', `${fmt(run.yaw * DEG, 1)}°`],
+          ['Sesgo que cree el coche, heading.bias', learned],
+          ['Rumbo real a los 10 s', real],
+          ['Rumbo que cree el coche a los 10 s', `${fmt(run.est, 3)} rad (${fmt(run.est * DEG, 1)}°)`],
           ['Error lateral en 6 m', `${fmt(sideways, 2)} m`],
         ],
         `${calibrated ? 'Con calibración' : 'Sin calibrar'}: a los 10 segundos el rumbo real es de ${fmt(run.yaw * DEG, 1)} grados y en 6 metros el coche se desvía ${fmt(sideways, 2)} metros.`,
       );
+      if (bias === 0) {
+        note.textContent = 'Sin sesgo no hay deriva que corregir: calibrar o no da casi igual. Lo que queda es el ruido.';
+      } else if (!calibrated) {
+        note.textContent = `Sin calibrar, el coche cree ir recto (la línea azul acaba en ${fmt(run.est * DEG, 1)}°) mientras el real acaba en ${fmt(run.yaw * DEG, 1)}°: nada dentro del coche avisa del error.`;
+      } else {
+        const miss = run.calBias - bias;
+        note.textContent = `Con 30 lecturas el promedio se equivoca en ${fmt(miss, 4)} rad/s; ese pequeño resto es lo único que se acumula. Pulsa «Otro ruido» para ver cuánto cambia.`;
+      }
     }
 
     const biasS = slider({
-      label: 'Sesgo del giroscopio',
+      label: 'Sesgo real del giroscopio (bias)',
       min: 0,
       max: 0.02,
       step: 0.0005,
@@ -114,7 +129,7 @@ export default function mount(el: HTMLElement): void {
       },
     });
     const noiseS = slider({
-      label: 'Ruido del giroscopio',
+      label: 'Ruido del giroscopio (cambia en cada lectura)',
       min: 0,
       max: 0.01,
       step: 0.0001,
@@ -125,12 +140,27 @@ export default function mount(el: HTMLElement): void {
         update();
       },
     });
-    const cal = toggle('Calibrar con el coche quieto (0,6 s)', calibrated, (v) => {
+    const cal = toggle('Calibrar con el coche quieto (0,6 s, 30 lecturas)', calibrated, (v) => {
       calibrated = v;
       update();
     });
     const reseed = button('Otro ruido', () => {
       seed += 1;
+      update();
+    });
+    const noBias = button('Sin sesgo', () => {
+      bias = 0;
+      biasS.set(0);
+      update();
+    });
+    const again = button('Reiniciar (coche real)', () => {
+      bias = REAL_BIAS;
+      noise = REAL_NOISE;
+      seed = 1;
+      calibrated = false;
+      biasS.set(bias);
+      noiseS.set(noise);
+      cal.input.checked = false;
       update();
     });
 
@@ -142,8 +172,9 @@ export default function mount(el: HTMLElement): void {
       ]),
       h('div', { class: 'lw-figure' }, path),
       h('div', { class: 'lw-controls' }, biasS.root, noiseS.root),
-      h('div', { class: 'lw-actions' }, cal.root, reseed),
+      h('div', { class: 'lw-actions' }, cal.root, reseed, noBias, again),
       rd.root,
+      note,
     );
     update();
   });

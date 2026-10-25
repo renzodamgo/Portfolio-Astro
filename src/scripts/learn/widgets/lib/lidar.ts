@@ -101,6 +101,13 @@ export function medianRange(angles: number[], ranges: number[], ok: boolean[], c
   return vals.length ? median(vals) : Infinity;
 }
 
+/** The mean of the same beams medianRange() uses: the wrong tool, kept so a widget can show why the median is used. */
+export function meanRange(angles: number[], ranges: number[], ok: boolean[], centre: number): number {
+  const chosen = near(angles, ok, centre, SIDE_HALF);
+  const vals = ranges.filter((_, i) => chosen[i]);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : Infinity;
+}
+
 export function frontAxis(angles: number[], ranges: number[], ok: boolean[], forwardYaw: number): number {
   const chosen = near(angles, ok, forwardYaw, AXIS_HALF);
   const vals = ranges.map((r, i) => r * Math.cos(angles[i] - forwardYaw)).filter((_, i) => chosen[i]);

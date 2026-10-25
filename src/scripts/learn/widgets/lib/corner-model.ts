@@ -130,7 +130,8 @@ export interface ArcRun {
   tClose: number | null; // s until within 0.12 rad of it
   t: number[];
   yaw: number[];
-  steer: number[];
+  steer: number[]; // the wheel angle the servo really reaches (helpers.run_arc's `steer`)
+  cmd: number[]; // the wheel angle the controller asks for
   ref: number[];
   x: number[];
   y: number[];
@@ -149,10 +150,11 @@ export function runArc(arcFn: ArcFn, o: ArcRunOptions = {}): ArcRun {
   const rate = fullLockRate() * rateFactor;
   let overshoot = 0;
   let tClose: number | null = null;
-  const run: ArcRun = { overshoot: 0, tClose: null, t: [], yaw: [], steer: [], ref: [], x: [], y: [], goal, dt };
+  const run: ArcRun = { overshoot: 0, tClose: null, t: [], yaw: [], steer: [], cmd: [], ref: [], x: [], y: [], goal, dt };
   run.t.push(0);
   run.yaw.push(0);
   run.steer.push(0);
+  run.cmd.push(0);
   run.ref.push(0);
   run.x.push(0);
   run.y.push(0);
@@ -166,6 +168,7 @@ export function runArc(arcFn: ArcFn, o: ArcRunOptions = {}): ArcRun {
     run.t.push(car.time);
     run.yaw.push(car.yaw);
     run.steer.push(car.steer);
+    run.cmd.push(steer);
     run.ref.push(ref);
     run.x.push(car.x);
     run.y.push(car.y);
@@ -187,4 +190,39 @@ export function controllerFor(c: CornerConfig): ArcFn {
   const damping = c.damping ? DAMPING : 0;
   if (!c.ramp) return (goal, ref, yaw, gyro, rate, dt) => jumpWithDamping(goal, ref, yaw, gyro, rate, dt, damping);
   return (goal, ref, yaw, gyro, rate, dt) => arcSteer(goal, ref, yaw, gyro, rate, dt, { feed: c.feed, fade: c.fade, damping });
+}
+
+/** The six rows of the table in the lesson: the controllers it compares. */
+export const VARIANTS: { key: string; label: string; cfg: CornerConfig }[] = [
+  { key: 'ramp', label: 'solo rampa', cfg: { ramp: true, feed: false, fade: true, damping: false } },
+  { key: 'ff', label: '+ feed-forward', cfg: { ramp: true, feed: true, fade: false, damping: false } },
+  { key: 'ff+fade', label: '+ feed-forward + aflojado', cfg: { ramp: true, feed: true, fade: true, damping: false } },
+  { key: 'ff+damp', label: '+ amortiguamiento (sin aflojado)', cfg: { ramp: true, feed: true, fade: false, damping: true } },
+  { key: 'ff+fade+damp', label: 'final: aflojado + amortiguamiento', cfg: { ramp: true, feed: true, fade: true, damping: true } },
+  { key: 'jump', label: 'sin rampa, solo amortiguar', cfg: { ramp: false, feed: false, fade: false, damping: true } },
+];
+
+/** Which row of the table a configuration is (feed-forward off makes `fade` irrelevant; with no ramp only damping counts). */
+export function variantKey(c: CornerConfig): string {
+  if (!c.ramp) return c.damping ? 'jump' : 'jump0';
+  if (!c.feed) return c.damping ? 'ramp+damp' : 'ramp';
+  return `ff${c.fade ? '+fade' : ''}${c.damping ? '+damp' : ''}`;
+}
+
+/** The Python that reproduces a run in the course's bench (`course/tests/helpers.py`). */
+export function pythonCall(c: CornerConfig, servoDelay: number, servoTau: number, fast: boolean): string {
+  let fn: string;
+  if (!c.ramp) fn = c.damping ? 'jump_with_damping' : 'partial(jump_with_damping, damping=0.0)';
+  else {
+    const args: string[] = [];
+    if (!c.feed) args.push('feed=False');
+    else if (!c.fade) args.push('fade=False');
+    if (!c.damping) args.push('damping=0.0');
+    fn = args.length ? `partial(arc_steer, ${args.join(', ')})` : 'arc_steer';
+  }
+  const kw: string[] = [];
+  if (Math.abs(servoDelay - SERVO_DELAY) > 1e-9) kw.push(`servo_delay=${servoDelay.toFixed(2)}`);
+  if (Math.abs(servoTau - SERVO_TAU) > 1e-9) kw.push(`servo_tau=${servoTau.toFixed(2)}`);
+  if (fast) kw.push('rate_factor=0.7');
+  return `run_arc(${[fn, ...kw].join(', ')})`;
 }

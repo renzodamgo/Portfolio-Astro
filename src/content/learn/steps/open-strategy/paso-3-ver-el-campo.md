@@ -8,11 +8,15 @@ tag: "step-3"
 compareFrom: "step-2"
 ---
 
-Hasta ahora el coche conduce a ciegas: sabe hacia dónde apunta (el giroscopio), pero no sabe dónde están las paredes. En este paso escribes `perceive`, que convierte un escaneo del LiDAR en cuatro números (la `Scene`) que el resto de la estrategia usará: a qué distancia están las paredes de los lados, la pared de enfrente y dónde termina la isla.
+Hasta ahora el coche conduce a ciegas: sabe hacia dónde apunta (el giroscopio), pero no sabe dónde están las paredes. El **LiDAR** es un sensor láser que gira y mide la distancia al primer obstáculo en cada dirección; una vuelta de rayos es un **escaneo**. En este paso escribes `perceive`, que convierte un escaneo en cuatro números (la `Scene`) que usará el resto de la estrategia: a qué distancia están las paredes de los lados, la pared de enfrente y dónde termina la isla.
 
 ## Lo que vas a ver
 
-El coche calibra el giroscopio, avanza recto y, mientras tanto, publica en `/scene` los cuatro números de cada escaneo. En RViz verás cuatro marcas dibujadas donde el coche las ve. Al llegar a 0,5 m de la pared de enfrente (medidos desde el LiDAR) se detiene y ya no arranca de nuevo. En Gazebo, `left`, `right` y `front_axis` coinciden con los valores ideales a 1,6 cm, 0,7 cm y 1 cm.
+El coche espera Start, se queda quieto 0,6 s calibrando el giroscopio y avanza recto a 0,42 m/s (el comando 0,6). Mientras tanto publica en `/scene` los cuatro números de cada escaneo; los lees con `ros2 topic echo /scene`.
+
+- **Al salir**, en el centro del pasillo sur, deben ser más o menos `left` 0,51 m, `right` 0,51 m, `front_axis` 1,37 m e `island_end` 0,49 m. Son los valores del mini simulador, que corre el mismo código; Gazebo da los mismos con unos centímetros de diferencia.
+- **Al llegar a la esquina de la isla**, `island_end` baja hacia 0,2 m y enseguida `left` salta de 0,5 a unos 2,5 m: ya no hay isla al lado.
+- **Cerca de la pared de enfrente**, cuando `front_axis` baja de 0,5 m (medido desde el LiDAR), el coche manda parar y no vuelve a arrancar. En Gazebo todavía rueda unos 0,36 m y queda a unos 0,14 m de la pared (el mini simulador de la repetición frena casi en seco).
 
 <div data-widget="step-replay" data-src="/learn/assets/replays/step-3.json"></div>
 
@@ -27,14 +31,14 @@ Cada escaneo del LD19 simulado trae 306 distancias en un abanico de ±110°, de 
 | Hecho | Valor | Qué implica |
 |---|---|---|
 | Rayos | 306 en ±110° | unos 63 rayos caen a cada lado en una ventana de ±25°; unos 8 hacia delante en ±3° |
-| Rayos perdidos | 4,3 % al azar | de media 13 de 306 llegan como `inf`; tu código debe tolerarlo |
+| Rayos perdidos | 4,3 % al azar | de media 13 de 306 llegan como `inf` (infinito: «no volvió nada»); tu código debe tolerarlo |
 | Ruido | 8 mm por rayo | los números se mueven unos milímetros entre escaneos |
 | Posición | 0,128 m delante de `base_link` | las distancias de pared se miden desde el LiDAR, no desde el centro del coche |
-| Repeticiones | el mismo escaneo llega varias veces con la misma marca de tiempo | percibe una sola vez por marca |
-
-La última fila no cambia los números (el mismo escaneo da lo mismo), pero evita gastar CPU y publicar copias.
+| Repeticiones | el mismo escaneo llega varias veces con la misma marca de tiempo | percibe una sola vez por marca: así no gastas CPU ni publicas copias |
 
 ### Cuatro números
+
+`perceive` devuelve una `Scene` (la clase ya está en `robotek_course.minisim`) con cuatro números, todos en metros:
 
 | Número | Qué es | Cómo se calcula |
 |---|---|---|
@@ -47,39 +51,47 @@ Un número que no se ve vale `inf`. Todo el código que los use (pasos 4 a 7) de
 
 ### Mediana, no promedio
 
-Con un rayo que se cuela por una abertura y da 9 m, el promedio se arruina y la mediana lo ignora. Midiendo desde (0, -0,75) con un rayo salvaje justo en el lado izquierdo, la pared está a 0,25 m: la mediana da 0,255 m y el promedio, 0,396 m. Eso lo calculé con el `perceive` de referencia; la prueba `test_a_median_ignores_a_beam_that_goes_through_a_gap` hace lo mismo.
+La mediana es el valor del medio cuando ordenas los rayos; el promedio los suma todos. Los 63 rayos del lado izquierdo miden casi lo mismo, pero a veces uno se cuela por una abertura y vuelve con 9 m. El promedio se arrastra hacia ese rayo y la mediana no se entera.
+
+Midiendo desde (0, -0,75) con un rayo salvaje justo en el lado izquierdo, la pared está a 0,25 m: la mediana da 0,255 m y el promedio 0,396 m, 14 cm de error por un solo rayo entre 63. Eso lo calculé con el `perceive` de referencia; la prueba `test_a_median_ignores_a_beam_that_goes_through_a_gap` hace lo mismo. Con el ruido y las pérdidas normales, promedio y mediana se parecen: solo un rayo salvaje los separa. Lo verás en el widget de abajo (botón «Un rayo salvaje»).
 
 ### A lo largo de la pista
 
-Tras una esquina el coche sigue un poco torcido. Una pared vista en diagonal parece más lejos, así que `front_axis` no mide hacia donde apunta el coche, sino hacia donde va la pista (`forward_yaw`, visto desde el coche). Cada rayo se proyecta con `range * cos(ángulo respecto a la pista)`.
+Tras una esquina el coche sigue un poco torcido, y una pared vista en diagonal parece más lejos. Por eso `front_axis` no mide hacia donde apunta el coche, sino hacia donde va la pista. `forward_yaw` es esa dirección vista desde el coche: si el coche está girado 17° a la izquierda de la pista, `forward_yaw` vale -17°. Cada rayo cercano a esa dirección se proyecta con `range * cos(ángulo respecto a la pista)`.
 
-Con el coche torcido 0,3 rad (17°) en el mismo punto, la referencia da 1,378 m midiendo a lo largo de la pista y 1,442 m si mides hacia donde apunta el coche. El valor correcto es `1,5 - 0,128 * cos(0,3) = 1,378`. En este paso `forward_yaw` vale 0 (el coche va recto); desde el paso 4 lo calcula el nodo a partir del giroscopio.
+Con el coche torcido 0,3 rad (17°) en (0, -0,75), la referencia da 1,378 m midiendo a lo largo de la pista y 1,442 m si mides hacia donde apunta el coche. El valor correcto es `1,5 - 0,128 * cos(0,3) = 1,378`: la pared está a 1,5 m y el LiDAR ya recorrió `0,128 * cos(0,3)` de esa distancia. En este paso `forward_yaw` vale 0 (el coche va recto); desde el paso 4 lo calcula el nodo a partir del giroscopio. En el widget, botón «Coche torcido 17°».
 
 ### El final de la isla
 
-`island_end` es el número difícil. La pared de la isla junto al coche es una recta, y el final es un salto de distancia. El método:
+`island_end` es el número difícil. La pared de la isla junto al coche es una recta, y su final es donde los rayos dejan de caer sobre ella. La idea: ajusta una recta a la pared que tienes al lado, recórrela hacia delante y quédate con el último rayo que sigue sobre ella. El método, en cinco pasos:
 
-1. Con `bearing = sign * angles` (positivo hacia el lado de la isla), toma los rayos válidos a ±20° de +90° y descarta los más lejanos que 1,5 veces su mediana (ya pasaron el final de la pared). Con menos de 10 rayos, devuelve `inf`.
-2. Pasa cada rayo a puntos `x = r cos(bearing)`, `y = r sin(bearing)` y ajusta `y = pendiente * x + desfase` con `np.polyfit`. El coche casi nunca va paralelo a la pared: con 0,07 rad de inclinación, una distancia fija se equivocaría 5 cm a 0,7 m. Si la pendiente es demasiado grande o el desfase queda fuera de 0,15 a 0,90 m, eso no es una pared de isla a un lado: `inf`.
+1. Con `bearing = sign * angles` (positivo hacia el lado de la isla; `sign` es +1 con la isla a la izquierda), toma los rayos válidos a ±20° de +90° y descarta los más lejanos que 1,5 veces su mediana (ya pasaron el final de la pared). Con menos de 10 rayos, devuelve `inf`.
+2. Pasa cada rayo a un punto, `x = r cos(bearing)` e `y = r sin(bearing)`, y ajusta `y = pendiente * x + desfase` con `np.polyfit`. Una recta y no una distancia fija porque el coche casi nunca va paralelo a la pared: con 0,07 rad de inclinación, una distancia fija se equivocaría 5 cm a 0,7 m. Si la pendiente es demasiado grande (más de 0,30 rad) o el desfase queda fuera de 0,15 a 0,90 m, eso no es una pared de isla a un lado: `inf`.
 3. `on_wall` son los rayos válidos a menos de 3 cm de la recta.
 4. Recorre los rayos desde el lado hacia el frente (de +90° a +20°) y recuerda el último que está sobre la pared. Se detiene cuando hay **más de 2** rayos seguidos fuera de ella: los rayos perdidos por azar no deben terminar la pared.
-5. Si no hay ninguno, o el último está a menos de 0,05 rad del límite de +20° (la pared sigue hasta el borde de la vista), devuelve `inf`. Si no, `x[último] + LIDAR_X`: el LiDAR está 0,128 m delante del centro del coche.
+5. Si no hay ninguno, o el último está a menos de 0,05 rad del límite de +20° (la pared sigue hasta el borde de la vista), devuelve `inf`. Si no, `x[último] + LIDAR_X`: el LiDAR está 0,128 m delante del centro del coche y `island_end` se da en el sistema del coche.
 
-Con la isla de 1 × 1 m y el coche en (0, -0,75), la pared termina en x = 0,5 y el número sale 0,48 con ruido y pérdidas, y 0,495 sin ellos. Cuando el coche pasa de x ≈ 0,4 m, `left` salta de 0,26 a 2,25 m (ahora ve la pared exterior del otro lado) e `island_end` vuelve a `inf`.
+Con la isla de 1 × 1 m y el coche en (0, -0,75), la pared termina en x = 0,5 y el número sale 0,48 con ruido y pérdidas, y 0,495 sin ellos. Cuando el coche pasa de x ≈ 0,37 m, `left` salta de 0,27 a 2,25 m (ahora ve la pared exterior del otro lado) e `island_end` vuelve a `inf`.
 
 ### El nodo
 
-En `drive.py` solo cambian tres cosas. `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los números en `/scene` (un `Float32MultiArray` con `left, right, front_axis, island_end`) y en `/scene_markers` (un `MarkerArray` que dibuja `robotek_course.viz.scene_markers`; ya te lo dan). Y `control` se detiene cuando `front_axis` baja de `STOP_FRONT`, con enclavamiento: un rayo con ruido no puede reiniciar el motor.
+En `drive.py` cambian tres cosas. `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los números en `/scene` (un `Float32MultiArray` con `left, right, front_axis, island_end`) y en `/scene_markers` (un `MarkerArray` que dibuja `robotek_course.viz.scene_markers`; ya te lo dan). Y `control` se detiene cuando `front_axis` baja de `STOP_FRONT`, con enclavamiento: un rayo con ruido no puede reiniciar el motor. La referencia también quita el parámetro `calibrate` del paso 2 (ya cumplió su función); tú puedes conservarlo.
 
 ## Explora el escaneo
 
-Este widget corre el mismo `perceive` (portado a JavaScript, da los mismos números que la versión de Python) sobre un escaneo simulado del campo.
+Este widget corre el mismo `perceive` (portado a JavaScript, da los mismos números que la versión de Python) sobre un escaneo simulado del campo. Los cuatro números aparecen escritos en la isla y, en la lista, cada uno con su valor «sin ruido» al lado.
 
 <div data-widget="scan-explorer"></div>
 
-Los controles son: el sentido de la vuelta, los deslizadores de posición (x, y) y de rumbo del coche, **Perder rayos** (0 a 15 %), **Ruido de la distancia** (0 a 30 mm), tres posiciones prediseñadas (**Recta**, **Antes de la esquina**, **En la esquina**), **Otro ruido**, y los interruptores **Mostrar el ajuste** y **Mostrar los rayos**. También puedes arrastrar el coche con el ratón o usar las flechas (Q y E lo giran).
+Prueba, en este orden:
 
-Algo concreto para probar: pulsa **Antes de la esquina** y mira `island_end`: debe quedar cerca de 0,5 m. Sube **Perder rayos** a 15 % y **Ruido** a 30 mm y pulsa **Otro ruido** varias veces. En 100 escaneos con esos valores en el mini simulador de Python, `left` se mantuvo entre 0,245 y 0,268 m y `front_axis` entre 1,34 y 1,41 m (lo ideal es 0,25 y 1,37), pero `island_end` fue de 0,13 a 0,52 m (lo cierto es 0,50). El final de la isla es el número frágil: por eso en el paso 6 la puerta de giro exige verlo cerca en dos escaneos distintos seguidos.
+1. **Antes de la esquina**: `island_end` debe quedar cerca de 0,5 m.
+2. Pulsa **Repetir 20 veces** y mira la tira de abajo. Con el ruido normal, `left` y `front_axis` son una línea casi plana y `island_end` también, salvo algún escaneo suelto: en 500 escaneos del mini simulador de Python, 2 se equivocaron más de 10 cm (uno dio 0,22 m en vez de 0,5).
+3. **Perder 15 % de rayos**: ahora `island_end` falla más: 70 de 500 escaneos (14 %), porque a veces caen tres rayos perdidos seguidos sobre la pared y el recorrido cree que terminó.
+4. **Ruido de 30 mm**: el ajuste admite 3 cm de distancia a la recta (`WALL_TOLERANCE`); con ese ruido muchos rayos se salen de la pared sin que la pared cambie, y `island_end` sale casi siempre muy por debajo de 0,5 m (386 de 500 escaneos con más de 10 cm de error; con 15 mm fueron 11 y con 20 mm, 107). Aun así `left` queda entre 0,24 y 0,27 m y `front_axis` entre 1,34 y 1,42 m (lo ideal es 0,25 y 1,37).
+5. **Un rayo salvaje** y **Coche torcido 17°**: la mediana contra el promedio, y `front_axis` con y sin `forward_yaw`.
+
+Por eso `island_end` es el número frágil, y por eso en el paso 6 la puerta de giro no se fía de un solo escaneo: exige ver el final cerca en dos escaneos distintos seguidos. El LD19 simulado mide con 8 mm de ruido, muy por debajo de esos 3 cm, y falla pocas veces; pero una sola lectura mala bastaría para girar antes de tiempo.
 
 ## Escríbelo
 
@@ -102,6 +114,7 @@ Antes de mirar la referencia, corre las pruebas.
 <summary>Ver la referencia de perception.py: constantes, perceive, median_range y front_axis</summary>
 
 ```python
+"""Step 3 - Perception: from one LiDAR scan to the four numbers of a Scene."""
 import math
 
 import numpy as np
@@ -122,7 +135,7 @@ def perceive(scan, forward_yaw=0.0, sign=1):
     """One scan -> Scene.
 
     ``forward_yaw``: the track direction seen from the car (rad), so the wall ahead is measured along the track, not
-    along where the car happens to point. ``sign``: +1 when the island is on the left, -1 when it is on the right.
+    along where the car happens to point. ``sign``: +1 when the island is on the left, -1 on the right.
     """
     ranges = np.asarray(scan.ranges, dtype=float)
     angles = scan.angle_min + np.arange(ranges.size) * scan.angle_increment
@@ -156,7 +169,7 @@ def front_axis(angles, ranges, ok, forward_yaw):
 </details>
 
 <details>
-<summary>Ver la referencia de island_end</summary>
+<summary>Ver la referencia de island_end (sigue en perception.py)</summary>
 
 ```python
 def island_end(angles, ranges, ok, sign):
@@ -196,18 +209,20 @@ def island_end(angles, ranges, ok, sign):
 </details>
 
 <details>
-<summary>Ver la referencia de los cambios en drive.py</summary>
+<summary>Ver la referencia de los cambios en drive.py (solo lo que cambia)</summary>
 
-Imports nuevos:
+Imports y constante (lo nuevo: `LaserScan`, `Float32MultiArray`, `MarkerArray`, `Scene`, `scene_markers`, `perceive` y `STOP_FRONT`):
 
 ```python
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import Bool, Float32MultiArray
 from visualization_msgs.msg import MarkerArray
 
+from robotek_common.vehicle import WHEELBASE
 from robotek_course.minisim import Scene
 from robotek_course.viz import scene_markers
 
+from .heading import GyroHeading, heading_steer
 from .perception import perceive
 
 STOP_FRONT = 0.5          # m: stop when the wall ahead is this near
@@ -219,6 +234,7 @@ En `__init__`, además de lo del paso 2:
 self.stopped = False                 # latched: a noisy reading must not restart the car
 self.scene = Scene()                 # the latest Scene (nothing seen yet)
 self.stamp = None                    # time stamp of the last scan we used
+self.cmd = self.create_publisher(Twist, '/cmd_vel_raw', 10)
 self.scene_pub = self.create_publisher(Float32MultiArray, '/scene', 10)      # left, right, front_axis, island_end
 self.markers_pub = self.create_publisher(MarkerArray, '/scene_markers', 10)  # the same, to see it in RViz
 self.create_subscription(LaserScan, '/scan', self.on_scan, qos_profile_sensor_data)
@@ -232,10 +248,10 @@ def on_scan(self, msg):
     if stamp == self.stamp:
         return                           # the same scan can arrive more than once: use each time stamp once
     self.stamp = stamp
-    self.scene = perceive(msg, forward_yaw=0.0, sign=1)
-    numbers = [self.scene.left, self.scene.right, self.scene.front_axis, self.scene.island_end]
+    scene = self.scene = perceive(msg, forward_yaw=0.0, sign=1)
+    numbers = [scene.left, scene.right, scene.front_axis, scene.island_end]
     self.scene_pub.publish(Float32MultiArray(data=[float(n) for n in numbers]))
-    self.markers_pub.publish(scene_markers(self.scene, msg.header.stamp, msg.header.frame_id))
+    self.markers_pub.publish(scene_markers(scene, msg.header.stamp, msg.header.frame_id))
 ```
 
 Y en `control`, la última parte del paso 2 se envuelve en el enclavamiento:
@@ -286,19 +302,20 @@ Ahora en Gazebo, sin ventana:
 
 ```bash
 colcon build --symlink-install --packages-select my_open
-source install/setup.bash
+source install/setup.bash        # en macOS: source tools/macos_env.sh ~/robotek-ros/jazzy
 python3 course/verify_step.py 3
 ```
 
-El comprobador lanza el simulador y tu nodo, publica Start, compara cada mensaje de `/scene` con el valor que daría el mismo `perceive` sobre un escaneo ideal (sin ruido ni rayos perdidos) tomado desde la pose real del coche, y comprueba que el coche se detiene ante la pared sin tocar nada. Debe terminar con `PASS`. La solución de referencia midió, en el campo normal:
+El comprobador lanza el simulador y tu nodo, publica Start, compara cada mensaje de `/scene` con el valor que daría el mismo `perceive` sobre un escaneo ideal (sin ruido ni rayos perdidos) tomado desde la pose real del coche, y comprueba que el coche se detiene ante la pared sin tocar nada. Debe terminar con `PASS`. La solución de referencia midió, en 8 ejecuciones en el campo normal:
 
 | Número | Peor diferencia con el valor ideal | Límite del comprobador |
 |---|---:|---:|
-| `left` | 1,6 cm | 5 cm |
-| `right` | 0,7 cm | 5 cm |
-| `front_axis` | 1 cm | 5 cm |
+| `left` | de 0,6 a 1,7 cm | 5 cm |
+| `right` | de 0,5 a 0,7 cm | 5 cm |
+| `front_axis` | de 0,6 a 1,1 cm | 5 cm |
+| `island_end` | de 0,7 a 1,2 cm | 10 cm |
 
-`island_end` se compara solo cuando se ve a la vez en el nodo y en la geometría, con límite de 10 cm. No tengo una cifra medida de su error en Gazebo.
+`island_end` solo se compara cuando se ve a la vez en el nodo y en la geometría. El comprobador deja fuera los escaneos de la frenada (con la pared a menos de 0,8 m el coche cabecea y el LiDAR ve el suelo como una pared) y los que llegan justo cuando el final de la isla pasa al lado del coche, donde la mediana de `left` salta.
 
 Para verlo con ventana y con las marcas de RViz:
 
@@ -306,13 +323,12 @@ Para verlo con ventana y con las marcas de RViz:
 ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true rviz:=true
 ```
 
-En RViz, añade un display `MarkerArray` en `/scene_markers` y pon el marco fijo en `lidar_link`. Verás líneas verdes a los lados (`left` y `right`), una línea roja delante (`front_axis`) y un punto amarillo donde termina la isla. También puedes leer los números: `ros2 topic echo /scene`. El árbitro puntuará la ronda; ignora esos puntos, en este paso el coche solo avanza hasta la pared y se para.
+El RViz de ese lanzador no trae las marcas: añade un display `MarkerArray` en `/scene_markers` y pon el marco fijo en `lidar_link`. Verás líneas verdes a los lados (`left` y `right`), una línea roja delante (`front_axis`) y un punto amarillo donde termina la isla. También puedes leer los números: `ros2 topic echo /scene`. El árbitro puntuará la ronda; ignora esos puntos, en este paso el coche solo avanza hasta la pared y se para.
 
 ### Rómpelo
 
-Cambia `np.median` por `np.mean` en `median_range` y corre las pruebas. En mi comprobación solo falla `test_a_median_ignores_a_beam_that_goes_through_a_gap`: con ruido y rayos perdidos normales el promedio y la mediana se parecen, y solo un rayo salvaje los separa.
-
-Otra: en `front_axis`, usa `0.0` en lugar de `forward_yaw` y corre `test_the_wall_ahead_is_measured_along_the_track_when_the_car_is_crooked`. Falla: con el coche torcido 0,3 rad la diferencia es de unos 6 cm.
+1. En `median_range`, cambia `np.median` por `np.mean` y corre las pruebas. Solo falla `test_a_median_ignores_a_beam_that_goes_through_a_gap` (`left` da 0,396 en vez de 0,25): con ruido y rayos perdidos normales el promedio y la mediana se parecen, y solo un rayo salvaje los separa.
+2. Deshaz el cambio. En `front_axis`, en la línea del coseno, usa `0.0` en lugar de `forward_yaw` y corre `test_the_wall_ahead_is_measured_along_the_track_when_the_car_is_crooked`. Falla: con el coche torcido 0,3 rad la diferencia es de unos 6 cm (1,442 en vez de 1,378). Si cambias solo la elección de rayos (`_near`) y dejas el coseno, las pruebas siguen pasando: no lo detectan.
 
 ## Si algo falla
 
@@ -323,6 +339,7 @@ Otra: en `front_axis`, usa `0.0` en lugar de `forward_yaw` y corre `test_the_wal
 - **`island_end` aparece y desaparece entre escaneos.** Con ruido y rayos perdidos es normal: es el número más frágil. Si ocurre también sin ruido ni pérdidas, mira que `missing` se reinicie a 0 cada vez que un rayo cae sobre la pared.
 - **Pasan las pruebas pero `/scene` no sale en Gazebo.** Las pruebas no usan ROS. Revisa que `/scan` use `qos_profile_sensor_data` y que el nodo se llame `strategy`.
 - **El coche no para ante la pared.** Revisa que `stopped` se quede en `True` y que uses `front_axis`, no `left`.
+- **`verify_step.py` dice que ya hay un `gz sim` en marcha.** Cierra el otro simulador o usa `--wait 60` para esperar a que termine.
 
 ## Compara
 
@@ -330,3 +347,15 @@ Otra: en `front_axis`, usa `0.0` en lugar de `forward_yaw` y corre `test_the_wal
 bash tools/compare-step.sh 2 3     # qué añade la referencia
 bash tools/compare-step.sh 3       # tu árbol contra el paso 3
 ```
+
+## Resumen
+
+- `perceive` convierte un escaneo de 306 rayos en cuatro números: `left`, `right`, `front_axis` (a lo largo de la pista, con `forward_yaw`) e `island_end`. Lo que no se ve vale `inf`.
+- Se usa la mediana y no el promedio porque un solo rayo salvaje arruina el promedio; `island_end` es el número frágil porque depende de una recta ajustada a unos pocos rayos y de que no falten tres seguidos.
+- En Gazebo los tres primeros números coinciden con los ideales a menos de 2 cm; el nodo publica `/scene` y se detiene ante la pared con enclavamiento.
+
+## Antes de seguir
+
+- [ ] `pytest` marca `9 passed` y `verify_step.py 3` termina en `PASS`.
+- [ ] Sabes decir por qué `left` resiste un rayo salvaje y un promedio no.
+- [ ] Viste en el widget que `island_end` baila más que `left` cuando subes el ruido o los rayos perdidos.

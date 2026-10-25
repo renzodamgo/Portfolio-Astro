@@ -1,6 +1,6 @@
 // Widget "results-table": the rounds of the reference solution (2 in Gazebo, 12 in the Open lab), sortable.
 // The rule of the challenge: points first, total time from Start second. Data: lib/open-results.ts.
-import { button, fmt, guarded, h, nextId } from './lib/common';
+import { button, fmt, guarded, h, legend, nextId } from './lib/common';
 import { OPEN_LAB_SUMMARY, RESULTS, byRule, rankings, type Dir, type Env, type RoundResult } from './lib/open-results';
 
 type Key = 'rank' | 'test' | 'dir' | 'points' | 'time';
@@ -58,6 +58,8 @@ export default function mount(el: HTMLElement): void {
       headers.set(c.key, { th, btn, arrow });
       head.append(th);
     }
+    // The partial times are not a sort key: they do not decide anything, they explain the total.
+    head.append(h('th', { scope: 'col', class: 'lw-th-laps lw-col-laps', title: 'Tiempo de cada una de las tres vueltas. La suma no llega al total: falta el frenado y la parada.' }, 'Vueltas (s)'));
 
     const cmp = (a: RoundResult, b: RoundResult): number => {
       switch (sortKey) {
@@ -92,12 +94,14 @@ export default function mount(el: HTMLElement): void {
       tbody.replaceChildren(
         ...rows.map((r) => {
           const test = r.env === 'Gazebo' ? 'Gazebo' : `Open lab · ${r.field}`;
-          const detail = r.laps && r.margin !== undefined ? `vueltas ${r.laps.map((v) => fmt(v, 1)).join(' / ')} s · margen ${fmt(r.margin, 1)} cm` : '';
+          const detail = r.margin !== undefined ? `margen mínimo ${fmt(r.margin, 1)} cm` : '';
           const cls = r.env === 'Gazebo' ? 'blue' : 'amber';
+          const rank = ranks.get(r);
+          const lapSum = r.laps.reduce((a, b) => a + b, 0);
           return h(
             'tr',
-            {},
-            h('td', {}, h('span', { class: 'lw-rank', title: 'Puesto según la regla dentro de su prueba' }, `#${ranks.get(r)}`), ` ${test}`, detail ? h('span', { class: 'lw-sub' }, detail) : null),
+            { class: rank === 1 ? 'lw-row-best' : undefined },
+            h('td', {}, h('span', { class: 'lw-rank', title: 'Puesto según la regla dentro de su prueba' }, `#${rank}`), ` ${test}`, rank === 1 ? h('span', { class: 'lw-best' }, ' mejor') : null, detail ? h('span', { class: 'lw-sub' }, detail) : null),
             h('td', {}, r.dir),
             h('td', { class: 'lw-num' }, `${r.points}/${r.max}`),
             h(
@@ -105,7 +109,9 @@ export default function mount(el: HTMLElement): void {
               { class: 'lw-time' },
               h('span', { class: 'lw-num' }, `${fmt(r.time, 2)} s`),
               h('span', { class: `lw-bar lw-c-${cls}`, 'aria-hidden': 'true', style: `width:${((r.time / maxTime) * 100).toFixed(1)}%` }),
+              h('span', { class: 'lw-sub lw-laps-inline' }, `vueltas ${r.laps.map((v) => fmt(v, 1)).join(' / ')} s`),
             ),
+            h('td', { class: 'lw-laps lw-col-laps' }, h('span', { class: 'lw-num' }, r.laps.map((v) => fmt(v, 1)).join(' / ')), h('span', { class: 'lw-sub' }, `+${fmt(r.time - lapSum, 1)} s hasta parar`)),
           );
         }),
       );
@@ -149,13 +155,14 @@ export default function mount(el: HTMLElement): void {
     root.append(
       filters,
       h('div', { class: 'lw-actions' }, rule),
+      legend([['blue', 'Gazebo (la autoridad)'], ['amber', 'Open lab (filtro rápido)']]),
       h('div', { class: 'lw-tablewrap', role: 'region', 'aria-label': 'Tabla de resultados, con desplazamiento horizontal si no cabe', tabindex: '0' }, table),
       status,
       live,
       h(
         'p',
         { class: 'lw-note' },
-        `Regla: gana quien tiene más puntos y, a igual puntuación, menos tiempo desde Start. El puesto cuenta dentro de cada prueba: el Open lab es un filtro rápido con el modelo del coche en Python y la autoridad es Gazebo, así que no compares tiempos entre las dos. Open lab: ${OPEN_LAB_SUMMARY.valid} de ${OPEN_LAB_SUMMARY.total} rondas válidas, tiempo medio ${fmt(OPEN_LAB_SUMMARY.meanTime, 2)} s. Estimaciones de simulación, no puntuación oficial.`,
+        `Regla: gana quien tiene más puntos y, a igual puntuación, menos tiempo desde Start (la marca «mejor» es el puesto 1 de cada prueba; un empate comparte puesto). Las vueltas son parciales de ese total: la suma de las tres queda por debajo porque después viene el frenado y la parada. El puesto cuenta dentro de cada prueba: el Open lab es un filtro rápido con el modelo del coche en Python y la autoridad es Gazebo, así que no compares tiempos entre las dos. Open lab: ${OPEN_LAB_SUMMARY.valid} de ${OPEN_LAB_SUMMARY.total} rondas válidas, tiempo medio ${fmt(OPEN_LAB_SUMMARY.meanTime, 2)} s. Estimaciones de simulación, no puntuación oficial.`,
       ),
     );
     render();

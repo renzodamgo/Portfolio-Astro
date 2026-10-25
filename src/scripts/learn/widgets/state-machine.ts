@@ -1,12 +1,28 @@
 // Widget "state-machine": the mission of step 7 as an animated diagram (SETUP, RUN with FOLLOW / TURN / FINISH, STOP).
 // It follows the transitions of my_open/mission.py (MiniMission) along a scripted round. No physics: it explains the logic.
-import { button, fmt, guarded, h, nextId, slider, svgEl } from './lib/common';
+// Next to the diagram: the lines of mission.py that run in the current state, the lap counter and the speed the mission asks for.
+import { button, createPlot, fmt, guarded, h, nextId, slider, svgEl } from './lib/common';
 
 type Sub = 'WAIT_START' | 'CALIBRATE' | 'DETECT_DIRECTION' | 'FOLLOW' | 'TURN' | 'FINISH' | 'DONE' | 'DIRECTION_FAULT' | 'OPERATOR_STOP';
 type EdgeId = 'start' | 'calibrated' | 'direction' | 'turn' | 'corner' | 'finish' | 'rest' | 'fault';
 type Group = 'SETUP' | 'RUN' | 'STOP';
 
-interface Ev { t: number; sub: Sub; corners: number; edge: EdgeId | null; speed: number; caption: string }
+interface Ev { t: number; sub: Sub; corners: number; edge: EdgeId | null; speed: number; caption: string; code?: CodeId }
+
+/** Lines of my_open/mission.py (step 7) that run in each state. Every line is copied from the file ('# ...' marks skipped lines). */
+type CodeId = Sub | 'BRAKE';
+const CODE: Record<CodeId, { fn: string; lines: string[] }> = {
+  WAIT_START: { fn: '_setup', lines: ['if not self.started:', '    return 0.0, 0.0'] },
+  CALIBRATE: { fn: '_setup', lines: ['self._time += dt', 'if not self._calibrated and self._time < CALIBRATE_SECONDS:', '    self._samples.append(gyro_z)', '    self._fronts.append(scene.front_axis)'] },
+  DETECT_DIRECTION: { fn: '_setup', lines: ['if not self.direction and camera:', "    self.direction = 'ccw' if camera > 0 else 'cw'", 'if self.direction:', "    self.state, self.travelled = 'RUN', 0.0"] },
+  FOLLOW: { fn: '_run', lines: ['steer = lane_steer(self.goal, self.yaw, keep, sign)', 'return self._straight_speed(scene, last, corner_speed), steer'] },
+  TURN: { fn: '_run', lines: ['if self.gate.update(scene, inner, self.travelled, self.arc):', '    self.goal = wrap(self.goal + sign * math.pi / 2)', '    self.arc = True', '# ...', 'if self.arc:', '    return corner_speed, self._corner(dt, gyro, sign, corner_speed)'] },
+  FINISH: { fn: '_finish', lines: ['if math.isfinite(self._start_front) and scene.front_axis > self._start_front + FINISH_LEAD:', '    return FINISH_SPEED, steer', 'self._braking = True'] },
+  BRAKE: { fn: '_finish', lines: ['self._rest += dt', 'if self._rest >= STOP_WAIT:', "    self._stop('done')", 'return 0.0, 0.0'] },
+  DONE: { fn: '_stop', lines: ['self.state, self.stop_reason = \'STOP\', reason'] },
+  DIRECTION_FAULT: { fn: '_setup', lines: ['elif self._time >= DIRECTION_TIMEOUT:', "    self._stop('direction_fault')"] },
+  OPERATOR_STOP: { fn: 'operator_stop', lines: ["self._stop('operator_stop')"] },
+};
 
 const CORNERS = 12;
 const GROUP: Record<Sub, Group> = {
@@ -27,7 +43,7 @@ function setupEvents(): Ev[] {
 
 function normalRound(): Ev[] {
   const ev = setupEvents();
-  ev.push({ t: 0.44, sub: 'FOLLOW', corners: 0, edge: 'direction', speed: CRUISE, caption: 'Sentido conocido (la cámara decidió): SETUP pasa a RUN. FOLLOW sigue el rumbo meta a lo largo de la pared de la isla, a 1,28 m/s pedidos.' });
+  ev.push({ t: 0.44, sub: 'FOLLOW', corners: 0, edge: 'direction', speed: CRUISE, caption: 'Sentido conocido (en este paso va fijo; desde el paso 8 lo decide la cámara): SETUP pasa a RUN. FOLLOW sigue el rumbo meta a lo largo de la pared de la isla, a 1,28 m/s pedidos.' });
   for (let k = 1; k <= CORNERS; k++) {
     const t0 = 1.1 + 2.6 * (k - 1);
     if (k === CORNERS) {
@@ -43,12 +59,12 @@ function normalRound(): Ev[] {
     ev.push({
       t: t0 + 1.1, sub: last ? 'FINISH' : 'FOLLOW', corners: k, edge: last ? 'finish' : 'corner', speed: last ? CREEP : CRUISE,
       caption: last
-        ? 'Esquina 12 hecha (tolerancia 0,4 rad en la última): con 12 esquinas contadas, RUN pasa a FINISH. Avanza a 0,15 m/s hasta que la pared de enfrente esté como en Start (más 0,08 m).'
+        ? 'Esquina 12 hecha (tolerancia 0,4 rad en la última): con 12 esquinas contadas, RUN pasa a FINISH. Avanza a 0,15 m/s hasta que la pared de enfrente esté a menos de 0,08 m de la distancia que tenía en Start.'
         : `Esquina ${k} hecha: el rumbo está a menos de 0,12 rad de la meta. El contador sube a ${k} y vuelve FOLLOW.`,
     });
   }
-  ev.push({ t: 33.9, sub: 'FINISH', corners: CORNERS, edge: null, speed: 0, caption: 'La pared de enfrente ya está a la distancia de Start: el freno se engancha (el ruido no puede arrancar el motor otra vez). Cuenta 0,9 s quieto.' });
-  ev.push({ t: 34.8, sub: 'DONE', corners: CORNERS, edge: 'rest', speed: 0, caption: 'Pasaron 0,9 s: STOP con razón done, etiqueta DONE. La ronda de referencia dura unos 34,8 s desde Start.' });
+  ev.push({ t: 33.9, sub: 'FINISH', code: 'BRAKE', corners: CORNERS, edge: null, speed: 0, caption: 'La pared de enfrente ya está a la distancia de Start: el freno se engancha (el ruido no puede arrancar el motor otra vez). Cuenta 0,9 s quieto.' });
+  ev.push({ t: 34.8, sub: 'DONE', corners: CORNERS, edge: 'rest', speed: 0, caption: 'Pasaron 0,9 s: STOP con razón done, etiqueta DONE. La ronda de referencia dura unos 34,8 s desde Start en Gazebo (32,58 s en el laboratorio).' });
   return ev;
 }
 
@@ -148,8 +164,16 @@ export default function mount(el: HTMLElement): void {
     any.textContent = 'desde cualquier estado';
     svg.append(any);
 
-    const dots = Array.from({ length: CORNERS }, () => h('span', { class: 'lw-cell' }));
+    const dots = Array.from({ length: CORNERS }, (_, i) => h('span', { class: i % 4 === 3 && i < CORNERS - 1 ? 'lw-cell lw-cell-lapend' : 'lw-cell' }));
     const counter = h('span', { class: 'lw-meter-text' });
+    const lapText = h('p', { class: 'lw-sm-lap' });
+    const codeHead = h('p', { class: 'lw-code-head' });
+    const codeText = h('code', {});
+    const code = h('pre', { class: 'lw-code', tabindex: '0', 'aria-label': 'Líneas de mission.py que se ejecutan en este estado' }, codeText);
+    const horizonOf = (list: Ev[]) => Math.max(10, Math.ceil(list[list.length - 1].t / 5) * 5);
+    const makePlot = (list: Ev[]) => createPlot({ xmin: 0, xmax: horizonOf(list), xlabel: 's desde Start (orientativo)', ylabel: 'm/s pedidos', aria: 'Velocidad que pide la misión a lo largo de la ronda', digitsY: 1 });
+    let plot = makePlot(events);
+    const plotBox = h('div', { class: 'lw-figure lw-square' }, plot.svg);
     const caption = h('p', { class: 'lw-caption', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' });
     const facts = h('dl', { class: 'lw-readout-list' });
 
@@ -172,6 +196,11 @@ export default function mount(el: HTMLElement): void {
       if (pos < events.length - 1) pos++;
       render();
     }, 'lw-btn-primary');
+    const bBack = button('Atrás', () => {
+      pause();
+      if (pos > 0) pos--;
+      render();
+    });
     const bPlay = button('Reproducir', () => (timer ? pause() : play()));
     const bReset = button('Reiniciar', () => {
       pause();
@@ -212,7 +241,27 @@ export default function mount(el: HTMLElement): void {
       (Object.keys(nodeG) as Sub[]).forEach((n) => nodeG[n].classList.toggle('lw-sm-node-on', n === ev.sub));
       (Object.keys(edgeG) as EdgeId[]).forEach((id) => edgeG[id].classList.toggle('lw-sm-edge-on', id === ev.edge));
       dots.forEach((d, i) => d.classList.toggle('lw-cell-on', i < ev.corners));
-      counter.textContent = `Esquinas contadas: ${ev.corners} de ${CORNERS}`;
+      counter.textContent = `${ev.corners} de ${CORNERS}`;
+      lapText.textContent = ev.corners >= CORNERS
+        ? 'Las 3 vueltas están hechas (12 esquinas contadas).'
+        : `Vuelta ${Math.floor(ev.corners / 4) + 1} de 3 · va por la esquina ${(ev.corners % 4) + 1} de 4 (cada vuelta tiene 4).`;
+      const snippet = CODE[ev.code ?? ev.sub];
+      codeHead.textContent = `Extracto de mission.py (sin comentarios), método ${snippet.fn}`;
+      codeText.textContent = snippet.lines.join('\n');
+      const horizon = horizonOf(events);
+      const stepLine: [number, number][] = [];
+      events.forEach((e, i) => {
+        if (i > 0) stepLine.push([e.t, events[i - 1].speed]);
+        stepLine.push([e.t, e.speed]);
+      });
+      stepLine.push([horizon, events[events.length - 1].speed]);
+      plot.update({
+        ymin: 0,
+        ymax: 1.5,
+        series: [{ points: stepLine, color: 'blue' }],
+        hlines: [{ y: CRUISE, label: 'crucero 1,28', color: 'muted' }, { y: LAST, label: 'última esquina 0,6', color: 'muted' }],
+        marker: { x: ev.t, y: ev.speed, color: 'amber' },
+      });
       caption.textContent = ev.caption;
       scrub.set(pos);
       facts.replaceChildren(
@@ -226,6 +275,7 @@ export default function mount(el: HTMLElement): void {
       );
       svg.setAttribute('aria-label', `Diagrama de estados de la misión. Estado actual: ${group}, ${ev.sub}. ${ev.corners} de ${CORNERS} esquinas contadas.`);
       bStep.disabled = pos >= events.length - 1;
+      bBack.disabled = pos <= 0;
       bLast.disabled = scenario !== 'normal';
     }
 
@@ -233,6 +283,8 @@ export default function mount(el: HTMLElement): void {
       pause();
       scenario = name;
       events = SCENARIOS[name].build();
+      plot = makePlot(events);
+      plotBox.replaceChildren(plot.svg);
       pos = 0;
       scrub.input.max = String(events.length - 1);
       render();
@@ -245,14 +297,18 @@ export default function mount(el: HTMLElement): void {
     root.append(
       h('div', { class: 'lw-figure lw-square' }, svg),
       h('div', { class: 'lw-meter-row' }, h('span', { class: 'lw-meter-title' }, 'Esquinas'), h('div', { class: 'lw-meter lw-meter-12', 'aria-hidden': 'true' }, ...dots), counter),
+      lapText,
       caption,
+      codeHead,
+      code,
+      plotBox,
       h('div', { class: 'lw-controls' }, field, scrub.root),
-      h('div', { class: 'lw-actions' }, bStep, bPlay, bReset, bLast),
+      h('div', { class: 'lw-actions' }, bBack, bStep, bPlay, bReset, bLast),
       facts,
       h(
         'p',
         { class: 'lw-note' },
-        'Sigue las transiciones de MiniMission. Los tiempos son orientativos (la ronda de referencia dura 34,8 s); la lógica es la del código: SETUP calibra y espera el sentido, RUN alterna FOLLOW y TURN y pasa a FINISH con 12 esquinas, y STOP se alcanza con done, direction_fault u operator_stop.',
+        'Sigue las transiciones de MiniMission. Los tiempos son orientativos (la ronda de referencia dura 34,8 s en Gazebo; el laboratorio da 32,58 s); la lógica es la del código: SETUP calibra y espera el sentido, RUN alterna FOLLOW y TURN y pasa a FINISH con 12 esquinas, y STOP se alcanza con done, direction_fault u operator_stop.',
       ),
     );
     render();

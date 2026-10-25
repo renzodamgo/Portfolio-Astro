@@ -10,7 +10,11 @@ import { currentTheme, onThemeChange, scenePalette, sceneBackground, trackColor,
 import { frameIndex, latestAt, samplePose, type Replay, type Scan, type Track, type TrackPose } from './format';
 
 export type CameraMode = 'top' | 'follow';
-export interface FrameOptions { lidar: boolean; measures: boolean; mode: CameraMode; dt: number; snap: boolean }
+export interface FrameOptions {
+  lidar: boolean; measures: boolean; mode: CameraMode; dt: number; snap: boolean;
+  /** Poster: draw the whole path (the car waits at the start) instead of the part driven so far. */
+  preview?: boolean;
+}
 export interface ReplayScene {
   resize(width: number, height: number): void;
   /** Draws the replay at `time` seconds. Returns true when the camera has settled (nothing else will move). */
@@ -338,7 +342,7 @@ async function buildScene(renderer: THREE.WebGLRenderer, replay: Replay, assetBa
         if (w.steered) w.pivot.rotation.z = pose.steer;
         w.wheel.rotation.y = pose.spin;
       }
-      if (view.trail) view.trail.geometry.setDrawRange(0, 6 * Math.min(view.trailSegments, frameIndex(track, time)));
+      if (view.trail) view.trail.geometry.setDrawRange(0, 6 * (o.preview ? view.trailSegments : Math.min(view.trailSegments, frameIndex(track, time))));
     }
     const main = views[0].pose;
 

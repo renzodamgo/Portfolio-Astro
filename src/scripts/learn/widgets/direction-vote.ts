@@ -1,5 +1,7 @@
 // Widget "direction-vote": DirectionVote (step 8). Feed the length of the blue and orange lines frame by frame and watch
 // the vote, the consecutive hits and the decision. Port of my_open/direction.py.
+// The picture is a sketch of one camera image (640 x 480 px, drawn at half size): the two lines with their length in pixels,
+// the top 8 % that line_lengths() ignores and the 40 px minimum.
 import { button, fmt, guarded, h, nextId, reducedMotion, slider, svgEl } from './lib/common';
 import { CONFIRMATIONS, DirectionVote, MIN_CONFIDENCE, MIN_LENGTH, frameVote } from './lib/direction-model';
 
@@ -22,8 +24,8 @@ export default function mount(el: HTMLElement): void {
     const sBlue = slider({ label: 'Línea azul', min: 0, max: MAX_LEN, step: 1, value: 300, format: (v) => `${fmt(v, 0)} px`, onInput: () => preview() });
     const sOrange = slider({ label: 'Línea naranja', min: 0, max: MAX_LEN, step: 1, value: 60, format: (v) => `${fmt(v, 0)} px`, onInput: () => preview() });
 
-    // two bars: what the camera "sees"
-    const BW = 360, BH = 90;
+    // a sketch of one camera image: what line_lengths() measures
+    const BW = 320, BH = 240, X0 = 52, HALF = 0.5; // the image is 640 x 480 px; it is drawn at half size
     const bars = svgEl('svg', { viewBox: `0 0 ${BW} ${BH}`, class: 'lw-svg', role: 'img' });
     const barsG = svgEl('g');
     bars.append(barsG);
@@ -53,21 +55,29 @@ export default function mount(el: HTMLElement): void {
       ),
       tbody,
     );
-    const empty = h('p', { class: 'lw-note' }, 'Aún no has enviado ningún fotograma.');
+    const empty = h('p', { class: 'lw-note' }, 'Aún no has enviado ningún fotograma. Mueve los deslizadores y pulsa «Enviar un fotograma», o envía la secuencia de ejemplo.');
 
     function drawBars(blue: number, orange: number, voteNow: number | null): void {
-      const scale = (BW - 130) / MAX_LEN;
-      const row = (y: number, len: number, cls: string, name: string) =>
-        `<text class="lw-tick" x="4" y="${y + 13}" fill="currentColor">${name}</text>` +
-        `<g class="lw-c-${cls}"><rect x="64" y="${y}" width="${Math.max(1, len * scale)}" height="18" rx="3" fill="currentColor"/></g>` +
-        `<text class="lw-tick" x="${64 + Math.max(1, len * scale) + 6}" y="${y + 13}" fill="currentColor">${fmt(len, 0)} px</text>`;
-      const minX = 64 + MIN_LENGTH * scale;
-      const mark = voteNow === null ? '' : `<text class="lw-tag lw-c-amber" x="4" y="${BH - 6}" fill="currentColor">${voteNow === 0 ? 'este fotograma no vota' : `este fotograma votaría ${signed(voteNow)}`}</text>`;
+      const bar = (y: number, len: number, cls: string, name: string) => {
+        const w = Math.max(1, len * HALF);
+        return (
+          `<text class="lw-tick" x="4" y="${y + 9}" fill="currentColor">${name}</text>` +
+          `<g class="lw-c-${cls}"><rect x="${X0}" y="${y}" width="${w}" height="10" rx="2" fill="currentColor"/>` +
+          `<path d="M${X0} ${y + 16}H${X0 + w}M${X0} ${y + 13}v6M${X0 + w} ${y + 13}v6" stroke="currentColor" stroke-width="1" fill="none"/>` +
+          `<text class="lw-tag" x="${X0 + w + 6}" y="${y + 10}" fill="currentColor">${fmt(len, 0)} px</text></g>`
+        );
+      };
+      const minX = X0 + MIN_LENGTH * HALF;
+      const mark = voteNow === null ? '' : `<text class="lw-tag lw-c-amber" x="6" y="${BH - 22}" fill="currentColor">${voteNow === 0 ? 'este fotograma no vota' : `este fotograma votaría ${signed(voteNow)}`}</text>`;
       barsG.innerHTML =
-        row(6, blue, 'blue', 'azul') +
-        row(30, orange, 'amber', 'naranja') +
-        `<line x1="${minX}" y1="2" x2="${minX}" y2="52" stroke="currentColor" class="lw-c-muted" stroke-dasharray="3 3"/>` +
-        `<text class="lw-tick" x="${minX + 3}" y="66" fill="currentColor">${MIN_LENGTH} px mínimo</text>` +
+        `<rect class="lw-frame" x="0.5" y="0.5" width="${BW - 1}" height="${BH - 1}"/>` +
+        `<rect x="1" y="1" width="${BW - 2}" height="${(BH * 0.08).toFixed(1)}" fill="currentColor" class="lw-c-muted" opacity="0.28"/>` +
+        `<text class="lw-tick" x="6" y="14" fill="currentColor">8 % superior: se ignora (pared y sala)</text>` +
+        `<text class="lw-tick" x="6" y="${BH - 6}" fill="currentColor">Esquema de una imagen de 640 × 480 px, dibujada a la mitad</text>` +
+        bar(76, blue, 'blue', 'azul') +
+        bar(130, orange, 'amber', 'naranja') +
+        `<line x1="${minX}" y1="62" x2="${minX}" y2="170" stroke="currentColor" class="lw-c-muted" stroke-dasharray="3 3"/>` +
+        `<text class="lw-tick" x="${minX + 3}" y="180" fill="currentColor">${MIN_LENGTH} px: mínimo para votar</text>` +
         mark;
     }
 
@@ -75,12 +85,13 @@ export default function mount(el: HTMLElement): void {
       const b = sBlue.get(), o = sOrange.get();
       const f = frameVote(b, o);
       drawBars(b, o, f.vote);
+      const sum = `confianza = |${fmt(b, 0)} − ${fmt(o, 0)}| / ${fmt(Math.max(b, o, 1), 0)} = ${fmt(f.confidence, 2)}`;
       preview$.textContent =
         f.reason === 'short'
           ? `Con estos números el fotograma no vota: la línea más larga mide menos de ${MIN_LENGTH} px (ruido).`
           : f.reason === 'close'
-            ? `Con estos números el fotograma no vota: la confianza es ${fmt(f.confidence, 2)} y hace falta ${fmt(MIN_CONFIDENCE, 2)}.`
-            : `Con estos números el fotograma votaría ${signed(f.vote)} (confianza ${fmt(f.confidence, 2)}).`;
+            ? `Con estos números el fotograma no vota: ${sum}, y hace falta ${fmt(MIN_CONFIDENCE, 2)} o más.`
+            : `Con estos números el fotograma votaría ${signed(f.vote)}: ${sum}, y ${fmt(MIN_CONFIDENCE, 2)} ya basta.`;
       bars.setAttribute('aria-label', `Línea azul de ${b} píxeles y línea naranja de ${o} píxeles. ${preview$.textContent}`);
     }
 
@@ -164,7 +175,7 @@ export default function mount(el: HTMLElement): void {
       h(
         'p',
         { class: 'lw-note' },
-        `Un fotograma vota solo si la línea más larga mide al menos ${MIN_LENGTH} px y |azul − naranja| / la más larga llega a ${fmt(MIN_CONFIDENCE, 2)}. La decisión necesita ${CONFIRMATIONS} votos seguidos iguales; un fotograma que no vota o vota lo contrario reinicia la cuenta.`,
+        `Los píxeles son los que mide line_lengths() en cada imagen (el lado largo de cada mancha de color). Un fotograma vota solo si la línea más larga mide al menos ${MIN_LENGTH} px y |azul − naranja| / la más larga llega a ${fmt(MIN_CONFIDENCE, 2)}. La decisión necesita ${CONFIRMATIONS} votos seguidos iguales; un fotograma que no vota o vota lo contrario reinicia la cuenta.`,
       ),
     );
     preview();

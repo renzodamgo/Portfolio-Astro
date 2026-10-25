@@ -1,21 +1,83 @@
 // Widget "corner": one 90 degree corner at cruising speed. Port of arc_steer / ramp (my_open/arc.py), of the MiniCar servo
-// model (minisim.py) and of the bench run_arc (course/tests/helpers.py). The numbers are the ones the Python bench prints.
+// model (minisim.py) and of the bench run_arc (course/tests/helpers.py). The numbers are the ones the Python bench prints
+// (lib/corner-model.ts was checked against Python for the six rows of the lesson's table in four situations).
 import { animate, button, createPlot, fmt, guarded, h, legend, readout, reducedMotion, slider, svgEl, toggle } from './lib/common';
-import { CLOSE_TOLERANCE, SERVO_DELAY, SERVO_TAU, STEER_LIMIT, controllerFor, runArc, type ArcRun, type CornerConfig } from './lib/corner-model';
+import {
+  CLOSE_TOLERANCE, SERVO_DELAY, SERVO_TAU, STEER_LIMIT, VARIANTS, controllerFor, fullLockRate, pythonCall, runArc, variantKey,
+  type ArcRun, type CornerConfig,
+} from './lib/corner-model';
 
 const DEG = 180 / Math.PI;
 const VW = 300, VH = 300, K = 170; // viewBox and px/m
 const X0 = 0.9, Y0 = 0.4; // metres left of and below the corner start that the window shows
 const FRONT = 0.1477, REAR = 0.0852, HALF = 0.074;
 const SECONDS = 4;
+const CLEAN = 2; // degrees: the tests accept less than this
+
+const BASE: CornerConfig = { ramp: true, feed: false, fade: true, damping: false };
+const INTRO = 'Elige una situación y un controlador, o pulsa uno de los intentos. Antes de pulsar, predice el sobrepaso.';
+const CUSTOM = 'Valores propios: la tabla de abajo muestra cómo cambia cada controlador con esta situación.';
+
+interface Situation {
+  label: string;
+  delay: number;
+  tau: number;
+  fast: boolean;
+}
+const SITUATIONS: Situation[] = [
+  { label: '1 Servo real', delay: SERVO_DELAY, tau: SERVO_TAU, fast: false },
+  { label: '2 Servo lento', delay: 0.15, tau: 0.1, fast: false },
+  { label: '3 Gira más rápido de lo que cree la estrategia', delay: SERVO_DELAY, tau: SERVO_TAU, fast: true },
+];
+
+interface Attempt {
+  label: string;
+  cfg: CornerConfig;
+  sit: number;
+  look: string;
+}
+const ATTEMPTS: Attempt[] = [
+  {
+    label: 'Servo lento, solo rampa',
+    cfg: VARIANTS[0].cfg,
+    sit: 1,
+    look: 'La referencia (línea gris) llega a 90° en 1 s, pero el servo tarda en responder: el coche sigue girando cuando ya debería enderezar y se pasa unos 10°. En «Ver el volante», el volante pedido solo cambia de signo cuando el coche ya pasó de 90° (a 92,8°).',
+  },
+  {
+    label: 'Añade amortiguamiento',
+    cfg: VARIANTS[4].cfg,
+    sit: 1,
+    look: 'El mismo servo lento, pero ahora se resta damping por la velocidad de giro que sobra: el volante cambia de signo antes de llegar a la meta (a 81,7°) y el sobrepaso baja a 0,2°.',
+  },
+  {
+    label: 'Gira más rápido, sin aflojar',
+    cfg: VARIANTS[1].cfg,
+    sit: 2,
+    look: 'La estrategia cree que el coche gira menos de lo que gira: la referencia sube más despacio que el coche. El feed-forward sigue sumando casi todo el volante, así que al llegar a 90° el volante aún pide unos 12° a la izquierda y el coche se pasa unos 17°. El servo es el real: el fallo no viene del servo.',
+  },
+  {
+    label: 'Con aflojado',
+    cfg: VARIANTS[2].cfg,
+    sit: 2,
+    look: 'Igual, pero el feed-forward se apaga en el último cuarto de radián antes de la meta (EXIT_ANGLE): al llegar a 90° el volante pide 0° y el sobrepaso baja a 0,3°.',
+  },
+  {
+    label: 'Sin rampa',
+    cfg: VARIANTS[5].cfg,
+    sit: 1,
+    look: 'Sin rampa, la meta es la referencia desde el primer instante y solo se amortigua. Con servo lento también queda limpio (0,1°), pero tarda más en llegar (1,22 s contra 1,20 s). La rampa no es lo que evita el sobrepaso; el amortiguamiento sí.',
+  },
+];
 
 export default function mount(el: HTMLElement): void {
   guarded(el, (root) => {
-    const cfg: CornerConfig = { ramp: true, feed: false, fade: true, damping: false };
+    const cfg: CornerConfig = { ...BASE };
     let delay = SERVO_DELAY, tau = SERVO_TAU, fast = false;
     let run: ArcRun | null = null;
     let index = 0, last = 0;
     let cancel: (() => void) | null = null;
+    let view: 'yaw' | 'steer' = 'yaw';
+    let look = INTRO;
 
     const svg = svgEl('svg', {
       viewBox: `0 0 ${VW} ${VH}`,
@@ -25,7 +87,7 @@ export default function mount(el: HTMLElement): void {
     });
     const scene = svgEl('g');
     svg.append(scene);
-    const plot = createPlot({
+    const yawPlot = createPlot({
       xmin: 0,
       xmax: SECONDS,
       xlabel: 'tiempo (s)',
@@ -33,6 +95,26 @@ export default function mount(el: HTMLElement): void {
       aria: 'Gráfico del rumbo del coche y del rumbo de referencia durante la esquina, con la meta de 90 grados',
       digitsY: 0,
     });
+    const steerPlot = createPlot({
+      xmin: 0,
+      xmax: SECONDS,
+      xlabel: 'tiempo (s)',
+      ylabel: 'volante (grados)',
+      aria: 'Gráfico del volante pedido por el controlador y del volante que alcanza el servo durante la esquina, con el tope de 17,6 grados',
+      digitsY: 0,
+    });
+    steerPlot.svg.setAttribute('hidden', '');
+    const yawLegend = legend([
+      ['amber', 'rumbo del coche (yaw)'],
+      ['muted', 'referencia (ref, la rampa)'],
+      ['green', 'meta de 90° y llegada a ±0,12 rad'],
+    ]);
+    const steerLegend = legend([
+      ['amber', 'volante pedido (steer)'],
+      ['blue', 'volante que alcanza el servo'],
+      ['green', 'tope del volante (17,6°)'],
+    ]);
+    steerLegend.setAttribute('hidden', '');
     const rd = readout();
     const P = (x: number, y: number): [number, number] => [(x + X0) * K, VH - (y + Y0) * K];
 
@@ -90,10 +172,10 @@ export default function mount(el: HTMLElement): void {
       scene.innerHTML = out;
       scrub.set(run.t[i]);
 
-      const yawDeg = run.yaw.map((v) => v * DEG);
-      const top = Math.max(100, Math.ceil((Math.max(...yawDeg) + 5) / 10) * 10);
       const r = run;
-      plot.update({
+      const yawDeg = r.yaw.map((v) => v * DEG);
+      const top = Math.max(100, Math.ceil((Math.max(...yawDeg) + 5) / 10) * 10);
+      yawPlot.update({
         ymin: -10,
         ymax: top,
         hlines: [{ y: 90, label: 'meta 90°', color: 'green' }],
@@ -101,23 +183,82 @@ export default function mount(el: HTMLElement): void {
           { color: 'muted', dashed: true, points: r.t.map((t, k) => [t, r.ref[k] * DEG] as [number, number]).filter((_, k) => k % 3 === 0) },
           { color: 'amber', points: r.t.map((t, k) => [t, yawDeg[k]] as [number, number]).filter((_, k) => k <= i && (k % 3 === 0 || k === i)) },
         ],
-        marker: { x: run.t[i], y: yawDeg[i], color: 'blue' },
+        marker: { x: r.t[i], y: yawDeg[i], color: 'blue' },
+      });
+      const lock = STEER_LIMIT * DEG;
+      const edge = Math.ceil((lock + 4) / 5) * 5;
+      steerPlot.update({
+        ymin: -edge,
+        ymax: edge,
+        hlines: [
+          { y: lock, label: 'tope', color: 'green' },
+          { y: -lock, label: 'tope', color: 'green' },
+        ],
+        series: [
+          { color: 'blue', points: r.t.map((t, k) => [t, r.steer[k] * DEG] as [number, number]).filter((_, k) => k <= i && (k % 3 === 0 || k === i)) },
+          { color: 'amber', points: r.t.map((t, k) => [t, r.cmd[k] * DEG] as [number, number]).filter((_, k) => k <= i && (k % 3 === 0 || k === i)) },
+        ],
+        marker: { x: r.t[i], y: r.cmd[i] * DEG, color: 'amber' },
       });
     }
+
+    const code = h('code', { class: 'lw-corner-code' });
+    const tableBody = h('tbody');
+    const table = h(
+      'div',
+      { class: 'lw-tablewrap', tabindex: '0', role: 'region', 'aria-label': 'Sobrepaso y tiempo de cada controlador con la situación elegida' },
+      h(
+        'table',
+        { class: 'lw-table lw-table-small' },
+        h('caption', { class: 'lw-corner-caption' }, 'Los seis controladores de la lección con la situación elegida: sobrepaso y tiempo hasta quedar a ±0,12 rad de la meta. Pulsa uno para probarlo.'),
+        h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Controlador'), h('th', { scope: 'col' }, 'Sobrepaso'), h('th', { scope: 'col' }, 'Tiempo'))),
+        tableBody,
+      ),
+    );
+    const lookEl = h('p', { class: 'lw-caption lw-corner-look', role: 'status', 'aria-live': 'polite' }, look);
 
     function numbers(): void {
       if (!run) return;
       const over = run.overshoot * DEG;
-      const clean = over < 2;
+      const clean = over < CLEAN;
+      const peak = Math.max(...run.cmd.map((v) => Math.abs(v))) * DEG;
       const rows: [string, string, string?][] = [
-        ['Sobrepaso (se pasa de la meta)', `${fmt(over, 1)}°`, clean ? 'green' : 'red'],
+        ['Sobrepaso máximo (pasarse de la meta)', `${fmt(over, 1)}°${clean ? '' : ' (más de 2°)'}`, clean ? 'green' : 'red'],
         [`Tiempo hasta ±${fmt(CLOSE_TOLERANCE, 2)} rad de la meta`, run.tClose === null ? 'no llega en 4 s' : `${fmt(run.tClose, 2)} s`],
-        ['Retardo / lag del servo', `${fmt(delay, 2)} s / ${fmt(tau, 2)} s`],
-        ['Creencia sobre la velocidad de giro', fast ? '70 % de la real' : 'la real'],
+        ['Volante máximo pedido', `${fmt(peak, 1)}°${peak >= STEER_LIMIT * DEG - 0.05 ? ' (el tope)' : ''}`],
+        ['Servo (delay / tau)', `${fmt(delay, 2)} s / ${fmt(tau, 2)} s`],
+        ['La estrategia cree que el giro máximo es', fast ? '0,7 del real' : 'el real'],
       ];
       rd.set(
         rows,
-        `Sobrepaso de ${fmt(over, 1)} grados${clean ? ', esquina limpia' : ''}. ${run.tClose === null ? 'No llega a la meta en 4 segundos.' : `Llega a menos de 0,12 radianes de la meta a los ${fmt(run.tClose, 2)} segundos.`}`,
+        `Sobrepaso de ${fmt(over, 1)} grados${clean ? ', esquina limpia' : ', más de 2 grados'}. ${run.tClose === null ? 'No llega a la meta en 4 segundos.' : `Llega a menos de 0,12 radianes de la meta a los ${fmt(run.tClose, 2)} segundos.`}`,
+      );
+      code.textContent = pythonCall(cfg, delay, tau, fast);
+    }
+
+    function variants(): void {
+      const key = variantKey(cfg);
+      tableBody.replaceChildren(
+        ...VARIANTS.map((v) => {
+          const r = runArc(controllerFor(v.cfg), { servoDelay: delay, servoTau: tau, rateFactor: fast ? 0.7 : 1 });
+          const o = r.overshoot * DEG;
+          const b = button(
+            v.label,
+            () => {
+              Object.assign(cfg, v.cfg);
+              look = CUSTOM;
+              sync();
+            },
+            'lw-sort',
+          );
+          return h(
+            'tr',
+            { class: v.key === key ? 'lw-row-hit' : undefined, 'aria-current': v.key === key ? 'true' : undefined },
+            h('th', { scope: 'row' }, b),
+            h('td', { class: o < CLEAN ? 'lw-c-green' : 'lw-c-red' }, `${fmt(o, 1)}°`),
+            h('td', {}, r.tClose === null ? 'no llega' : `${fmt(r.tClose, 2)} s`),
+          );
+        }),
       );
     }
 
@@ -136,6 +277,9 @@ export default function mount(el: HTMLElement): void {
       scrub.input.max = String(run.t[last]);
       index = last;
       numbers();
+      variants();
+      pressSituations();
+      lookEl.textContent = look;
       draw();
     }
 
@@ -163,7 +307,7 @@ export default function mount(el: HTMLElement): void {
 
     // controls
     const delaySlider = slider({
-      label: 'Retardo del servo',
+      label: 'Retraso del servo (servo_delay)',
       min: 0.06,
       max: 0.2,
       step: 0.01,
@@ -171,11 +315,12 @@ export default function mount(el: HTMLElement): void {
       format: (v) => `${fmt(v, 2)} s`,
       onInput: (v) => {
         delay = v;
+        look = CUSTOM;
         rerun();
       },
     });
     const tauSlider = slider({
-      label: 'Suavidad del servo',
+      label: 'Inercia del servo (servo_tau)',
       min: 0.05,
       max: 0.15,
       step: 0.01,
@@ -183,6 +328,7 @@ export default function mount(el: HTMLElement): void {
       format: (v) => `${fmt(v, 2)} s`,
       onInput: (v) => {
         tau = v;
+        look = CUSTOM;
         rerun();
       },
     });
@@ -193,24 +339,29 @@ export default function mount(el: HTMLElement): void {
       tauSlider.set(t);
     };
 
-    const tRamp = toggle('Rampa', cfg.ramp, (v) => {
+    const tRamp = toggle('Rampa (la ley sigue a ref, no a goal)', cfg.ramp, (v) => {
       cfg.ramp = v;
+      look = CUSTOM;
       sync();
     });
-    const tFeed = toggle('Anticipación (feed-forward)', cfg.feed, (v) => {
+    const tFeed = toggle('Feed-forward (feed=True)', cfg.feed, (v) => {
       cfg.feed = v;
+      look = CUSTOM;
       sync();
     });
-    const tFade = toggle('Desvanecer al final (fade)', cfg.fade, (v) => {
+    const tFade = toggle('Aflojado (fade=True)', cfg.fade, (v) => {
       cfg.fade = v;
+      look = CUSTOM;
       sync();
     });
-    const tDamp = toggle('Amortiguación (damping)', cfg.damping, (v) => {
+    const tDamp = toggle('Amortiguamiento (damping=0,1)', cfg.damping, (v) => {
       cfg.damping = v;
+      look = CUSTOM;
       sync();
     });
-    const tFast = toggle('El coche gira más rápido de lo esperado', fast, (v) => {
+    const tFast = toggle('La estrategia cree que el coche gira menos (rate_factor=0,7)', fast, (v) => {
       fast = v;
+      look = CUSTOM;
       rerun();
     });
     function sync(): void {
@@ -222,57 +373,96 @@ export default function mount(el: HTMLElement): void {
       tDamp.input.checked = cfg.damping;
       rerun();
     }
-    const recipe = (label: string, c: CornerConfig) =>
-      button(label, () => {
-        Object.assign(cfg, c);
-        sync();
-      });
 
-    const checks = h(
+    const sitButtons = SITUATIONS.map((s) =>
+      button(s.label, () => {
+        setSituation(s);
+        look = CUSTOM;
+        rerun();
+      }),
+    );
+    function setSituation(s: Situation): void {
+      setServo(s.delay, s.tau);
+      fast = s.fast;
+      tFast.input.checked = fast;
+    }
+    function pressSituations(): void {
+      SITUATIONS.forEach((s, i) => {
+        const on = Math.abs(delay - s.delay) < 1e-9 && Math.abs(tau - s.tau) < 1e-9 && fast === s.fast;
+        sitButtons[i].classList.toggle('lw-btn-on', on);
+        sitButtons[i].setAttribute('aria-pressed', String(on));
+      });
+    }
+
+    const attemptButtons = ATTEMPTS.map((t) =>
+      button(t.label, () => {
+        Object.assign(cfg, t.cfg);
+        setSituation(SITUATIONS[t.sit]);
+        look = t.look;
+        sync();
+        play();
+      }),
+    );
+
+    const viewButtons = (['yaw', 'steer'] as const).map((v) =>
+      button(v === 'yaw' ? 'Ver el rumbo' : 'Ver el volante', () => {
+        view = v;
+        showView();
+      }),
+    );
+    function showView(): void {
+      yawPlot.svg.toggleAttribute('hidden', view !== 'yaw');
+      yawLegend.toggleAttribute('hidden', view !== 'yaw');
+      steerPlot.svg.toggleAttribute('hidden', view !== 'steer');
+      steerLegend.toggleAttribute('hidden', view !== 'steer');
+      viewButtons.forEach((b, i) => {
+        const on = (i === 0) === (view === 'yaw');
+        b.classList.toggle('lw-btn-on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    }
+
+    const reset = button('Restablecer', () => {
+      Object.assign(cfg, BASE);
+      setSituation(SITUATIONS[0]);
+      look = INTRO;
+      view = 'yaw';
+      showView();
+      sync();
+    });
+
+    const checks = h('fieldset', { class: 'lw-group lw-radios' }, h('legend', {}, 'Qué lleva el controlador'), tRamp.root, tFeed.root, tFade.root, tDamp.root);
+    const situation = h(
       'fieldset',
-      { class: 'lw-group lw-radios' },
-      h('legend', {}, 'Qué lleva el controlador'),
-      tRamp.root,
-      tFeed.root,
-      tFade.root,
-      tDamp.root,
+      { class: 'lw-group' },
+      h('legend', {}, 'Situación'),
+      h('div', { class: 'lw-actions' }, ...sitButtons),
+      h('div', { class: 'lw-controls' }, delaySlider.root, tauSlider.root),
+      tFast.root,
     );
 
     root.append(
-      h('div', { class: 'lw-pair' }, h('div', { class: 'lw-figure' }, svg), h('div', { class: 'lw-figure' }, plot.svg)),
-      legend([
-        ['amber', 'rumbo del coche'],
-        ['muted', 'referencia (la rampa)'],
-        ['green', 'meta de 90° y llegada a ±0,12 rad'],
-      ]),
-      h('div', { class: 'lw-controls' }, delaySlider.root, tauSlider.root),
+      h('div', { class: 'lw-pair' }, h('div', { class: 'lw-figure' }, svg), h('div', { class: 'lw-figure' }, yawPlot.svg, steerPlot.svg)),
+      h('div', { class: 'lw-actions' }, ...viewButtons),
+      yawLegend,
+      steerLegend,
+      situation,
       checks,
-      h('div', { class: 'lw-actions' }, tFast.root),
-      h(
-        'div',
-        { class: 'lw-actions' },
-        recipe('Solo rampa', { ramp: true, feed: false, fade: true, damping: false }),
-        recipe('+ anticipación', { ramp: true, feed: true, fade: false, damping: false }),
-        recipe('+ desvanecer', { ramp: true, feed: true, fade: true, damping: false }),
-        recipe('+ amortiguación', { ramp: true, feed: true, fade: true, damping: true }),
-        button('Servo real', () => {
-          setServo(SERVO_DELAY, SERVO_TAU);
-          rerun();
-        }),
-        button('Servo lento (0,15 / 0,10)', () => {
-          setServo(0.15, 0.1);
-          rerun();
-        }),
-      ),
-      h('div', { class: 'lw-controls' }, scrub.root),
-      h('div', { class: 'lw-actions' }, button('Reproducir la esquina', play, 'lw-btn-primary')),
       rd.root,
+      h('p', { class: 'lw-note' }, 'Equivale a este banco de Python: ', code),
+      table,
+      h('div', { class: 'lw-actions' }, h('span', { class: 'lw-meter-title lw-tg-label' }, 'Prueba esto (predice el sobrepaso antes de pulsar)'), ...attemptButtons),
+      lookEl,
+      h('div', { class: 'lw-controls' }, scrub.root),
+      h('div', { class: 'lw-actions' }, button('Reproducir la esquina', play, 'lw-btn-primary'), reset),
       h(
         'p',
         { class: 'lw-note' },
-        `Mismo banco que run_arc de los tests: ${fmt(SECONDS, 0)} s, paso de 0,02 s, velocidad de crucero 1,28 m/s pedidos (el coche llega a 0,6), tope de dirección ${fmt(STEER_LIMIT * DEG, 1)}° y ruido del giroscopio del coche real. Sin rampa se usa jump_with_damping: la meta es la referencia desde el primer instante.`,
+        `Mismo banco que run_arc de los tests: ${fmt(SECONDS, 0)} s, paso de 0,02 s, velocidad de crucero 1,28 m/s pedidos (el coche llega a 0,6), giro máximo de ${fmt(fullLockRate(), 2)} rad/s con el volante al tope (${fmt(STEER_LIMIT * DEG, 1)}°) y ruido del giroscopio del coche real. Sin rampa se usa jump_with_damping: la meta es la referencia desde el primer instante.`,
       ),
     );
+    showView();
+    setSituation(SITUATIONS[0]);
     sync();
   });
 }

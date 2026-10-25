@@ -3,6 +3,7 @@ import { render } from "astro:content";
 import LearnLayout from "../../../layouts/LearnLayout.astro";
 import {
     GUIDE_BASE,
+    LAST_STEP,
     SITE,
     getGuideSteps,
     stepLabel,
@@ -18,7 +19,7 @@ export async function getStaticPaths() {
             entry,
             prev: steps[index - 1] as StepEntry | undefined,
             next: steps[index + 1] as StepEntry | undefined,
-            total: steps.length - 1,
+            total: LAST_STEP,
         },
     }));
 }
@@ -76,7 +77,7 @@ const jsonld = {
     <header>
         <p class="flex flex-wrap items-center gap-3 text-sm">
             <span class="font-medium tracking-wide text-amber-400 uppercase">
-                {stepLabel(entry)}{order > 0 && ` de ${total}`}
+                {stepLabel(entry)}{order > 0 && order <= LAST_STEP && ` de ${total}`}
             </span>
             <code
                 class="border border-white/15 bg-white/10 px-2 py-0.5 font-mono text-xs text-amber-300"

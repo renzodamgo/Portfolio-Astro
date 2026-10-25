@@ -16,7 +16,18 @@ Al terminar este capítulo tendrás tres cosas:
 2. El coche de la WRO en el campo Open, dentro de Gazebo, y las vistas del LiDAR y de la cámara en RViz. Lo conduces con el teclado.
 3. Tu propio paquete de ROS, `my_open`, que compila y se ejecuta. Ahí vivirá tu estrategia a partir del paso 1.
 
-Cuenta con una hora si todo va bien, casi toda en descargas. El entorno ocupa unos 4 GB en macOS y varios GB en Ubuntu (ROS 2 de escritorio más Gazebo). Deja unos 10 GB libres para no tener sorpresas.
+Cuenta con una hora si todo va bien, casi toda en descargas. El entorno ocupa unos 4,5 GB en macOS y varios GB en Ubuntu (ROS 2 de escritorio más Gazebo). Deja unos 10 GB libres para no tener sorpresas.
+
+## Seis palabras que vas a leer
+
+No hace falta entenderlas a fondo ahora: cada una vuelve a aparecer cuando se usa.
+
+- **ROS 2**: un conjunto de herramientas para programar robots como varios programas pequeños, los **nodos**, que se pasan mensajes por canales con nombre, los **tópicos**. Por ejemplo, `/cmd_vel_raw` es el canal donde se piden velocidades al coche.
+- **Gazebo**: el simulador. Pone el campo, el coche y la física.
+- **RViz**: un visor para ver lo que el robot percibe (los puntos del LiDAR, la imagen de la cámara).
+- **LiDAR**: un sensor con un láser que gira y mide la distancia a lo que tiene alrededor. Es la «vista» del coche para las paredes.
+- **colcon**: la herramienta que compila los paquetes. La carpeta con todos los paquetes (aquí, el repositorio) se llama **workspace**.
+- **`source`**: el comando que activa en *esta* terminal lo que acabas de instalar o compilar. Si una orden de ROS «no existe», casi siempre falta un `source`.
 
 > **Qué está probado.** Lo que ves aquí lo he ejecutado yo, pero no en todas partes:
 >
@@ -28,7 +39,7 @@ Cuenta con una hora si todo va bien, casi toda en descargas. El entorno ocupa un
 
 ## Requisitos y sistema operativo
 
-Necesitas un ordenador con Ubuntu 24.04 o con macOS en Apple Silicon, conexión a internet y una terminal. Elige tu sistema con las pestañas de abajo. La elección se recuerda en toda la guía.
+Necesitas un ordenador con Ubuntu 24.04 o con macOS en Apple Silicon, conexión a internet y una terminal (la ventana donde se escriben los comandos). Elige tu sistema con las pestañas de abajo. La elección se recuerda en toda la guía.
 
 <div data-os="ubuntu">
 
@@ -126,7 +137,7 @@ Si prefieres no hacer eso, compila con `colcon build` a secas. Funciona, pero en
 
 ## Comprueba la instalación
 
-Con el entorno cargado, comprueba que ROS y Gazebo responden:
+Con el entorno cargado (el `source` de arriba), comprueba que ROS y Gazebo responden:
 
 ```bash
 echo $ROS_DISTRO          # jazzy
@@ -134,7 +145,7 @@ gz sim --versions         # 8.x (Gazebo Harmonic)
 ros2 pkg list | grep robotek
 ```
 
-Debes ver `jazzy`, una versión 8 de Gazebo y los paquetes `robotek_*` del repositorio. Si falta alguno, no has cargado `install/setup.bash` (Ubuntu) o `tools/macos_env.sh` (macOS).
+Debes ver `jazzy`, una versión 8 de Gazebo y seis paquetes: `robotek_common`, `robotek_course`, `robotek_description`, `robotek_evaluation`, `robotek_gazebo` y `robotek_hardware`. Si faltan, no has cargado `install/setup.bash` (Ubuntu) o `tools/macos_env.sh` (macOS).
 
 Ahora lanza el simulador:
 
@@ -142,7 +153,7 @@ Ahora lanza el simulador:
 ros2 launch robotek_course sim.launch.py
 ```
 
-Se abre la ventana de Gazebo con el campo del reto Open y el coche mirando en el sentido contrario a las agujas del reloj (`direction:=ccw`, el valor por defecto). El coche está quieto. Lleva un LiDAR, una cámara a 6 fotogramas por segundo y un giroscopio, con los mismos retrasos y ruido que el coche real.
+Se abre la ventana de Gazebo con el campo del reto Open y el coche quieto, mirando hacia donde empieza la vuelta en sentido contrario a las agujas del reloj (`direction:=ccw`, el valor por defecto; con `direction:=cw` empieza mirando al otro lado). El coche lleva un LiDAR, una cámara a 6 fotogramas por segundo y un giroscopio, con los mismos retrasos y ruido que el coche real.
 
 Para ver lo que ve el coche, lanza el simulador con RViz:
 
@@ -158,7 +169,7 @@ Gazebo necesita una pantalla. Si tu máquina no tiene una (un servidor, un conte
 ros2 launch robotek_course sim.launch.py gui:=false rviz:=true
 ```
 
-El servidor de Gazebo corre igual sin ventana. Esto lo verifiqué en Docker con render por software. En el Mac, la simulación con cámara y LiDAR consume bastante CPU, y la ventana de Gazebo corre como un proceso aparte del servidor; si el ordenador se arrastra, cierra otras aplicaciones o prueba con `gui:=false`.
+El servidor de Gazebo corre igual sin ventana (lo verifiqué en Docker con render por software). En el Mac la simulación con cámara y LiDAR consume bastante CPU; si el ordenador se arrastra, cierra otras aplicaciones o prueba con `gui:=false`.
 
 ### Conduce con el teclado
 
@@ -177,7 +188,9 @@ Esa terminal debe estar en primer plano, porque lee las teclas directamente.
 | `espacio` | Para el coche y centra la dirección |
 | `q` | Sale |
 
-El programa publica en `/cmd_vel_raw`, el mismo tema que publicará tu estrategia. La velocidad y el ángulo de dirección se convierten en una velocidad de giro con el modelo de bicicleta; ese modelo es justo lo que escribirás en el paso 1. Da una vuelta al campo y fíjate en cómo cambia el escaneo en RViz. Para cerrar, pulsa `q` en esa terminal y `Ctrl+C` en la del simulador.
+Prueba esto: pulsa `w` tres veces y `a` dos veces. El coche arranca y dibuja un círculo a la izquierda; con `d` hasta pasar el centro, gira a la derecha. Con `espacio` se detiene. En RViz fíjate en cómo cambian los puntos del LiDAR cuando te acercas a una pared.
+
+El programa publica en `/cmd_vel_raw`, el mismo tópico que usará tu estrategia. Convierte la velocidad y el ángulo de dirección en una velocidad de giro con el **modelo de bicicleta**, que es justo lo que escribirás en el paso 1. Para cerrar, pulsa `q` en esa terminal y `Ctrl+C` en la del simulador.
 
 ## Crea tu paquete
 
@@ -219,7 +232,9 @@ ros2 run my_open drive
 
 Debe imprimir `Hi from my_open.`. Ese es el nodo de plantilla. En el paso 1 empiezas a llenar `my_open/` con código.
 
-Git ignora `src/my_open` en la rama `main`: es tu código, no el del repositorio. El repositorio tiene además una rama `solutions` con un commit y una etiqueta `step-N` por cada paso de la guía. Esta página corresponde a `step-0`. Para comparar tu trabajo con la referencia, desde el paso 1:
+### Tu código y la referencia
+
+Git ignora `src/my_open` en la rama `main`: es tu código, no el del repositorio. El repositorio tiene además una rama `solutions` con un commit y una etiqueta `step-N` por cada paso de la guía; esta página corresponde a `step-0`. Para comparar tu trabajo con la referencia, desde el paso 1:
 
 ```bash
 git fetch --tags
@@ -229,7 +244,7 @@ bash tools/compare-step.sh 1 2      # qué cambia la referencia entre dos pasos
 
 ## Si algo falla
 
-- **`rosdep install` falla con una dependencia que no encuentra.** No hace falta: `ros-jazzy-desktop` y `ros-jazzy-ros-gz` ya traen todo lo que pide el curso. Salta `rosdep` y ve directo a `colcon build`. (Si te sale justo `ament_python`, haz `git pull`: ya no está en el repositorio.)
+- **`rosdep install` (lo pide la documentación general de ROS) falla con una dependencia que no encuentra.** No hace falta: `ros-jazzy-desktop` y `ros-jazzy-ros-gz` ya traen todo lo que pide el curso. Salta `rosdep` y ve directo a `colcon build`.
 - **La ronda puntúa casi 0 aunque el código esté bien, o el coche avanza muy despacio.** Casi siempre quedan procesos de una ejecución anterior que se interrumpió (un `gz sim`, los puentes o tus nodos). Se mezclan con la nueva ronda: dos modelos de actuadores publican a la vez. Es lo que más tiempo me hizo perder. Una ronda que termina sola limpia lo suyo, pero si cortas con Ctrl+C o por tiempo, ciérralo todo antes de lanzar otra vez:
 
   ```bash
@@ -242,7 +257,7 @@ bash tools/compare-step.sh 1 2      # qué cambia la referencia entre dos pasos
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest course/tests/test_step_1.py
   ```
 
-- **Veo topics o nodos que no son míos.** Otro ordenador de la red usa tu mismo `ROS_DOMAIN_ID`. Elige un número entre 0 y 101 y úsalo igual en todas tus terminales: `export ROS_DOMAIN_ID=37`. En macOS el script ya pone 42.
+- **Veo tópicos o nodos que no son míos.** Otro ordenador de la red usa tu mismo `ROS_DOMAIN_ID`. Elige un número entre 0 y 101 y úsalo igual en todas tus terminales: `export ROS_DOMAIN_ID=37`. En macOS el script ya pone 42.
 - **Gazebo no abre ventana en WSL2.** Comprueba que WSLg funciona (`echo $DISPLAY` no debe estar vacío y una app gráfica sencilla debe abrirse). Si no, usa `gui:=false rviz:=true`.
 - **En macOS, `ros2` o `colcon` no es el de RoboStack, o `install/setup.sh` menciona `/opt/homebrew`.** Carga `tools/macos_env.sh` (limpia las variables de Homebrew) y vuelve a compilar.
 - **En macOS, `option --editable not recognized`.** Falta el truco de `setuptools<80` descrito arriba.
@@ -252,7 +267,7 @@ bash tools/compare-step.sh 1 2      # qué cambia la referencia entre dos pasos
 
 Cada paso de la guía repite el mismo ciclo:
 
-1. **Lee** la explicación de la página.
+1. **Lee** la explicación de la página y juega con sus gráficos.
 2. **Escribe** el código en tu editor, dentro de `src/my_open/my_open/`.
 3. **Prueba** con `pytest`. Las pruebas de cada paso son Python puro, sin ROS ni Gazebo:
 
@@ -261,7 +276,7 @@ Cada paso de la guía repite el mismo ciclo:
    ```
 
    En macOS, antepón `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`.
-4. **Comprueba en Gazebo** con el script de verificación del paso, o lanzando una ronda con tu estrategia:
+4. **Comprueba en Gazebo** con el script de verificación (`python3 course/verify_step.py N`, pasos 1 a 6), o lanzando una ronda con tu estrategia:
 
    ```bash
    ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=ccw
@@ -269,6 +284,16 @@ Cada paso de la guía repite el mismo ciclo:
 
 5. **Compara** con la referencia: `bash tools/compare-step.sh N`.
 
-Las rondas se guardan en `~/robotek_runs/` y los puntos son una estimación de simulación con las reglas publicadas, no una puntuación oficial. Si algo no te cuadra, vuelve a esta página: casi todos los problemas de instalación están en la sección anterior.
+Las rondas se guardan en `~/robotek_runs/` y los puntos son una estimación de simulación con las reglas publicadas, no una puntuación oficial. Los problemas de instalación más comunes están en la sección anterior.
 
-Cuando `ros2 run my_open drive` imprima `Hi from my_open.` y veas el coche en Gazebo, pasa al paso 1.
+## Resumen
+
+- Instalaste ROS 2 Jazzy y Gazebo, compilaste el repositorio y lanzaste el simulador con `ros2 launch robotek_course sim.launch.py`.
+- Cada terminal nueva necesita su `source` (`install/setup.bash` en Ubuntu, `tools/macos_env.sh` en macOS).
+- Tu código va en `src/my_open`, un paquete aparte que git ignora; la referencia de cada paso está en la rama `solutions`.
+
+## Antes de seguir
+
+- [ ] `ros2 pkg list | grep robotek` muestra los seis paquetes y el coche aparece en Gazebo.
+- [ ] Conduces el coche con `keyboard_drive` y ves el LiDAR en RViz.
+- [ ] `ros2 run my_open drive` imprime `Hi from my_open.`.

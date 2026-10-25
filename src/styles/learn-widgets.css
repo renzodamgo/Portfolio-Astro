@@ -835,3 +835,464 @@ html[data-theme="light"] .lw-replay-legend .lw-swatch {
         font-size: 0.68rem;
     }
 }
+
+/* imu-axes */
+.lw-imu-svg {
+    max-width: 34rem;
+    margin-inline: auto;
+}
+.lw-imu-yaml {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    overflow-x: auto;
+    background: var(--lw-panel);
+    border-radius: 0.5rem;
+    color: var(--lw-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+.lw-imu-verdict {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* ---- scan-explorer (paso 3): numbers written on the picture, a sticky picture on phones, the history strip ---- */
+.lw-scan-label {
+    font-size: 11px;
+    font-weight: 700;
+    paint-order: stroke;
+    stroke: var(--color-black);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+.lw-scan-strip {
+    max-height: 11rem;
+}
+.lw-scan-hint {
+    min-height: 3.6em;
+    margin-top: 0.6rem;
+}
+.lw-scan-summary {
+    margin-top: 0.4rem;
+}
+.lw-group > .lw-actions + .lw-field,
+.lw-group > .lw-actions + .lw-figure,
+.lw-group > .lw-field + .lw-figure,
+.lw-group > .lw-figure + .lw-legend {
+    margin-top: 0.6rem;
+}
+@media (max-width: 640px) {
+    .lw-scan-stick {
+        position: sticky;
+        top: 0.4rem;
+        z-index: 3;
+        padding-block: 0.3rem;
+        background: var(--color-black);
+        border-radius: 0.5rem;
+    }
+    .lw-scan-stick .lw-square {
+        max-width: min(100%, 44vh);
+    }
+}
+.lw-scan-hud {
+    font-size: 10.5px;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+/* ---- steps 7 to 9 (state-machine, direction-vote, results-table) and the replay player: poster, state chip, speed, keys ---- */
+.lw-replay-stage:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+.lw-replay-state {
+    position: absolute;
+    inset: auto 0.4rem 0.4rem 0.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.5rem;
+    max-width: calc(100% - 0.8rem);
+    padding: 0.35rem 0.6rem;
+    color: var(--stage-fg);
+    background: var(--stage-chip-bg);
+    border: 1px solid var(--stage-chip-border);
+    border-left: 4px solid var(--stage-accent-line);
+    border-radius: 0.4rem;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    pointer-events: none;
+}
+.lw-replay-state-name {
+    color: var(--stage-accent);
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+}
+.lw-replay-state-help {
+    flex: 1 1 8rem;
+}
+.lw-replay-state-meta {
+    flex: 1 0 100%;
+    color: var(--stage-muted);
+    font-variant-numeric: tabular-nums;
+}
+.lw-replay-state-meta:empty {
+    display: none;
+}
+.lw-replay-poster {
+    position: absolute;
+    inset: 2.2rem 0 auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 1rem;
+    text-align: center;
+    pointer-events: none;
+}
+.lw-replay-poster-btn {
+    pointer-events: auto;
+    min-height: 2.75rem;
+    padding-inline: 1.25rem;
+    font-size: 1rem;
+}
+.lw-replay-poster-text {
+    max-width: 18rem;
+    padding: 0.2rem 0.5rem;
+    color: var(--stage-fg);
+    background: var(--stage-chip-bg);
+    border-radius: 0.35rem;
+    font-size: 0.75rem;
+}
+.lw-replay-speedrow .lw-field {
+    max-width: 22rem;
+}
+.lw-replay-keys {
+    margin: 0;
+}
+.lw-replay-keys kbd {
+    padding: 0.05em 0.4em;
+    border: 1px solid var(--btn-border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: var(--lw-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+}
+html[data-theme="light"] .lw-replay-legend .lw-swatch {
+    filter: none; /* the swatches are already computed with trackColor() / scenePalette() */
+    opacity: 1 !important;
+}
+.lw-legend[aria-label] {
+    font-size: 0.78rem;
+}
+
+.lw-cell-lapend {
+    margin-right: 0.35rem;
+}
+.lw-sm-lap {
+    margin: 0;
+    color: var(--lw-amber-hi);
+    font-variant-numeric: tabular-nums;
+}
+.lw-code-head {
+    margin: 0;
+    color: var(--lw-muted);
+    font-size: 0.8rem;
+}
+.lw .lw-code {
+    margin: 0.25rem 0 0;
+    padding: 0.6rem 0.75rem;
+    overflow-x: auto;
+    background: var(--lw-panel);
+    border: 0;
+    border-left: 3px solid var(--lw-amber);
+    border-radius: 0.5rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+.lw .lw-code code {
+    padding: 0;
+    background: none;
+    border: 0;
+    white-space: pre;
+}
+.lw .lw-code:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+.lw-row-best td {
+    background: color-mix(in oklab, var(--lw-amber) 12%, transparent);
+}
+.lw-best {
+    color: var(--lw-amber-hi);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.lw-th-laps,
+.lw-laps {
+    min-width: 7.2rem;
+}
+@media (max-width: 480px) {
+    .lw-cell-lapend {
+        margin-right: 0.2rem;
+    }
+    .lw-th-laps,
+    .lw-laps {
+        min-width: 5.6rem;
+    }
+}
+
+/* ---- turn-gate widget ---- */
+.lw-tg-svg {
+    cursor: ew-resize;
+    touch-action: pan-y;
+    user-select: none;
+}
+.lw-tg-rows,
+.lw-tg-sub {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.lw-tg-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem;
+    background: var(--lw-panel);
+    border-left: 4px solid var(--lw-line);
+    border-radius: 0.4rem;
+}
+.lw-tg-row[data-ok="true"] {
+    border-left-color: var(--lw-green);
+}
+.lw-tg-row[data-ok="false"] {
+    border-left-color: var(--lw-red);
+}
+.lw-tg-group {
+    border-left-color: var(--lw-amber);
+}
+.lw-tg-group > .lw-tg-badge {
+    color: var(--lw-amber-hi);
+}
+.lw-tg-sub {
+    margin-top: 0.3rem;
+}
+.lw-tg-sub .lw-tg-row {
+    padding: 0.3rem 0.5rem;
+    background: transparent;
+    border: 1px solid var(--lw-line);
+    border-left-width: 4px;
+}
+.lw-tg-badge {
+    flex: none;
+    min-width: 2.1rem;
+    padding: 0.05rem 0.35rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+}
+.lw-tg-row[data-ok="true"] > .lw-tg-badge {
+    color: var(--lw-green);
+}
+.lw-tg-row[data-ok="false"] > .lw-tg-badge {
+    color: var(--lw-red);
+}
+.lw-tg-body {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+}
+.lw-tg-code {
+    font-size: 0.8rem;
+    color: var(--lw-amber-hi);
+    word-break: break-word;
+}
+.lw-tg-text {
+    color: var(--lw-text);
+    overflow-wrap: anywhere;
+}
+.lw-tg-verdict[data-fire="true"] {
+    border-left: 4px solid var(--lw-green);
+    color: var(--lw-green);
+}
+.lw-tg-verdict[data-fire="false"] {
+    border-left: 4px solid var(--lw-line);
+}
+.lw-tg-look {
+    min-height: 0;
+}
+
+/* turn-gate: win over the prose list and inline code styles */
+.lw .lw-tg-rows,
+.lw .lw-tg-sub {
+    padding-left: 0;
+    list-style: none;
+}
+.lw .lw-tg-rows > li,
+.lw .lw-tg-sub > li {
+    margin-top: 0;
+}
+.lw .lw-tg-body {
+    display: block;
+}
+.lw .lw-tg-code {
+    display: inline-block;
+    margin-right: 0.4rem;
+    padding: 0 0.3rem;
+    font-size: 0.78rem;
+}
+.lw .lw-tg-label {
+    flex-basis: 100%;
+}
+.lw-tg-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.lw-tg-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--lw-muted);
+}
+.lw-tg-pill[data-ok="true"] {
+    color: var(--lw-green);
+}
+.lw-tg-pill[data-ok="false"] {
+    color: var(--lw-red);
+}
+.lw-tg-pill b {
+    font-weight: 700;
+}
+.lw-tg-pill[data-ok] > span {
+    color: var(--lw-text);
+}
+
+/* "Antes de seguir": GFM task lists in the step pages (no bullet; the box is the marker) */
+.prose-learn ul.contains-task-list {
+    list-style: none;
+    padding-left: 0;
+}
+.prose-learn ul.contains-task-list > li.task-list-item {
+    position: relative;
+    padding-left: 1.9rem;
+}
+.prose-learn ul.contains-task-list > li.task-list-item > input[type="checkbox"] {
+    position: absolute;
+    left: 0.15rem;
+    top: 0.4em;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    accent-color: var(--color-amber-400, #e8a33d);
+}
+
+/* corner widget (and anything that toggles `hidden`) */
+.lw [hidden] {
+    display: none !important;
+}
+.lw .lw-corner-code {
+    display: block;
+    margin-top: 0.3rem;
+    padding: 0.4rem 0.6rem;
+    overflow-x: auto;
+    white-space: pre;
+    font-size: 0.78rem;
+}
+.lw-corner-caption {
+    padding: 0.4rem 0.5rem;
+    color: var(--lw-muted);
+    font-size: 0.8rem;
+    text-align: left;
+    caption-side: top;
+}
+.lw-table .lw-sort {
+    min-height: 2rem;
+    text-align: left;
+}
+.lw-table [aria-current="true"] .lw-sort {
+    color: var(--lw-amber-hi);
+    border-bottom-style: solid;
+}
+.lw .lw-corner-code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.lw-table-small th[scope="row"] {
+    color: var(--lw-text);
+    font-weight: 500;
+    white-space: normal;
+}
+.lw-table-small th[scope="row"] .lw-sort {
+    padding: 0;
+    min-height: 1.75rem;
+    border-bottom: 0;
+    font-weight: inherit;
+    text-align: left;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+.lw-table-small th[scope="row"] .lw-sort:hover {
+    text-decoration-style: solid;
+}
+
+/* results-table: on a narrow screen the laps go under the time instead of in their own column */
+.lw-laps-inline {
+    display: none;
+}
+@media (max-width: 560px) {
+    .lw-col-laps {
+        display: none;
+    }
+    .lw-laps-inline {
+        display: block;
+    }
+}
+.lw-replay-poster {
+    inset: 2.2rem 0 auto 0;
+}
+
+/* replay player: the mission state is a bar under the scene (not an overlay), so the field stays visible */
+.lw-replay .lw-replay-state {
+    position: static;
+    max-width: none;
+    color: var(--lw-text);
+    background: var(--lw-panel);
+    border: 0;
+    border-left: 4px solid var(--lw-amber);
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+.lw-replay .lw-replay-state-name {
+    color: var(--lw-amber-hi);
+    font-size: 1.05rem;
+}
+.lw-replay .lw-replay-state-meta {
+    color: var(--lw-muted);
+}
+@media (max-width: 480px) {
+    .lw-replay-poster-text {
+        display: none;
+    }
+}
+
+.lw .lw-replay-keys {
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+}

@@ -16,6 +16,11 @@ export function stepUrl(step: StepEntry): string {
     return `${GUIDE_BASE}${step.data.slug}/`;
 }
 
+/** The first chapters that are numbered steps (1 to 9); 10 and up are the real-car chapters. */
+export const LAST_STEP = 9;
+
 export function stepLabel(step: StepEntry): string {
-    return step.data.order === 0 ? "Preparación" : `Paso ${step.data.order}`;
+    if (step.data.order === 0) return "Preparación";
+    if (step.data.order > LAST_STEP) return "Coche real";
+    return `Paso ${step.data.order}`;
 }
