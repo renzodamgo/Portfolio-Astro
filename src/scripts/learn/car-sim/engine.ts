@@ -17,6 +17,8 @@ export interface EngineOptions {
 }
 export interface Engine {
   setVisible(visible: boolean): void;
+  /** Show or hide the LiDAR fan and the car-camera picture (the keys L and C do the same). */
+  setOverlays(overlays: { lidar?: boolean; camera?: boolean }): void;
   dispose(): void;
 }
 
@@ -29,6 +31,7 @@ const MESHES: [string, string][] = [
 export function startEngine(opts: EngineOptions): Engine {
   const { root, sim, compact, autostart, assetBase, onTick } = opts;
   const state = sim.state;
+  const challenge = root.dataset.challenge === 'true'; // the Reto panel has its own timer
   const q = <T extends HTMLElement>(sel: string) => root.querySelector(sel) as T;
   const viewport = q<HTMLElement>('.cs-viewport');
   const canvas = q<HTMLCanvasElement>('.cs-canvas');
@@ -347,7 +350,7 @@ export function startEngine(opts: EngineOptions): Engine {
       ? `v        ${state.v.toFixed(2)} m/s\nvolante  ${deg(state.steer)}°\nLiDAR    ${front} m\nchoques  ${state.contacts}`
       : `v        ${state.v.toFixed(2)} m/s\nvolante  ${deg(state.steer)}° (límite ±${deg(sim.steerLimit)}°)\n` +
         `x, y     ${state.x.toFixed(2)}, ${state.y.toFixed(2)} m\nrumbo    ${deg(wrap)}°\n` +
-        `LiDAR    ${front} m al frente\ntiempo   ${state.time.toFixed(1)} s\nchoques  ${state.contacts}`;
+        `LiDAR    ${front} m al frente\n${challenge ? '' : `tiempo   ${state.time.toFixed(1)} s\n`}choques  ${state.contacts}`;
   }
   function renderFrame() {
     if (disposed) return;
@@ -438,6 +441,13 @@ export function startEngine(opts: EngineOptions): Engine {
   }
 
   return {
+    setOverlays({ lidar, camera }) {
+      if (lidar !== undefined) lidarVisible = lidar;
+      if (camera !== undefined) camVisible = camera;
+      lidarRays.visible = lidarHits.visible = lidarVisible;
+      camLabel.hidden = !camVisible;
+      renderFrame();
+    },
     setVisible(v: boolean) { visible = v; if (v) kick(); else { cancelAnimationFrame(raf); raf = 0; } },
     dispose,
   };

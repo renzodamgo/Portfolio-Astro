@@ -65,6 +65,10 @@ Hay un detalle con los ángulos. 3 rad y -3 rad parecen estar a 6 rad de distanc
 
 **Prueba esto**: pulsa **Meta 3 rad, coche en −3 rad**. Con `wrap` el volante gira un poco a la derecha (el camino corto, 0,28 rad). Quita la marca de `wrap`: el volante se va al tope hacia la izquierda y el coche daría casi una vuelta entera por el camino largo.
 
+> **Antes de escribirlo, juega un rato.** Da 3 vueltas sin chocar y apunta tu tiempo. Tú ves la pista entera, pero el código solo sabrá hacia dónde mira por el giroscopio. ¿Cómo sabrías hacia dónde miras si no vieras la pista?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=2)
+
 ## Escríbelo
 
 > **En este paso**

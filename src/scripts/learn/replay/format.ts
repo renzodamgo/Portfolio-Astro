@@ -1,8 +1,10 @@
 // Replay file format (version 1): parsing, defensive validation and pure helpers. No DOM, no three.js.
-import { OUTLINE_FRONT, OUTLINE_HALF_WIDTH, OUTLINE_REAR } from '../car-sim/constants';
+import { createSectionJudge, MAX_SECTION_POINTS, type Direction } from '../car-sim/sections';
+
+export { footprintSection, matSection, MAX_SECTION_POINTS } from '../car-sim/sections';
+export type { Direction } from '../car-sim/sections';
 
 export type FieldName = 'square100' | 'long-island' | 'empty';
-export type Direction = 'ccw' | 'cw';
 
 export interface Track {
   id: string;
@@ -48,7 +50,6 @@ export class ReplayError extends Error {}
 
 const FIELDS: readonly string[] = ['square100', 'long-island', 'empty'];
 const DEFAULT_COLORS = ['#e8a33d', '#ff7a6b'];
-export const MAX_SECTION_POINTS = 24;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -181,43 +182,13 @@ export function frameIndex(track: Track, time: number): number {
 }
 
 // ----------------------------------------------------------------------------- mat sections
-/** Fixed mat sections as in rule_judge.mat_section: 0 bottom straight, then counter-clockwise. */
-export function matSection(x: number, y: number): number {
-  if (y < -0.5) return x < -0.5 ? 7 : x > 0.5 ? 1 : 0;
-  if (y > 0.5) return x < -0.5 ? 5 : x > 0.5 ? 3 : 4;
-  return x < 0 ? 6 : 2;
-}
-/** The section that holds the whole car outline, or null while it straddles a boundary. */
-export function footprintSection(x: number, y: number, yaw: number): number | null {
-  const c = Math.cos(yaw), s = Math.sin(yaw);
-  let found: number | null = null;
-  for (const [lx, ly] of [[OUTLINE_FRONT, OUTLINE_HALF_WIDTH], [OUTLINE_FRONT, -OUTLINE_HALF_WIDTH],
-    [-OUTLINE_REAR, -OUTLINE_HALF_WIDTH], [-OUTLINE_REAR, OUTLINE_HALF_WIDTH]]) {
-    const section = matSection(x + lx * c - ly * s, y + lx * s + ly * c);
-    if (found === null) found = section;
-    else if (found !== section) return null;
-  }
-  return found;
-}
-
 /** Section exits in the round direction, following the judge: backward crossings are not counted twice. */
 export function sectionExits(track: Track, direction: Direction): SectionExit[] {
-  const sign = direction === 'ccw' ? 1 : -1;
+  const judge = createSectionJudge(direction, MAX_SECTION_POINTS);
   const exits: SectionExit[] = [];
-  let current: number | null = null;
-  let reverse = 0;
   for (let i = 0; i < track.t.length; i++) {
-    const section = footprintSection(track.x[i], track.y[i], track.yaw[i]);
-    if (current === null) { current = section; continue; }
-    if (section === null || section === current) continue;
-    if (section === (current + sign + 8) % 8) {
-      if (reverse) reverse--;
-      else if (exits.length < MAX_SECTION_POINTS) exits.push({ t: track.t[i], section: current });
-      current = section;
-    } else if (section === (current - sign + 8) % 8) {
-      reverse++;
-      current = section;
-    }
+    const exited = judge.update(track.x[i], track.y[i], track.yaw[i]);
+    if (exited !== null) exits.push({ t: track.t[i], section: exited });
   }
   return exits;
 }

@@ -81,6 +81,10 @@ La condición 2 necesita saber cuántos metros avanzó el coche, y el coche no t
 
 En el paso 4 la ley de carril empuja al coche hacia la isla si está más lejos de 0,25 m. Cuando la isla termina, el lado queda abierto o sin pared, y esa ley pediría girar hacia donde no hay nada. Por eso, si `inner` no es finito o es mayor que `ISLAND_OPEN`, se usa `GAP` como distancia: error cero y sin desvío.
 
+> **Antes de escribirlo, juega un rato.** Gira cuando tú creas que toca, mirando el número de frente. El código usa 1,19 m. Prueba a girar antes y después, y mira qué pasa con la esquina. ¿Qué distancia te da mejor resultado?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=6)
+
 ## Escríbelo
 
 > **En este paso**

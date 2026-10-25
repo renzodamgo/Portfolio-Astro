@@ -8,6 +8,8 @@ tag: "step-0"
 compareFrom: "step-0"
 ---
 
+Mientras se instala, juega con el coche: [Juega con el coche en el navegador](/learn/open-strategy/simulador/).
+
 ## Qué tendrás al final
 
 Al terminar este capítulo tendrás tres cosas:

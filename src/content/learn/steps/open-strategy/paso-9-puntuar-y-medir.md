@@ -126,6 +126,10 @@ Para comparar con tu ejecución del lab, las 12 rondas con sus tiempos, todas v�
 
 12 de 12 válidas, tiempo medio 40,75 s (Open lab, semilla 0). Las dos rondas de Gazebo (`ccw` 34,80 s y `cw` 34,90 s, ambas 30 puntos y válidas) están en la tabla de arriba.
 
+> **Antes de empezar, juega un rato.** Haz tu mejor ronda y compárala con la del código: cuentan primero los puntos y después el tiempo. ¿Qué cambiarías para ganar tiempo sin perder puntos?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=9)
+
 ## Hazlo: correr, leer, anotar
 
 > **En este paso**

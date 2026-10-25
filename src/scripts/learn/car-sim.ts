@@ -32,7 +32,9 @@ export function mountCarSim(root: CarSimElement) {
     },
   };
 
-  let engine: { setVisible(v: boolean): void; dispose(): void } | null = null;
+  let engine: { setVisible(v: boolean): void; setOverlays(o: { lidar?: boolean; camera?: boolean }): void; dispose(): void } | null = null;
+  let overlays: { lidar?: boolean; camera?: boolean } = {};
+  let stopChallenge: (() => void) | null = null;
   let loading = false;
   let visible = false;
   let gone = false;
@@ -49,6 +51,7 @@ export function mountCarSim(root: CarSimElement) {
         root, sim, compact, autostart, assetBase: ASSET_BASE,
         onTick: () => { const pose = sim.getPose(); listeners.forEach((cb) => cb(pose, sim.ranges)); },
       });
+      engine.setOverlays(overlays);
       engine.setVisible(visible);
     } catch (error) {
       console.error('[car-sim] could not start', error);
@@ -56,6 +59,18 @@ export function mountCarSim(root: CarSimElement) {
       const loadingEl = root.querySelector<HTMLElement>('.cs-loading');
       if (loadingEl) { loadingEl.hidden = false; loadingEl.textContent = 'No se pudo iniciar WebGL en este navegador.'; }
     }
+  }
+
+  // Challenge mode (?paso=N&dir=...): the panel and the rules are a separate light module, no three.js in it.
+  if (root.dataset.challenge === 'true') {
+    import('./car-sim/challenge').then(({ startChallenge }) => {
+      if (gone) return;
+      stopChallenge = startChallenge({
+        root, sim,
+        onTick: (cb) => { const listener = () => cb(); listeners.add(listener); return () => { listeners.delete(listener); }; },
+        setOverlays(o) { overlays = { ...overlays, ...o }; engine?.setOverlays(o); },
+      });
+    }).catch((error) => console.error('[car-sim] challenge could not start', error));
   }
 
   const observer = new IntersectionObserver((entries) => {
@@ -70,6 +85,8 @@ export function mountCarSim(root: CarSimElement) {
   const dispose = () => {
     gone = true;
     observer.disconnect();
+    stopChallenge?.();
+    stopChallenge = null;
     engine?.dispose();
     engine = null;
     listeners.clear();

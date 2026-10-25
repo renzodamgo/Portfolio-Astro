@@ -2,14 +2,18 @@
 /**
  * Drivable Robotek car on the Open Challenge field (Three.js, lazy). Mount as <CarSim />.
  * JS API on the root element: el.__carSim = { setDirection, reset, getPose, onTick }.
+ * With `challenge` it also shows the Reto panel (timer, laps, sections, crashes, best round, finish card), configured
+ * by the URL: ?paso=1..9 and ?dir=ccw|cw (see scripts/learn/car-sim/challenge.ts).
  */
 interface Props {
     /** Smaller canvas, fewer HUD lines, for embedding inside a guide step. */
     compact?: boolean;
     /** Skip the dimmed "haz clic para conducir" cover (a small hint chip is shown instead). */
     autostart?: boolean;
+    /** Manual challenge mode: the Reto panel above the canvas and the finish card over it. */
+    challenge?: boolean;
 }
-const { compact = false, autostart = false } = Astro.props;
+const { compact = false, autostart = false, challenge = false } = Astro.props;
 ---
 
 <div
@@ -17,8 +21,126 @@ const { compact = false, autostart = false } = Astro.props;
     data-car-sim
     data-compact={compact ? "true" : "false"}
     data-autostart={autostart ? "true" : "false"}
+    data-challenge={challenge ? "true" : "false"}
     data-focused="false"
 >
+    {
+        challenge && (
+            <section class="csc" data-csc="panel" aria-label="Reto">
+                <div class="csc-head">
+                    <h2 class="csc-title" data-csc="title">Reto</h2>
+                    <a class="csc-back" data-csc="back" href="/learn/open-strategy/" hidden>
+                        Volver a la guía
+                    </a>
+                    <span class="csc-spacer" />
+                    <div class="csc-dirbox" data-csc="dirbox">
+                        <span class="csc-dirlabel" data-csc="dirlabel">Sentido: antihorario</span>
+                        <button type="button" class="csc-btn" data-csc-dir="ccw" aria-pressed="true">
+                            Antihorario
+                        </button>
+                        <button type="button" class="csc-btn" data-csc-dir="cw" aria-pressed="false">
+                            Horario
+                        </button>
+                    </div>
+                    <button type="button" class="csc-btn csc-reset" data-csc="reset">
+                        Reiniciar (R)
+                    </button>
+                </div>
+                <p class="csc-text" data-csc="text" />
+                <p class="csc-speed" data-csc="speed">Velocidad máxima: 0,6 m/s, como el coche real.</p>
+                <div class="csc-guess" data-csc="guess" role="group" aria-label="Adivina el sentido" hidden>
+                    <p class="csc-guess-hint" data-csc="guess-hint">
+                        Elige el sentido para poder arrancar. La cámara (tecla C) muestra lo único que ve el código.
+                    </p>
+                    <div class="csc-guess-buttons">
+                        <button type="button" class="csc-btn" data-csc-guess="ccw" aria-pressed="false">
+                            Líneas azules más largas: antihorario
+                        </button>
+                        <button type="button" class="csc-btn" data-csc-guess="cw" aria-pressed="false">
+                            Líneas naranjas más largas: horario
+                        </button>
+                        <button type="button" class="csc-btn csc-skip" data-csc-guess="skip">Saltar</button>
+                    </div>
+                </div>
+                <div class="csc-stats">
+                    <div class="csc-stat csc-stat-time">
+                        <span class="csc-label">Tiempo</span>
+                        <span class="csc-value csc-big" data-csc="time">0,0 s</span>
+                    </div>
+                    <div class="csc-stat">
+                        <span class="csc-label">Vueltas</span>
+                        <span class="csc-value" data-csc="laps">0/3</span>
+                    </div>
+                    <div class="csc-stat">
+                        <span class="csc-label">Secciones</span>
+                        <span class="csc-value" data-csc="sections">0/24</span>
+                    </div>
+                    <div class="csc-stat">
+                        <span class="csc-label">Choques</span>
+                        <span class="csc-value" data-csc="crashes">0</span>
+                    </div>
+                    <div class="csc-stat csc-stat-best">
+                        <span class="csc-label" data-csc="bestlabel">Mejor ronda</span>
+                        <span class="csc-value csc-small" data-csc="best">ninguna todavía</span>
+                    </div>
+                </div>
+                <div class="csc-reads">
+                    <div class="csc-read" data-read="steer" hidden>
+                        <span class="csc-label">Volante</span>
+                        <span class="csc-value" data-csc="steer">0,0°</span>
+                    </div>
+                    <div class="csc-read" data-read="limit" hidden>
+                        <span class="csc-label">Límite (tecla T)</span>
+                        <span class="csc-value" data-csc="limit" />
+                    </div>
+                    <div class="csc-read" data-read="radius" hidden>
+                        <span class="csc-label">Radio de giro</span>
+                        <span class="csc-value" data-csc="radius">recto</span>
+                    </div>
+                    <div class="csc-read" data-read="heading" hidden>
+                        <span class="csc-label">Rumbo del giroscopio</span>
+                        <span class="csc-value" data-csc="heading">0°</span>
+                    </div>
+                    <div class="csc-read" data-read="left" hidden>
+                        <span class="csc-label">Izquierda</span>
+                        <span class="csc-value" data-csc="left">-</span>
+                    </div>
+                    <div class="csc-read" data-read="right" hidden>
+                        <span class="csc-label">Derecha</span>
+                        <span class="csc-value" data-csc="right">-</span>
+                    </div>
+                    <div class="csc-read" data-read="front" hidden>
+                        <span class="csc-label">Frente</span>
+                        <span class="csc-value" data-csc="front">-</span>
+                    </div>
+                    <div class="csc-read" data-read="gap" hidden>
+                        <span class="csc-label">Hueco a la isla</span>
+                        <span class="csc-value" data-csc="gap" data-ok="false">-</span>
+                    </div>
+                    <div class="csc-read" data-read="band" hidden>
+                        <span class="csc-label">Dentro de la banda</span>
+                        <span class="csc-value" data-csc="band">0,0 s</span>
+                    </div>
+                    <div class="csc-read" data-read="turn" hidden>
+                        <span class="csc-label">Empezaste a girar a</span>
+                        <span class="csc-value" data-csc="turn">todavía no giraste</span>
+                    </div>
+                </div>
+                <div class="csc-gauge" data-csc="gauge" hidden>
+                    <div class="csc-gauge-track">
+                        <div class="csc-gauge-band" />
+                        <div class="csc-gauge-marker" data-csc="marker" />
+                    </div>
+                    <div class="csc-gauge-scale" aria-hidden="true">
+                        <span>0</span>
+                        <span>banda verde: 0,20 a 0,30 m</span>
+                        <span>0,60 m</span>
+                    </div>
+                </div>
+                <p class="csc-sr" role="status" aria-live="polite" data-csc="live" />
+            </section>
+        )
+    }
     <div
         class="cs-viewport"
         tabindex="0"
@@ -33,6 +155,26 @@ const { compact = false, autostart = false } = Astro.props;
         <div class="cs-cover" aria-hidden="true">
             <span class="cs-cover-chip">Haz clic para conducir</span>
         </div>
+        {
+            challenge && (
+                <p class="cs-lockmsg" data-csc="lockmsg" aria-hidden="true" hidden>
+                    Elige el sentido para arrancar
+                </p>
+            )
+        }
+        {
+            challenge && (
+                <div class="cs-finish" data-csc="finish" hidden>
+                    <h3 class="csf-title">Ronda terminada</h3>
+                    <p class="csf-line" data-csc="finish-line" />
+                    <p class="csf-extra" data-csc="finish-extra" />
+                    <p class="csf-note">Es una estimación, no la puntuación oficial.</p>
+                    <button type="button" class="csc-btn" data-csc="again">
+                        Reiniciar (R)
+                    </button>
+                </div>
+            )
+        }
         <div class="cs-touch">
             <div class="cs-pad cs-pad-left">
                 <button type="button" tabindex="-1" data-touch="left" aria-label="Girar a la izquierda">←</button>
@@ -272,6 +414,338 @@ const { compact = false, autostart = false } = Astro.props;
     }
     .car-sim[data-compact="true"] .cs-keys {
         font-size: 12px;
+    }
+
+    /* ---- Challenge mode: Reto panel above the canvas, finish card over it ---- */
+    .car-sim {
+        --cs-good: #6fd3a0;
+        --cs-bad: var(--stage-error, #ff9d8f);
+        --cs-panel: color-mix(in oklab, var(--cs-text) 6%, transparent);
+    }
+    :global(html[data-theme="light"]) .car-sim {
+        --cs-good: #1c7a4c;
+    }
+    .csc {
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--cs-line);
+        border-radius: 10px;
+        background: var(--cs-panel);
+    }
+    .csc-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+    }
+    .csc-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--cs-amber-soft);
+    }
+    .csc-back {
+        color: var(--cs-amber-soft);
+        font-size: 13px;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+    .csc-back[hidden] {
+        display: none;
+    }
+    .csc-spacer {
+        flex: 1 1 0;
+    }
+    .csc-dirbox {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .csc-dirbox[hidden] {
+        display: none;
+    }
+    .csc-dirlabel {
+        margin-right: 4px;
+        color: var(--cs-muted);
+        font-size: 13px;
+    }
+    .csc-btn {
+        padding: 5px 12px;
+        border: 1px solid var(--btn-border, var(--cs-line));
+        border-radius: 8px;
+        background: var(--btn-bg, transparent);
+        color: var(--cs-text);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .csc-btn:hover {
+        background: var(--btn-bg-hover, var(--cs-panel));
+    }
+    .csc-btn:focus-visible {
+        outline: 2px solid var(--focus-ring, var(--cs-amber));
+        outline-offset: 2px;
+    }
+    .csc-btn[aria-pressed="true"] {
+        background: var(--btn-on-bg, var(--cs-panel));
+        border-color: var(--btn-on-border, var(--cs-amber));
+    }
+    .csc-reset {
+        background: var(--btn-primary-bg, #e8a33d);
+        border-color: var(--btn-primary-bg, #e8a33d);
+        color: var(--btn-primary-fg, #0c0a07);
+        font-weight: 600;
+    }
+    .csc-reset:hover {
+        background: var(--btn-primary-bg-hover, #f2b95c);
+    }
+    .csc-text {
+        margin: 8px 0 12px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .csc-speed {
+        margin: -4px 0 10px;
+        color: var(--cs-muted);
+        font-size: 13px;
+    }
+    .csc-guess {
+        margin: 0 0 12px;
+        padding: 8px 10px;
+        border: 1px dashed var(--cs-amber);
+        border-radius: 8px;
+    }
+    .csc-guess[hidden],
+    .cs-lockmsg[hidden] {
+        display: none;
+    }
+    .csc-guess-hint {
+        margin: 0 0 8px;
+        font-size: 14px;
+    }
+    .csc-guess-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .csc-btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+    .csc-btn:disabled[aria-pressed="true"] {
+        opacity: 1;
+    }
+    .cs-lockmsg {
+        position: absolute;
+        left: 50%;
+        bottom: 14px;
+        z-index: 3;
+        margin: 0;
+        padding: 8px 16px;
+        transform: translateX(-50%);
+        border: 1px solid var(--cs-amber);
+        border-radius: 999px;
+        background: var(--cs-chip);
+        color: var(--cs-amber-soft);
+        font-size: 14px;
+        font-weight: 600;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+    .car-sim[data-locked="true"] .cs-cover-chip {
+        display: none;
+    }
+    @media (max-width: 720px) {
+        .csc-speed {
+            margin-top: -2px;
+            font-size: 12px;
+        }
+        .csc-guess-buttons .csc-btn {
+            flex: 1 1 100%;
+        }
+    }
+    .csc-stats {
+        display: grid;
+        grid-template-columns: minmax(150px, 1.6fr) repeat(3, minmax(70px, 1fr)) minmax(130px, 1.5fr);
+        gap: 8px;
+    }
+    .csc-stat,
+    .csc-read {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        padding: 6px 10px;
+        border: 1px solid var(--cs-line);
+        border-radius: 8px;
+    }
+    .csc-label {
+        color: var(--cs-muted);
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    .csc-value {
+        font: 600 1.15rem/1.25 ui-monospace, Menlo, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+    }
+    .csc-big {
+        font-size: 2.2rem;
+        line-height: 1.1;
+        color: var(--cs-amber-soft);
+    }
+    .csc-small {
+        font-size: 0.95rem;
+    }
+    .csc-reads {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .csc-reads:not(:has(.csc-read:not([hidden]))) {
+        display: none;
+    }
+    .csc-read[hidden] {
+        display: none;
+    }
+    .csc-value[data-ok="true"] {
+        color: var(--cs-good);
+    }
+    .csc-value[data-ok="false"] {
+        color: var(--cs-bad);
+    }
+    .csc-gauge {
+        margin-top: 10px;
+    }
+    .csc-gauge[hidden] {
+        display: none;
+    }
+    .csc-gauge-track {
+        position: relative;
+        height: 14px;
+        border: 1px solid var(--cs-line);
+        border-radius: 7px;
+        background: var(--cs-panel);
+    }
+    .csc-gauge-band {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 33.333%;
+        width: 16.667%;
+        background: var(--cs-good);
+        opacity: 0.55;
+    }
+    .csc-gauge-marker {
+        position: absolute;
+        top: -4px;
+        width: 4px;
+        height: 20px;
+        margin-left: -2px;
+        border-radius: 2px;
+        background: var(--cs-amber-soft);
+        transition: left 0.08s linear;
+    }
+    .csc-gauge-scale {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 4px;
+        color: var(--cs-muted);
+        font-size: 12px;
+    }
+    .csc-sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    .cs-finish {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 4;
+        width: min(30rem, calc(100% - 24px));
+        max-height: calc(100% - 20px);
+        overflow-y: auto;
+        padding: 14px 18px;
+        transform: translate(-50%, -50%);
+        border: 2px solid var(--cs-amber);
+        border-radius: 12px;
+        background: var(--cs-bg);
+        color: var(--cs-text);
+        font-size: 14px;
+        line-height: 1.5;
+        user-select: text;
+        -webkit-user-select: text;
+        touch-action: auto;
+    }
+    .cs-finish[hidden] {
+        display: none;
+    }
+    .cs-finish p {
+        margin: 0 0 8px;
+    }
+    .csf-title {
+        margin: 0 0 6px;
+        color: var(--cs-amber-soft);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .csf-note {
+        color: var(--cs-muted);
+        font-size: 12px;
+    }
+    .car-sim[data-tight="true"] .cs-finish {
+        padding: 10px 12px;
+        font-size: 12.5px;
+        line-height: 1.4;
+    }
+    @media (max-width: 720px) {
+        .csc {
+            margin-bottom: 8px;
+            padding: 10px 10px;
+        }
+        .csc-text {
+            margin: 6px 0 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .csc-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .csc-stat-time {
+            grid-column: 1 / 3;
+        }
+        .csc-stat-best {
+            grid-column: auto;
+        }
+        .csc-stat,
+        .csc-read {
+            padding: 4px 8px;
+        }
+        .csc-big {
+            font-size: 1.9rem;
+        }
+        .csc-value {
+            font-size: 1rem;
+        }
+        .csc-small {
+            font-size: 0.8rem;
+        }
+        .csc-reads {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .csc-spacer {
+            display: none;
+        }
     }
 </style>
 

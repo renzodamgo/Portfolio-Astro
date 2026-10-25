@@ -22,15 +22,25 @@ export function createSim() {
   /** Input set from the guide widgets through setDirection (null = none). */
   let override: { throttle: number; steer: number } | null = null;
   let steerLimit = STEER_LIMITS.real;
+  let maxSpeed = MAX_SPEED;
+  /** While locked the car ignores the controls and stays on the start (the step 8 guess). */
+  let locked = false;
   let lastHit = { index: -1, at: -1e9 };
+  /** Where reset() puts the car (the challenge starts it facing the other way for clockwise rounds). */
+  const start = { x: START.x, y: START.y, yaw: START.yaw };
+  /** Optional listeners (the manual challenge): after each fixed step and after each reset. */
+  let stepHook: ((state: CarState) => void) | null = null;
+  let resetHook: (() => void) | null = null;
   const ranges = new Float32Array(LIDAR.samples);
   let frontRange = Infinity;
 
   const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
   function reset() {
-    Object.assign(state, { x: START.x, y: START.y, yaw: START.yaw, v: 0, steer: 0, contacts: 0, time: 0, moved: false });
+    resetHook?.(); // first: the challenge may pick the start heading (setStartYaw) for the new round
+    Object.assign(state, { x: start.x, y: start.y, yaw: start.yaw, v: 0, steer: 0, contacts: 0, time: 0, moved: false });
     lastHit = { index: -1, at: -1e9 };
+    scan();
   }
 
   // Collision: SAT between the car outline (oriented box) and the axis-aligned walls.
@@ -60,6 +70,7 @@ export function createSim() {
   /** Fixed step: kinematic bicycle referenced to the rear axle. */
   function step(dt: number) {
     state.clock += dt;
+    if (locked) { state.v = 0; return; }
     const input = override
       ? { throttle: clamp(controls.throttle + override.throttle, -1, 1), steer: clamp(controls.steer + override.steer, -1, 1) }
       : controls;
@@ -75,7 +86,7 @@ export function createSim() {
     } else if (throttle) {
       const braking = Math.sign(state.v) !== 0 && Math.sign(state.v) !== Math.sign(throttle);
       state.v += throttle * (braking ? BRAKE : ACCEL) * dt;
-      state.v = clamp(state.v, -MAX_SPEED * 0.5, MAX_SPEED);
+      state.v = clamp(state.v, -maxSpeed * 0.5, maxSpeed);
     } else {
       state.v -= Math.sign(state.v) * Math.min(Math.abs(state.v), DRAG * dt);
     }
@@ -93,11 +104,13 @@ export function createSim() {
       lastHit = { index: wallIndex, at: state.clock };
       if (isNew) state.contacts++;
       state.v = 0; // blocked: the car stays where it was
+      stepHook?.(state);
       return;
     }
     state.x = nx; state.y = ny; state.yaw = yaw;
     state.wheelSpin += (state.v * dt) / WHEEL_RADIUS;
     if (state.moved) state.time += dt;
+    stepHook?.(state);
   }
 
   // Distance along the ray (ox, oy, dx, dy) to the axis-aligned wall, or Infinity (slab method).
@@ -143,6 +156,15 @@ export function createSim() {
   return {
     state, controls, ranges, reset, step, scan, getPose,
     setOverride(o: { throttle: number; steer: number } | null) { override = o; },
+    /** Heading reset() uses from now on (the challenge starts the car facing the other way for clockwise rounds). */
+    setStartYaw(yaw: number) { start.yaw = yaw; },
+    /** Top forward speed (reverse is half of it). Without a call the simulator keeps MAX_SPEED. */
+    setMaxSpeed(v: number) { maxSpeed = v; state.v = clamp(state.v, -v * 0.5, v); },
+    setLocked(on: boolean) { locked = on; },
+    setHooks(hooks: { step?: ((state: CarState) => void) | null; reset?: (() => void) | null }) {
+      stepHook = hooks.step ?? null;
+      resetHook = hooks.reset ?? null;
+    },
     toggleSteerLimit() { steerLimit = steerLimit === STEER_LIMITS.real ? STEER_LIMITS.rule : STEER_LIMITS.real; },
     get steerLimit() { return steerLimit; },
     get lastHit() { return lastHit; },

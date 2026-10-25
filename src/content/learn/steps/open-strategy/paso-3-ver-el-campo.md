@@ -93,6 +93,10 @@ Prueba, en este orden:
 
 Por eso `island_end` es el número frágil, y por eso en el paso 6 la puerta de giro no se fía de un solo escaneo: exige ver el final cerca en dos escaneos distintos seguidos. El LD19 simulado mide con 8 mm de ruido, muy por debajo de esos 3 cm, y falla pocas veces; pero una sola lectura mala bastaría para girar antes de tiempo.
 
+> **Antes de escribirlo, juega un rato.** Conduce con el abanico del LiDAR encendido (tecla **L**) y fíjate solo en los números de izquierda, derecha y frente. Eso es todo lo que sabrá el código. ¿Podrías conducir mirando solo esos tres números?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=3)
+
 ## Escríbelo
 
 > **En este paso**

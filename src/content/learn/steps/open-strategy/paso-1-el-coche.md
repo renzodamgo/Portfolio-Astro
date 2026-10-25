@@ -74,6 +74,10 @@ El servo del coche real no llega a los 25° que admite el simulador. Su tope son
 
 Por eso el parámetro `steer` del nodo vale 0,25 rad por defecto y no 0,3: cerca del tope, el simulador recorta el ángulo y el modelo deja de acertar (la tabla de «Pruébalo» lo muestra y explica).
 
+> **Antes de escribirlo, juega un rato.** Pon el volante a tope y da el círculo más cerrado que puedas. Mira el ángulo y el radio que enseña el simulador, y pulsa **T** para cambiar el límite de la dirección. ¿Qué círculo se cierra más, con 25° o con el límite del coche real?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=1)
+
 ## Escríbelo
 
 > **En este paso**

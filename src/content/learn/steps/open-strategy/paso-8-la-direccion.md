@@ -99,6 +99,10 @@ def on_image(self, msg):
 
 Se descartan las imágenes que llegan a menos de 0,09 s de la anterior, para no gastar CPU de más. `image_time` guarda cuándo llegó la última, y `control` calcula su edad para pasársela a `strategy.control(dt, age)`.
 
+> **Antes de escribirlo, juega un rato.** Aquí la dirección es una sorpresa, porque es aleatoria, y el código no sabe hacia dónde mira el coche: solo ve las líneas. Abre la cámara (tecla **C**), mira qué color es más largo y adivina el sentido antes de arrancar: el coche no se mueve hasta que eliges. ¿Acertaste?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=8)
+
 ## Escríbelo
 
 > **En este paso**

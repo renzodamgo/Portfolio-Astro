@@ -97,6 +97,10 @@ La vuelta tiene 4 esquinas y la ronda 3 vueltas, así que `CORNERS = 12`. Tres d
 El comando 1,28 m/s no es la velocidad real: con el motor medido del coche, 1,28 llega a 0,60 m/s (`real_speed`).
 
 
+> **Antes de escribirlo, juega un rato.** Da tres vueltas y para donde empezaste. El código lo hace en 34,8 s: a ver si le ganas sin chocar. ¿Cómo sabrías que ya completaste las tres vueltas?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=7)
+
 ## Escríbelo
 
 > **En este paso**

@@ -11,6 +11,8 @@ export const WHEEL_WIDTH = 0.0145;
 export const STEER_LIMITS = { real: 0.30718, rule: 0.4363323129985824 }; // 17.6 deg / 25 deg
 export const STEER_RATE = 1.22; // rad/s, servo ~70 deg/s (real_car_v1 model)
 export const MAX_SPEED = 1.28;
+/** Top speed in challenge mode: what the simulated real car reaches (so 3 laps against the course code is a fair comparison). */
+export const CHALLENGE_MAX_SPEED = 0.6;
 export const ACCEL = 2.0;
 export const BRAKE = 4.0;
 export const DRAG = 0.8; // m/s, m/s^2

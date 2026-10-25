@@ -100,6 +100,10 @@ El tiempo hasta quedar a 0,12 rad de la meta también cambia. Con el servo real,
 
 Con el servo real, **todas** las variantes quedan por debajo de 1 grado: la esquina es fácil. El laboratorio solo enseña por qué existen el aflojado y el amortiguamiento cuando el servo o la estimación son peores. En Gazebo con el coche real, las ablaciones del equipo sobre el v4 (tres rondas por prueba) dejaron inválidas las rondas sin amortiguamiento y las rondas sin aflojado. Esa medida no se repitió con este paquete.
 
+> **Antes de escribirlo, juega un rato.** Toma las 4 esquinas de una vuelta sin tocar la pared. Fíjate en cuándo empiezas a girar y en cuándo vuelves a poner el volante recto. ¿Qué haces con el volante justo antes de terminar la esquina?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=5)
+
 ## Escríbelo
 
 > **En este paso**

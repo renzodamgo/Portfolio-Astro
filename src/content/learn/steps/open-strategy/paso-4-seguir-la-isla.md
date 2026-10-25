@@ -95,6 +95,10 @@ Los botones de **Prueba esto** cargan los valores de cada experimento. En este o
 
 También puedes mover los cuatro deslizadores a mano y el instante con **Instante**.
 
+> **Antes de escribirlo, juega un rato.** Ve pegado a la isla, a 25 cm. El simulador muestra el hueco y una banda verde de 20 a 30 cm: intenta no salirte de ella. ¿Cuánto y hacia dónde corriges el volante cada vez que el hueco cambia?
+>
+> [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=4)
+
 ## Escríbelo
 
 > **En este paso**
