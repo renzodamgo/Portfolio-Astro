@@ -25,6 +25,17 @@ export const WALLS: readonly Wall[] = [
 ];
 export const START = { x: 0, y: -1.15, yaw: 0 };
 
+/** Traffic signs of the Obstacle race (50 x 50 x 100 mm): regulation layout 4 of the Obstacle guide
+ * (WRO-Strategies obstacle_experiment_setup.regulation_signs(4)), the field where the course strategy
+ * scored 40 points in Gazebo. `side` is the straight the sign stands on. */
+export interface Pillar { x: number; y: number; color: 'red' | 'green'; side: 'bottom' | 'right' | 'top' | 'left' }
+export const PILLAR_SIZE = 0.05;
+export const OBSTACLE_PILLARS: readonly Pillar[] = [
+  { x: -1.1, y: 0.0, color: 'red', side: 'left' }, { x: 0.0, y: 0.9, color: 'red', side: 'top' },
+  { x: 1.1, y: -0.5, color: 'green', side: 'right' }, { x: 1.1, y: 0.5, color: 'red', side: 'right' },
+  { x: -0.5, y: -0.9, color: 'red', side: 'bottom' }, { x: 0.5, y: -0.9, color: 'green', side: 'bottom' },
+];
+
 // LiDAR (LD19 as simulated with real_car:=true): 306 samples over +-110 deg, 0.03 to 12 m,
 // scan plane 0.030 m high and 0.128 m ahead of base_link (lidar_joint).
 export const LIDAR = { x: 0.128, z: 0.03, samples: 306, halfAngle: 1.91986, min: 0.03, max: 12.0 };

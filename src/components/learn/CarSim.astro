@@ -12,8 +12,11 @@ interface Props {
     autostart?: boolean;
     /** Manual challenge mode: the Reto panel above the canvas and the finish card over it. */
     challenge?: boolean;
+    /** Race mode (step 0 of the guides): driver and car colour, countdown, 3 laps against the clock, local ranking.
+     * "obstacle" adds the traffic signs of the Obstacle guide (layout 4). See scripts/learn/car-sim/race.ts. */
+    race?: "open" | "obstacle";
 }
-const { compact = false, autostart = false, challenge = false } = Astro.props;
+const { compact = false, autostart = false, challenge = false, race } = Astro.props;
 ---
 
 <div
@@ -22,6 +25,8 @@ const { compact = false, autostart = false, challenge = false } = Astro.props;
     data-compact={compact ? "true" : "false"}
     data-autostart={autostart ? "true" : "false"}
     data-challenge={challenge ? "true" : "false"}
+    data-race={race}
+    data-field={race === "obstacle" ? "obstacle" : undefined}
     data-focused="false"
 >
     {
@@ -141,6 +146,38 @@ const { compact = false, autostart = false, challenge = false } = Astro.props;
             </section>
         )
     }
+    {
+        race && (
+            <section class="csc csr" data-csr="panel" aria-label="Carrera">
+                <div class="csc-head">
+                    <h2 class="csc-title">{race === "obstacle" ? "Carrera con señales" : "Carrera"}</h2>
+                    <span class="csr-driver" data-csr="driver" />
+                    <span class="csc-spacer" />
+                    <button type="button" class="csc-btn csc-reset" data-csr="change">Cambiar piloto</button>
+                </div>
+                <p class="csc-speed" data-csr="speed" />
+                <div class="csc-stats">
+                    <div class="csc-stat csr-stat-lap">
+                        <span class="csc-label">Vuelta</span>
+                        <span class="csc-value csc-big" data-csr="lap">1 de 3</span>
+                    </div>
+                    <div class="csc-stat csc-stat-time">
+                        <span class="csc-label">Tiempo</span>
+                        <span class="csc-value csc-big" data-csr="time">0,0 s</span>
+                    </div>
+                    <div class="csc-stat">
+                        <span class="csc-label">Choques</span>
+                        <span class="csc-value" data-csr="crashes">0</span>
+                    </div>
+                    <div class="csc-stat" data-csr="wrong-stat" hidden>
+                        <span class="csc-label">Señales mal pasadas</span>
+                        <span class="csc-value" data-csr="wrong">0</span>
+                    </div>
+                </div>
+                <p class="csc-sr" role="status" aria-live="polite" data-csr="live" />
+            </section>
+        )
+    }
     <div
         class="cs-viewport"
         tabindex="0"
@@ -155,6 +192,45 @@ const { compact = false, autostart = false, challenge = false } = Astro.props;
         <div class="cs-cover" aria-hidden="true">
             <span class="cs-cover-chip">Haz clic para conducir</span>
         </div>
+        {
+            race && (
+                <div class="csr-setup" data-csr="setup">
+                    <h3 class="csf-title">Tu piloto</h3>
+                    <label class="csr-field">
+                        <span>Nombre</span>
+                        <input type="text" maxlength="20" placeholder="Piloto" data-csr="name" autocomplete="nickname" />
+                    </label>
+                    <div class="csr-row"><span>Piel</span><div class="csr-swatches" data-csr-swatches="skin" /></div>
+                    <div class="csr-row"><span>Pelo</span><div class="csr-swatches" data-csr-swatches="hair" /></div>
+                    <div class="csr-row"><span>Polo</span><div class="csr-swatches" data-csr-swatches="shirt" /></div>
+                    <div class="csr-row"><span>Coche</span><div class="csr-swatches" data-csr-swatches="car" /></div>
+                    <div class="csr-row">
+                        <span>Sentido</span>
+                        <div class="csr-swatches">
+                            <button type="button" class="csc-btn" data-csr-dir="ccw" aria-pressed="true">Antihorario</button>
+                            <button type="button" class="csc-btn" data-csr-dir="cw" aria-pressed="false">Horario</button>
+                        </div>
+                    </div>
+                    <p class="csr-hint">Teclas: W o flecha arriba para acelerar, A y D para girar, S para frenar.</p>
+                    <button type="button" class="csc-btn csr-go" data-csr="start">¡A correr!</button>
+                </div>
+                <div class="csr-count" data-csr="count" aria-hidden="true" hidden>3</div>
+                <div class="csr-penalty" data-csr="penalty" aria-hidden="true" hidden>+2 s</div>
+                <div class="cs-finish csr-finish" data-csr="finish" hidden>
+                    <h3 class="csf-title">¡Meta!</h3>
+                    <p class="csr-final" data-csr="final">0,0 s</p>
+                    <p class="csf-line" data-csr="breakdown" />
+                    <p class="csf-line" data-csr="place" />
+                    <ol class="csr-ranking" data-csr="ranking" />
+                    <p class="csf-note" data-csr="ranking-empty" hidden>Todavía no hay tiempos en este navegador.</p>
+                    <div class="csr-actions">
+                        <button type="button" class="csc-btn csr-go" data-csr="again">Otra vez</button>
+                        <button type="button" class="csc-btn" data-csr="copy">Copiar resultado</button>
+                    </div>
+                    <p class="csf-note" data-csr="copied">Compártelo: gana el menor tiempo con penalizaciones.</p>
+                </div>
+            )
+        }
         {
             challenge && (
                 <p class="cs-lockmsg" data-csc="lockmsg" aria-hidden="true" hidden>
@@ -747,6 +823,83 @@ const { compact = false, autostart = false, challenge = false } = Astro.props;
             display: none;
         }
     }
+    /* ---- Race mode (step 0): setup card, countdown, penalties, finish card with the ranking ---- */
+    .car-sim[data-race] .cs-cover { display: none; }
+    .csr-driver { font-weight: 700; color: var(--cs-amber); }
+    .csr-stat-lap .csc-value { color: var(--cs-amber); }
+    .csr .csc-stats { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+    .csr .csc-big { font-size: clamp(22px, 3.2vw, 30px); white-space: nowrap; }
+    .car-sim[data-race] .cs-hud { display: none; }
+    /* On the left, so the driver and the car colour show on the right while choosing. */
+    .csr-setup {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        bottom: 10px;
+        z-index: 5;
+        width: min(21rem, calc(100% - 20px));
+        overflow-y: auto;
+        padding: 12px 16px;
+        border: 2px solid var(--cs-amber);
+        border-radius: 12px;
+        background: color-mix(in oklab, var(--cs-bg) 88%, transparent);
+        color: var(--cs-text);
+        font-size: 14px;
+    }
+    .csr-setup[hidden], .csr-count[hidden], .csr-penalty[hidden] { display: none; }
+    .csr-field { display: grid; gap: 4px; margin: 6px 0 10px; }
+    .csr-field input {
+        padding: 6px 8px;
+        border: 1px solid var(--cs-line, rgb(255 255 255 / 0.25));
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+    }
+    .csr-row { display: grid; grid-template-columns: 4.5rem 1fr; align-items: center; gap: 8px; margin: 6px 0; }
+    .csr-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+    .csr-swatches :global(.csr-swatch) {
+        width: 26px;
+        height: 26px;
+        border: 2px solid rgb(255 255 255 / 0.35);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    .csr-swatches :global(.csr-swatch[aria-pressed="true"]) { border-color: var(--cs-amber); box-shadow: 0 0 0 2px var(--cs-amber); }
+    .csr-hint { margin: 8px 0; font-size: 12.5px; opacity: 0.8; }
+    .csr-go { font-weight: 700; border-color: var(--cs-amber); }
+    .csr-count {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: grid;
+        place-items: center;
+        font-size: clamp(64px, 14vw, 160px);
+        font-weight: 800;
+        color: var(--cs-amber);
+        text-shadow: 0 4px 18px rgb(0 0 0 / 0.55);
+        pointer-events: none;
+    }
+    .csr-penalty {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        z-index: 5;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #d8392b;
+        color: #fff;
+        font-weight: 800;
+        pointer-events: none;
+    }
+    .csr-final { margin: 0; font-size: 44px; font-weight: 800; color: var(--cs-amber); line-height: 1.1; }
+    .csr-ranking { margin: 8px 0; padding-left: 1.4em; }
+    .csr-ranking :global(li) { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+    .csr-ranking :global(li[data-mine="true"]) { font-weight: 800; color: var(--cs-amber); }
+    .csr-ranking :global(.csr-chip) { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+    .csr-ranking :global(.csr-who) { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .csr-ranking :global(.csr-t) { font-variant-numeric: tabular-nums; }
+    .csr-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 </style>
 
 <script>

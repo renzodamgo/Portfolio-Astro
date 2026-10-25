@@ -6,6 +6,7 @@ title: "Instalar y preparar"
 summary: "Instala el entorno, clona el repositorio y comprueba que las pruebas corren."
 tag: "step-0"
 compareFrom: "step-0"
+race: "open"
 ---
 
 Mientras se instala, juega con el coche: [Juega con el coche en el navegador](/learn/open-strategy/simulador/).

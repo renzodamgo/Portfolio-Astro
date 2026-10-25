@@ -74,6 +74,15 @@ export function startEngine(opts: EngineOptions): Engine {
   startZone.position.set(START.x, 0.002, -START.y);
   scene.add(startZone);
 
+  // Traffic signs (Obstacle race): red and green 50 x 50 x 100 mm boxes.
+  for (const p of sim.pillars) {
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05),
+      new THREE.MeshStandardMaterial({ color: p.color === 'red' ? 0xee2737 : 0x44d62c, roughness: 0.6 }));
+    sign.position.set(p.x, 0.05, -p.y);
+    sign.castShadow = sign.receiveShadow = true;
+    scene.add(sign);
+  }
+
   const wallMeshes = WALLS.map(([cx, cy, sx, sy]) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.1, sy), new THREE.MeshStandardMaterial({ color: palette.wall, roughness: 0.7 }));
     mesh.position.set(cx, 0.06, -cy);
@@ -176,6 +185,52 @@ export function startEngine(opts: EngineOptions): Engine {
     fl: makeWheel(frontX, FRONT_TRACK / 2, true), fr: makeWheel(frontX, -FRONT_TRACK / 2, true),
     rl: makeWheel(REAR_AXLE_X, REAR_TRACK / 2, false), rr: makeWheel(REAR_AXLE_X, -REAR_TRACK / 2, false),
   };
+
+  // ---- Race look: the car colour and a small Mii-style driver sitting on the case (race mode) ----
+  const avatar = new THREE.Group();
+  avatar.visible = false;
+  avatar.position.set(-0.012, 0, 0.112);                 // on top of the case, behind the camera support
+  const avatarMat = {
+    skin: material(new THREE.Color(0xf1c6a5), 0.7, 0), hair: material(new THREE.Color(0x3b2a20), 0.8, 0),
+    shirt: material(new THREE.Color(0x2f6fd6), 0.7, 0), eye: material(new THREE.Color(0x111111), 0.4, 0),
+  };
+  {
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.011, 0.014, 6, 16), avatarMat.shirt);
+    body.rotation.x = Math.PI / 2;                       // the capsule axis along +z (up in the URDF frame)
+    body.position.z = 0.016;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.0145, 24, 18), avatarMat.skin);
+    head.position.z = 0.046;
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.0152, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), avatarMat.hair);
+    hair.rotation.x = Math.PI / 2;                       // the cap's pole up (+z)
+    hair.position.set(-0.002, 0, 0.0475);
+    const eyes = [1, -1].map((side) => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.0022, 12, 8), avatarMat.eye);
+      eye.position.set(0.0135, side * 0.0055, 0.0475);
+      return eye;
+    });
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.0022, 12, 8), avatarMat.skin);
+    nose.position.set(0.0145, 0, 0.0435);
+    const arms = [1, -1].map((side) => {
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.0035, 0.014, 4, 10), avatarMat.shirt);
+      arm.position.set(0.008, side * 0.014, 0.02);
+      arm.rotation.set(0, Math.PI / 3, 0);               // reaching forward, as if holding a wheel
+      return arm;
+    });
+    for (const part of [body, head, hair, nose, ...eyes, ...arms]) { part.castShadow = true; avatar.add(part); }
+  }
+  addPart(urdf, avatar);
+  interface Look { car?: string; skin?: string; hair?: string; shirt?: string; driver?: boolean }
+  function applyLook(look: Look) {
+    if (look.car) materials.purple.color.set(look.car);
+    if (look.skin) avatarMat.skin.color.set(look.skin);
+    if (look.hair) avatarMat.hair.color.set(look.hair);
+    if (look.shirt) avatarMat.shirt.color.set(look.shirt);
+    if (look.driver !== undefined) avatar.visible = look.driver;
+  }
+  const onLook = (e: Event) => applyLook((e as CustomEvent<Look>).detail ?? {});
+  root.addEventListener('carsim:look', onLook);
+  const initialLook = (root as HTMLElement & { __carSimLook?: Look }).__carSimLook;
+  if (initialLook) applyLook(initialLook);
 
   // ---- The car's own camera (camera_link in the URDF with real_car:=true) ----
   const carCamera = new THREE.PerspectiveCamera(
@@ -433,6 +488,7 @@ export function startEngine(opts: EngineOptions): Engine {
       const mat = m.material as THREE.Material | THREE.Material[] | undefined;
       (Array.isArray(mat) ? mat : mat ? [mat] : []).forEach((x) => x.dispose());
     });
+    root.removeEventListener('carsim:look', onLook);
     loadedGeometries.forEach((g) => g.dispose());
     texture?.dispose();
     sun.shadow.map?.dispose();

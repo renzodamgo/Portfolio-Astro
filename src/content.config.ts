@@ -29,6 +29,8 @@ const steps = defineCollection({
         tag: z.string(),
         /** Tag to compare from, e.g. "step-2". */
         compareFrom: z.string(),
+        /** Step 0: the warm-up race in the simulator (CarSim race mode). */
+        race: z.enum(["open", "obstacle"]).optional(),
     }),
 });
 

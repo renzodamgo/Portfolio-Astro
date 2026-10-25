@@ -3,6 +3,7 @@
 import { render } from "astro:content";
 import LearnLayout from "../../layouts/LearnLayout.astro";
 import GuideSteps from "./GuideSteps.astro";
+import CarSim from "./CarSim.astro";
 import {
     REPO,
     SITE,
@@ -26,7 +27,7 @@ const GUIDE_BASE = guideBase(guide.id);
 const LAST_STEP = guide.lastStep;
 const total = LAST_STEP;
 const { Content, headings } = await render(entry);
-const { title, summary, tag, compareFrom, order } = entry.data;
+const { title, summary, tag, compareFrom, order, race } = entry.data;
 
 const compareUrl = `${REPO}/compare/${compareFrom}...${tag}`;
 const diffCommand = guide.diffCommand(compareFrom, tag);
@@ -119,6 +120,24 @@ const jsonld = {
         <h1 class="mt-2 text-3xl font-semibold md:text-4xl">{title}</h1>
         <p class="mt-3 text-white/80">{summary}</p>
     </header>
+
+    {
+        race && (
+            <section aria-labelledby="carrera" class="mt-8">
+                <h2 id="carrera" class="text-xl font-semibold">Carrera de calentamiento</h2>
+                <p class="mt-2 text-white/80">
+                    Antes de instalar nada, maneja tú el coche: elige tu piloto y el color del coche, espera la cuenta
+                    atrás y da 3 vueltas lo más rápido que puedas{race === "obstacle"
+                        ? ", pasando cada señal roja por la derecha y cada verde por la izquierda"
+                        : ""}. Al final verás tu tiempo y el ranking de este navegador; copia el resultado y rétate con
+                    los demás. Al terminar la guía, tu código hará lo mismo solo.
+                </p>
+                <div class="mt-4">
+                    <CarSim race={race} />
+                </div>
+            </section>
+        )
+    }
 
     <article class="prose-learn mt-8">
         <Content />

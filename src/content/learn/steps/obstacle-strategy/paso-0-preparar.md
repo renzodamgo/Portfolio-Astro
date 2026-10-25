@@ -6,6 +6,7 @@ title: "Preparar el paquete"
 summary: "Usa el entorno del Open, crea el paquete my_obstacle y corre una ronda del Obstacle en Gazebo."
 tag: "obstacle-step-0"
 compareFrom: "obstacle-step-0"
+race: "obstacle"
 ---
 
 > **El coche es el mismo del Open.** Si vas a llevar la estrategia al coche real, las instrucciones de montaje y de cables están en [Armar y conectar el coche](/learn/open-strategy/armar-y-conectar-el-coche/).

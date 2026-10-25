@@ -1,6 +1,6 @@
 import {
   ACCEL, BRAKE, DRAG, LIDAR, MAX_SPEED, OUTLINE_FRONT, OUTLINE_HALF_WIDTH, OUTLINE_REAR, REAR_AXLE_X,
-  START, STEER_LIMITS, STEER_RATE, WALLS, WHEELBASE, WHEEL_RADIUS, type Wall,
+  PILLAR_SIZE, START, STEER_LIMITS, STEER_RATE, WALLS, WHEELBASE, WHEEL_RADIUS, type Pillar, type Wall,
 } from './constants';
 
 /** Pure simulation (no three.js, no DOM): the same kinematic bicycle model as the standalone simulator. */
@@ -13,7 +13,10 @@ export interface Pose {
   x: number; y: number; yaw: number; v: number; steer: number; contacts: number; time: number; frontRange: number;
 }
 
-export function createSim() {
+export function createSim(opts: { pillars?: readonly Pillar[] } = {}) {
+  /** Walls plus the traffic signs (Obstacle race): the same boxes for collisions and for the LiDAR. */
+  const pillars = opts.pillars ?? [];
+  const walls: readonly Wall[] = [...WALLS, ...pillars.map((p) => [p.x, p.y, PILLAR_SIZE, PILLAR_SIZE] as const)];
   const state: CarState = {
     x: START.x, y: START.y, yaw: START.yaw, v: 0, steer: 0, wheelSpin: 0, contacts: 0, time: 0, moved: false, clock: 0,
   };
@@ -64,7 +67,7 @@ export function createSim() {
   }
   function touchingWall(x: number, y: number, yaw: number) {
     const corners = carCorners(x, y, yaw);
-    return WALLS.findIndex((wall) => hitsWall(corners, wall));
+    return walls.findIndex((wall) => hitsWall(corners, wall));
   }
 
   /** Fixed step: kinematic bicycle referenced to the rear axle. */
@@ -135,7 +138,7 @@ export function createSim() {
       const angle = -LIDAR.halfAngle + i * stepAngle, a = state.yaw + angle;
       const dx = Math.cos(a), dy = Math.sin(a);
       let range = LIDAR.max;
-      for (const wall of WALLS) range = Math.min(range, rayWall(ox, oy, dx, dy, wall));
+      for (const wall of walls) range = Math.min(range, rayWall(ox, oy, dx, dy, wall));
       if (range < LIDAR.min) range = LIDAR.min;
       if (Math.abs(angle) < bestAngle) { bestAngle = Math.abs(angle); best = range; }
       ranges[i] = range;
@@ -154,7 +157,7 @@ export function createSim() {
   scan(); // so getPose().frontRange is valid before the first frame
 
   return {
-    state, controls, ranges, reset, step, scan, getPose,
+    state, controls, ranges, reset, step, scan, getPose, pillars,
     setOverride(o: { throttle: number; steer: number } | null) { override = o; },
     /** Heading reset() uses from now on (the challenge starts the car facing the other way for clockwise rounds). */
     setStartYaw(yaw: number) { start.yaw = yaw; },
