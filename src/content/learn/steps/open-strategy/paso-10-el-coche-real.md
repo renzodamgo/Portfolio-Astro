@@ -55,9 +55,9 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 | LED de estado | Los dos RGB de la RRC Lite (1 izquierdo, 2 derecho) | los maneja `status_leds` |
 | LiDAR LD19 | USB del Pi, con su adaptador CP2102 | `/dev/ttyUSB0`, 230400 baudios (USB `10c4:ea60`) |
 | Cámara | USB del Pi | `/dev/v4l/by-id/...-video-index0` |
-| Motor | Puente TB6612FNG a GPIO del Pi: PWM 12, AIN1 5, AIN2 6, STBY 13 | chip `gpiochip4` |
+| Motor | Puente TB6612FNG a GPIO del Pi: PWM 12, AIN1 5, AIN2 6; STBY puenteado a VCC en la placa (GPIO13 opcional) | chip `gpiochip4` |
 
-Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. El pin **STBY** (13) es fácil de olvidar: si el puente no lo recibe en alto, el motor no se mueve (al equipo le pasó: el servo respondía y el motor solo andaba a ratos). `motor_driver` lo pone en alto solo.
+Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. El pin **STBY** del puente tiene que estar en alto o el motor no se mueve (al equipo le pasó: el servo respondía y el motor solo andaba a ratos). En la placa del equipo STBY va **puenteado a VCC**, así que siempre está activo y no necesita cable; si tu placa no lo tiene puenteado, llévalo al GPIO13 (pin 33): `motor_driver` lo pone en alto solo.
 
 ### Alimentación
 

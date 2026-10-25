@@ -604,7 +604,7 @@ La cuenta: con 240 fotogramas por segundo, 1 fotograma son 4,2 ms. Si el retardo
 Con la estrategia del equipo esto acabó en `STALLED`: la estrategia vio que no avanzaba y se detuvo sola. Pasó tres veces, siempre por un **cable del motor suelto** `[coche]`.
 
 1. **Cable suelto o motor sin alimentación.** Lo más probable de lejos `[coche]`. Tira de cada conector (motor, batería, puente TB6612).
-2. **STBY del TB6612 sin levantar.** El pin STBY (GPIO 13) tiene que estar en alto o el motor no gira. El nodo de motor original del equipo **nunca lo tocaba**, por eso el motor "funcionaba a ratos" `[coche]`. `motor_driver` lo pone en alto en cada orden.
+2. **STBY del TB6612 sin levantar.** El pin STBY (GPIO 13) tiene que estar en alto o el motor no gira. El nodo de motor original del equipo **nunca lo tocaba**, por eso el motor "funcionaba a ratos" `[coche]`. `motor_driver` lo pone en alto en cada orden. Hoy la placa del equipo lleva STBY **puenteado a VCC** (siempre activo, sin cable): si el motor no gira, mira primero que ese puente siga en su sitio.
 3. **El PWM al 100 por ciento.** Una versión anterior de `motor_driver` escribía el pin PWM como salida digital cuando pedía 100 por ciento, y con un PWM de `lgpio` activo esa escritura se ignoraba: el motor se quedaba con el último ciclo y no giraba. Hoy usa siempre `tx_pwm` `[coche]`. Si copias un driver propio, ten cuidado.
 4. **`lgpio` no está** (`lgpio missing: motor disabled` en el log), o el chip es otro. En la Raspberry Pi 5 los pines están en `gpiochip` 4 (`gpiochip: 4` en `robot.yaml`).
 5. **El porcentaje pedido es menor que el mínimo.** `motor_min_pct` (6,5) es el porcentaje en el que el coche empieza a moverse; por debajo, no se mueve. Con la batería baja, este mínimo sube `[código]`.

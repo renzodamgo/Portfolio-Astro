@@ -28,7 +28,7 @@ Antes de llevar tu nodo al coche real ([el capítulo siguiente](/learn/open-stra
 | Batería para el Pi | 1 | La RRC Lite, que da 5 V al Pi y mueve el servo |
 | Anillo de 16 LED WS2812 | 1 | Luz para ver mejor los colores |
 | Protectores de rueda de maleta | 4 | Los neumáticos de las ruedas impresas |
-| Cables USB (3), USB-C (1), dupont hembra-hembra (unos 9) | | Las conexiones |
+| Cables USB (3), USB-C (1), dupont hembra-hembra (8) | | Las conexiones |
 | Tornillos M2×10 (7) y M2×14 (1), tuercas M2 (8) | | La Raspberry Pi y la RRC Lite a la caja |
 | Tornillos PA2×6 (4) | | El LiDAR |
 | Tornillos M1.6×16 (2) y tuercas M1.6 (2) | | La cámara a su soporte |
@@ -118,7 +118,7 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 
 <img class="lego-wiring" src="/learn/assembly/wiring-usb.svg" alt="Paso 11: cámara, LiDAR y placa RRC Lite por USB a la Raspberry Pi 5" loading="lazy">
 
-<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el TB6612FNG a los pines GPIO 12, 5, 6 y 13 y al 3,3 V del Pi; el motor al TB6612; el servo a la RRC Lite" loading="lazy">
+<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el TB6612FNG a los pines GPIO 12, 5 y 6 y al 3,3 V del Pi, con STBY puenteado a VCC; el motor al TB6612; el servo a la RRC Lite" loading="lazy">
 
 <img class="lego-wiring" src="/learn/assembly/wiring-power.svg" alt="Paso 13: la batería del motor a la bornera VM del TB6612; la batería del Pi a la RRC Lite, que da 5 V al Pi por USB-C; el anillo de LED al GPIO10" loading="lazy">
 
@@ -131,7 +131,7 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 | 2 hilos | Motor | TB6612, A01 y A02 | si las ruedas giran al revés, intercámbialos |
 | dupont | Pi GPIO12 (pin 32) | TB6612 PWMA | velocidad |
 | dupont | Pi GPIO5 (pin 29) y GPIO6 (pin 31) | TB6612 AIN1 y AIN2 | sentido |
-| dupont | Pi GPIO13 (pin 33) | TB6612 STBY | sin STBY en alto el motor no gira |
+| puente | TB6612 STBY | TB6612 VCC | en esta placa STBY va puenteado a VCC: el puente está siempre activo y no hace falta cable al GPIO13 |
 | dupont | Pi 3,3 V (pin 1) y GND | TB6612 VCC y GND | VCC es la lógica: 3,3 V, nunca la batería (aguanta 5,5 V como máximo). Este GND une las masas de las dos baterías |
 | batería | Batería del motor | TB6612, bornera VM–GND | VM es la potencia del motor (2,5 a 13,5 V) |
 | batería | Batería del Pi | RRC Lite, entrada de batería | la placa se apaga bajo 6 V |
@@ -149,7 +149,7 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 
 ## Si algo falla
 
-- **El motor no gira y el servo sí.** Casi siempre es STBY (GPIO13), un dupont flojo en el TB6612 o la batería del motor descargada o sin conectar a VM.
+- **El motor no gira y el servo sí.** Casi siempre es un dupont flojo en el TB6612, la batería del motor descargada o sin conectar a VM, o que falte el puente de STBY a VCC (sin él, STBY queda en bajo y el puente no mueve el motor).
 - **El TB6612 se calienta sin motor.** Revisa que la batería del motor vaya a VM y no a VCC: VCC es solo la lógica, 3,3 V del Pi.
 - **El Pi se reinicia.** Revisa cada conector (al equipo le pasó con un cable flojo) y baja el brillo de los LED.
 - **Falta un dispositivo en `/dev/serial/by-id`.** Es el cable o el adaptador; los nombres no dependen del puerto.
@@ -158,6 +158,6 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 ## Resumen
 
 - Tres bolsas: el chasis (placa, dirección, motor, ruedas), la electrónica y los sensores (driver, caja, Pi, RRC Lite, LiDAR, cámara, con sus tornillos) y los cables (USB, motor y servo, energía y luces).
-- Los sensores van por USB al Pi; el motor por el TB6612 a cuatro pines GPIO (y su lógica, VCC, al 3,3 V del Pi); el servo, a la RRC Lite.
+- Los sensores van por USB al Pi; el motor por el TB6612 a tres pines GPIO (PWMA, AIN1, AIN2) y su lógica, VCC, al 3,3 V del Pi, con STBY puenteado a VCC; el servo, a la RRC Lite.
 - Dos baterías: la del motor a VM del TB6612 y la del Pi a la RRC Lite, que da 5 V al Pi por USB-C; las masas se unen por el GND del TB6612.
 - Las piezas dibujadas salen del modelo 3D del equipo (el mismo de la simulación, más los tornillos, el LD19 y la RRC Lite de SolidCraft); el motor y la dirección, de la descripción del equipo.
