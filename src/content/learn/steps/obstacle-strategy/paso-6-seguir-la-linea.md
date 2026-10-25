@@ -10,6 +10,23 @@ compareFrom: "obstacle-step-5"
 
 Con el plan de los pasos 4 y 5 el coche sabe por dónde quiere ir. En este paso escribes `follow.py`, el volante que lo lleva por ahí. Es el paso donde más cuenta el detalle: la misma línea seguida de dos formas distintas dio **77 o 88 rondas válidas de 100**.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/zMdoLO4kRKg" title="Vehicle Path Tracking Using Pure Pursuit Controller" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Vehicle Path Tracking Using Pure Pursuit Controller</strong> · MATLAB (inglés, 11 min). Pure pursuit con punto de anticipación: el controlador que el v2 tuvo que reemplazar.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/9Y7kVIJs_JI" title="Lesson 3: Geometric Lateral Control - Stanley - Introduction to Self-Driving Cars" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Lesson 3: Geometric Lateral Control - Stanley - Introduction to Self-Driving Cars</strong> · Ta Hai Dang (inglés). El controlador Stanley: error lateral y de rumbo respecto al punto más cercano, como el de este paso.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Por fin el coche se conduce solo: con el `drive.py` de este paso da **una vuelta** siguiendo la línea a 0,25 m/s y se para (todavía sin salida especial, sin mirar señales desconocidas y sin aparcar; eso es el paso 7). Ya no hace falta `keyboard_drive`. Sigues pudiendo mirar `/obstacle/pose`, `/obstacle/signs` y `/obstacle/plan`.

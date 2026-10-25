@@ -19,6 +19,19 @@ Aquí importa ir despacio: un error en el simulador cuesta una ronda, y uno aqu�
 > - **Después de eso el coche se reconstruyó** (21 de octubre): el servo de dirección cambió de sitio y giró 90 grados, y la Raspberry y la placa van de canto. Hasta donde llegan mis notas, el servo y los ejes de la IMU de esa construcción no se han vuelto a medir y no se ha hecho ninguna ronda con ella.
 > - **No probado en el coche real:** `car.launch.py`, `tools/setup-pi.sh`, el paquete `my_open` de esta guía y los comandos de este capítulo. Los he escrito leyendo el código y los datos del equipo, no ejecutándolos en el coche. Si algo no coincide con lo que ves, tú tienes la razón: cuéntamelo.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/JxhMEpHXym4" title="ROS 2 on a Raspberry Pi Robot | CamJam EduKit #3 Robot Kit" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>ROS 2 on a Raspberry Pi Robot | CamJam EduKit #3 Robot Kit</strong> · Mike Likes Robots (inglés). ROS 2 instalado en una Raspberry Pi y arrancado en un robot real.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## 1. Qué necesitas
 
 ### Piezas

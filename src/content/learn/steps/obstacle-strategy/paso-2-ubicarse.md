@@ -10,6 +10,23 @@ compareFrom: "obstacle-step-1"
 
 En el Open el coche no necesitaba saber dónde estaba: le bastaba con la pared de la isla. En el Obstacle sí lo necesita, porque cada señal está en un sitio concreto del carril y hay que llegar a ella por el lado correcto. En este paso escribes `localizer.py`: una pose (x, y, rumbo) que se predice con la distancia recorrida y el giroscopio y se corrige con el LiDAR contra los muros, que son siempre los mismos.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/QWDM4cFdKrE" title="Iterative Closest Point (ICP) - 5 Minutes with Cyrill" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Iterative Closest Point (ICP) - 5 Minutes with Cyrill</strong> · Cyrill Stachniss (inglés, 5 min). Cómo se alinean dos nubes de puntos del LiDAR: la idea detrás de ajustar el escaneo a los muros.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/8VJ-A9OlhAE" title="Robot Localization - An Overview (Cyrill Stachniss)" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Robot Localization - An Overview (Cyrill Stachniss)</strong> · Cyrill Stachniss (inglés). Panorama de la localización de robots (clase larga, para profundizar).</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Hasta el paso 6 el coche no se conduce solo: el `drive.py` de los pasos 2 a 5 es un nodo **observador**. Tras Start calibra el giroscopio 0,3 s, elige el sentido con el primer escaneo (lo imprime: `Direction ccw`) y desde ahí publica en `/obstacle/pose` lo que entiende: x, y y rumbo en el campo espejado, y el progreso. Tú conduces con el teclado en otra terminal, con `ros2 run robotek_course keyboard_drive`, y miras con `ros2 topic echo /obstacle/pose` cómo el progreso avanza y la pose sigue al coche. En el laboratorio, contra la pose real, el error típico es de **2 a 6 mm** y el del rumbo de unas décimas de grado.

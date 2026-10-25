@@ -10,6 +10,19 @@ compareFrom: "step-7"
 
 Hasta ahora el sentido de la vuelta iba fijo en `ccw`. En la prueba real el árbitro no avisa: el coche tiene que mirar el suelo y decidirlo solo. En este paso escribes `DirectionVote`, la votación que convierte lo que ve la cámara en una decisión, y la conectas a la misión y al nodo.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Q0IPYlIK-4A" title="Detecting colors (Hsv Color Space) - Opencv with Python" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Detecting colors (Hsv Color Space) - Opencv with Python</strong> · Pysource (inglés). El espacio HSV, inRange y máscaras en Python: lo que usa la votación de la cámara.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Después de calibrar, la misión pasa a `DETECT_DIRECTION` y el coche espera con el motor parado. En cuanto la cámara decide, la misión pasa a `RUN`. Hay dos pruebas:

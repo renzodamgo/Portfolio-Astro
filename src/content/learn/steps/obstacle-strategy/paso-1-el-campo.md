@@ -10,6 +10,23 @@ compareFrom: "obstacle-step-0"
 
 Antes de mover el coche hay que poder decir **dónde está todo**: el carril, cuánto ha avanzado el coche y en qué sitios pueden estar las señales. En este paso escribes `lane.py`, la geometría del campo que usarán todos los pasos siguientes. Es Python puro: no hay ROS ni sensores todavía.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Ojf7OwXbp6w" title="WRO 2023 Future Engineers" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>WRO 2023 Future Engineers</strong> · World Robot Olympiad (inglés). La categoría y sus dos retos, contados por la WRO.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Z6zT3QnwcCs" title="2025 WRO Future Engineers - Obstacle Challenge | WeMaker" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>2025 WRO Future Engineers - Obstacle Challenge | WeMaker</strong> · Uchiha Itachi 宇智撥柚 (inglés). Un equipo de la temporada 2025, con el aparcamiento.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Nada se mueve en Gazebo. Al terminar, `pytest course/tests/obstacle/test_obstacle_step_1.py` da `9 passed`, y puedes preguntar en Python, por ejemplo, dónde está el centro del carril a mitad de la primera esquina:

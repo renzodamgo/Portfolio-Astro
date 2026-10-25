@@ -10,6 +10,23 @@ compareFrom: "step-1"
 
 El coche no tiene brújula. Para saber hacia dónde mira solo cuenta con el giroscopio, un sensor que dice a qué velocidad gira (en rad/s). En este paso escribes `GyroHeading`, que suma esas lecturas para obtener el **rumbo**, y `heading_steer`, que gira el volante para volver al rumbo que quieres. El giroscopio tiene un error constante, y verás por qué hay que medirlo antes de arrancar.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/PK05u9c3yWI" title="How do MEMS gyroscopes work ?" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>How do MEMS gyroscopes work ?</strong> · nanolearning (inglés). Qué hay dentro del chip: una masa que vibra y el efecto Coriolis.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/0rlvvYgmTvI" title="Understanding Sensor Fusion and Tracking, Part 2: Fusing a Mag, Accel, &amp; Gyro Estimate" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Understanding Sensor Fusion and Tracking, Part 2: Fusing a Mag, Accel, &amp; Gyro Estimate</strong> · MATLAB (inglés). Por qué integrar el giroscopio deriva y cómo se corrige.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 En Gazebo, en un campo sin paredes, el coche espera Start, se queda quieto 0,6 s midiendo el giroscopio, y luego avanza intentando ir recto (rumbo 0) durante 10 s. La comprobación compara el rumbo **real** del coche al final, que tu nodo no ve. Con calibración, el error es de unas milésimas de radián. Sin calibrar (`calibrate:=false`), el coche cree ir recto pero termina torcido unos **0,06 rad (3,4°)**.

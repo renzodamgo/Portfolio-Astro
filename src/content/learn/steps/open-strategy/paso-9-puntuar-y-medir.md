@@ -10,6 +10,23 @@ compareFrom: "step-8"
 
 Tu estrategia ya da las tres vueltas y decide el sentido sola. Este paso no añade comportamiento: enseña a **medir**. Vas a aprender qué cuenta el juez, cómo leer lo que imprime, cómo repetir una ronda sin Gazebo, hasta dónde se puede confiar en cada medida y cómo anotar tus intentos para saber si un cambio mejora algo de verdad. Al final, qué probar para ir más rápido y qué hacer con el coche real.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/tvqgwusap9M" title="Team ANTi WRO 2025 Future Engineers International Open Challenge (Full Score - 16 Seconds)" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Team ANTi WRO 2025 Future Engineers International Open Challenge (Full Score - 16 Seconds)</strong> · Solipsy (inglés). Una ronda Open perfecta en la final internacional: la meta de las 12 rondas.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Ojf7OwXbp6w" title="WRO 2023 Future Engineers" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>WRO 2023 Future Engineers</strong> · World Robot Olympiad (inglés). La categoría contada por la propia WRO.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 No cambia nada en la pista. Cambia lo que haces con ella:

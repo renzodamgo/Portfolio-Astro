@@ -192,6 +192,28 @@ html[data-theme="light"] body.learn {
     text-align: center;
 }
 
+/* Intro videos (YouTube, privacy-enhanced embed) */
+.prose-learn .learn-videos {
+    display: grid;
+    gap: 1.2em;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    margin: 1.2em 0 1.6em;
+}
+.prose-learn .learn-video {
+    margin: 0;
+}
+.prose-learn .learn-video iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--color-black) 60%, transparent);
+}
+.prose-learn .learn-video figcaption {
+    text-align: left;
+}
+
 /* Widgets mount points */
 .prose-learn [data-widget] {
     min-height: 4rem;

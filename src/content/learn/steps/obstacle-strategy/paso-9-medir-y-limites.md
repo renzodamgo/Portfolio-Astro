@@ -10,6 +10,19 @@ compareFrom: "obstacle-step-8"
 
 Una estrategia que «parece ir bien» no sirve para decidir nada. En este paso mides la tuya como lo hizo el equipo: muchas rondas en el laboratorio para comparar versiones, Gazebo para confirmar, y una tabla con puntos y tiempos. Y lees, con los mismos números, dónde falla todavía la solución de referencia.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/laWn7_cj434" title="Simulating Robots with Gazebo and ROS | Getting Ready to Build Robots with ROS #8" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Simulating Robots with Gazebo and ROS | Getting Ready to Build Robots with ROS #8</strong> · Articulated Robotics (inglés). Por qué y cómo simular con Gazebo antes de pasar al robot real.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 ```text

@@ -10,6 +10,23 @@ compareFrom: "obstacle-step-7"
 
 Tras las tres vueltas, el reglamento da 15 puntos por aparcar del todo dentro del hueco y en paralelo al muro (7 si queda dentro a medias o torcido). El hueco mide **0,35 × 0,20 m** y el coche **0,233 × 0,148 m**: sobran 11,7 cm a lo largo y 5,2 cm a lo ancho. En este paso escribes `park.py`.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/yw305Q0khyo" title="Hybrid A* path planning for autonomous parallel parking of a trailer truck" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Hybrid A* path planning for autonomous parallel parking of a trailer truck</strong> · Atsushi Sakai (inglés). Aparcamiento en paralelo con una búsqueda A* sobre arcos (del autor de PythonRobotics).</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Mo6hTUZ-B6Q" title="Hybrid A-Star Path Planning - Autonomous Car" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Hybrid A-Star Path Planning - Autonomous Car</strong> · Vimal Raj Ayyappan (inglés). Hybrid A* en RViz con obstáculos.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Al terminar la tercera vuelta, el coche sigue por la recta de salida pegado a una línea paralela al aparcamiento, se para un poco después del tope del fondo, se queda quieto un momento (está planificando) y entra marcha atrás en varias maniobras cortas, parando entre una y otra para girar las ruedas. En el laboratorio, solo con el aparcamiento, aparca del todo en 7 a 9 de cada 10 intentos, en 35 a 70 s.

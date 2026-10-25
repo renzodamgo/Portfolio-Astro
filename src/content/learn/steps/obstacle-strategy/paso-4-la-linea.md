@@ -10,6 +10,19 @@ compareFrom: "obstacle-step-3"
 
 Ya sabes dónde están las señales y de qué color son. Falta decidir **por dónde pasa el coche**. En este paso escribes `plan.py`: una línea descrita como un desplazamiento lateral respecto al carril en función del progreso. Junto a cada señal el desplazamiento la deja del lado correcto, y entre dos señales cambia en línea recta.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/QR3U1dgc5RE" title="Path Planning with A* and RRT | Autonomous Navigation, Part 4" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Path Planning with A* and RRT | Autonomous Navigation, Part 4</strong> · MATLAB (inglés, 18 min). Qué es planificar una trayectoria; la línea de este paso es una versión simple.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 El coche sigue sin conducirse solo. Conduces con `keyboard_drive` y miras `ros2 topic echo /obstacle/plan`: el desplazamiento planificado 0, 0,5, 1 y 1,5 unidades por delante del coche. Al acercarte a una roja interior lo verás bajar a −0,15; a una verde interior, subir a +0,35. Lo seguirás en el paso 6. Las pruebas comprueban el plan contra campos armados a mano.

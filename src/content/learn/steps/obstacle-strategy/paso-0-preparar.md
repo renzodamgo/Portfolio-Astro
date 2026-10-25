@@ -8,6 +8,19 @@ tag: "obstacle-step-0"
 compareFrom: "obstacle-step-0"
 ---
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Bni7t7damEs" title="WRO 2024 Future Engineers International Final obstacle challenge run" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>WRO 2024 Future Engineers International Final obstacle challenge run</strong> · Team Asparagus (inglés). Una ronda Obstacle real en la final internacional: lo que vas a construir.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Qué tendrás al final
 
 1. El repositorio `robotek-learn` al día, compilado, con el campo del Obstacle: señales rojas y verdes y el aparcamiento.

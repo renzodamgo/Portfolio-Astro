@@ -19,6 +19,19 @@ Tu estrategia ya completa las tres vueltas con 30 puntos. Este capítulo no es u
 >
 > **Ninguno de estos ajustes se probó en el coche real.** Son números del simulador: el coche real puede darte otros.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/sFOEsA0Irjs" title="A PID Tuning Guide | Understanding PID Control, Part 4" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>A PID Tuning Guide | Understanding PID Control, Part 4</strong> · MATLAB (inglés, 12 min). Un método práctico para afinar ganancias, como en este paso.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Cómo trabajar
 
 1. **Un cambio cada vez.** Si cambias dos cosas y mejora, no sabrás cuál fue.

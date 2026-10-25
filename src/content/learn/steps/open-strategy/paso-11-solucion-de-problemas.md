@@ -24,6 +24,19 @@ Este capítulo es el que abres cuando el coche real **no hace lo que esperabas**
 >
 > Los comandos y los scripts de este capítulo están escritos a partir del código del coche y de las notas del equipo, pero **no se han ejecutado en el coche real**. Si algo no sale como lo cuento, dímelo.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/E-9Dan5Tjb4" title="ROS2 Basics #14 - ROS2 tools - RQt and Ros2bag" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>ROS2 Basics #14 - ROS2 tools - RQt and Ros2bag</strong> · BotBuilder (inglés). rqt_graph, rqt_console, rqt_plot y ros2 bag para ver qué pasa dentro del sistema.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Tres reglas antes de tocar nada
 
 1. **Primero con el coche en el aire.** Apóyalo sobre una caja para que las ruedas no toquen la mesa. Casi todo lo de aquí (sentido del servo, sentido del motor, ejes del giroscopio) se comprueba sin que el coche se mueva del sitio.

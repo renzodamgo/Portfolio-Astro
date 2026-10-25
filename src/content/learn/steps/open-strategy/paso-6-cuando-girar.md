@@ -10,6 +10,19 @@ compareFrom: "step-5"
 
 En el paso 5 la esquina empezaba con una regla fija: la pared de enfrente a 1,19 m. Una sola condición se equivoca con facilidad. En este paso escribes `TurnGate` (la puerta), que decide **cada tick** (cada ejecución del control, 50 veces por segundo) si es el momento de girar. La conexión con `drive.py` y con la distancia recorrida, que sale del LiDAR, te la damos hecha. Al terminar, el coche gira esquina tras esquina alrededor de la isla.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/Ht48vv0rQYk" title="EEVblog #941 - Schmitt Trigger Tutorial" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>EEVblog #941 - Schmitt Trigger Tutorial</strong> · EEVblog (inglés). Histéresis y dos umbrales contra el ruido: es electrónica, pero la puerta de giro usa la misma idea.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 En Gazebo el coche sigue la pared de la isla, gira a la izquierda en cada esquina y vuelve a seguir la pared, sin parar. En la terminal del nodo aparece `Giro a la izquierda (esquina N)` en cada giro. El sentido sigue fijo, antihorario: la cámara que lo decide llega en el paso 8. El comprobador lo deja correr 40 s de simulación y exige **al menos 8 esquinas** (dos vueltas) sin tocar ninguna pared.

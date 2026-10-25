@@ -10,6 +10,23 @@ compareFrom: "step-4"
 
 Hasta ahora el coche sigue la pared de la isla y se detiene ante la pared de enfrente. En este paso le enseñas a **girar 90 grados a la izquierda** en esa pared y a seguir por el pasillo siguiente. Escribes `arc.py`, que decide el volante durante la esquina. `drive.py`, que la usa **una sola vez**, te lo damos hecho. Cuándo girar sigue siendo una regla fija (la pared de enfrente, `front_axis`, a 1,19 m o menos); decidirlo bien es el paso 6.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/7dUVdrs1e18" title="Noise Filtering in PID Control | Understanding PID Control, Part 3" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Noise Filtering in PID Control | Understanding PID Control, Part 3</strong> · MATLAB (inglés, 12 min). El término derivativo (el amortiguamiento de este paso) y por qué hay que filtrar su ruido.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/XfAt6hNV8XM" title="Simple Examples of PID Control" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Simple Examples of PID Control</strong> · Brian Douglas (inglés). Cómo cambia la respuesta con cada término.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 En Gazebo el coche calibra el giroscopio 0,6 s, sigue la pared de la isla a 0,25 m y, cuando la pared de enfrente queda a 1,19 m o menos, gira a la izquierda: en la terminal del nodo aparece `Giro a la izquierda`. Entra en el pasillo del este, sigue la pared de la isla y se detiene ante la pared siguiente. En la referencia (con el modelo del coche real) el rumbo verdadero al terminar fue **π/2 + 0,019 rad**, 1,1 grados de más, y el límite de la prueba es 0,12 rad. No tocó ninguna pared.

@@ -10,6 +10,23 @@ compareFrom: "obstacle-step-4"
 
 En una recta, la línea del paso 4 funciona. En una esquina no: un desplazamiento de +0,354 m hacia la isla dentro de la curva pide un radio de 0,146 m, y el coche no gira por debajo de unos 0,41 m. En este paso escribes `corner.py`: cada esquina se planifica como **recta, arco, recta** y se elige, entre muchas, la que deja más margen con las señales de los dos extremos.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/gIVNggpYuXA" title="Dubins path examples" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Dubins path examples</strong> · Kyler Laird (inglés). Caminos de Dubins: rectas y arcos de radio mínimo, como la línea de cada esquina.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/tjUVE3jto98" title="Coding a Dubins Car Optimal Path Planner" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Coding a Dubins Car Optimal Path Planner</strong> · Aaron Becker (inglés). Un profesor programa el planificador de Dubins paso a paso.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Conduciendo con `keyboard_drive`, `/obstacle/plan` ya muestra la línea de cada esquina en vez de las rampas del paso 4. `corner.plan` devuelve, para cada par de señales en los extremos de una esquina, el margen y la línea. Los 25 casos posibles (4 tipos de señal o ninguna, en cada extremo) tienen línea con **al menos 3,4 cm** de margen sobre el papel. Las pruebas lo comprueban.

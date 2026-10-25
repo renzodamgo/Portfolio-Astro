@@ -10,6 +10,23 @@ compareFrom: "step-6"
 
 Hasta ahora tienes piezas sueltas: el rumbo, la ley de carril, la esquina y la puerta que decide cuándo girar. En este paso las unes en una **máquina de estados**: un programa que en cada momento está en un solo estado y solo cambia de estado por transiciones que tú defines. La tuya espera Start, da las tres vueltas (12 esquinas) y se detiene en la sección de salida. Al terminar tienes un coche que puntúa en Gazebo.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/4XEK7OU2gIw" title="Finite State Machines: Part 1" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Finite State Machines: Part 1</strong> · Barry Brown (inglés). Qué es una máquina de estados, con un robot de limpieza de ejemplo.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/NTEHRjiAY2I" title="How to Code a State Machine | Embedded System Project Series #26" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>How to Code a State Machine | Embedded System Project Series #26</strong> · Artful Bytes (inglés). Cómo se programa la máquina de estados de un robot.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Con Gazebo abierto, la ronda tiene cuatro momentos:

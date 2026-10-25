@@ -10,6 +10,19 @@ compareFrom: "step-0"
 
 Mientras se instala, juega con el coche: [Juega con el coche en el navegador](/learn/open-strategy/simulador/).
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/8aoFndU7jos" title="Getting Started with ROS 2" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Getting Started with ROS 2</strong> · Mike Likes Robots (inglés, 20 min). Qué es ROS 2: nodos, tópicos, mensajes, paquetes y las herramientas que usarás.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Qué tendrás al final
 
 Al terminar este capítulo tendrás tres cosas:

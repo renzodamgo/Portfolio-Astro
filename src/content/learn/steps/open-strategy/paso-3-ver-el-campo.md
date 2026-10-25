@@ -10,6 +10,23 @@ compareFrom: "step-2"
 
 Hasta ahora el coche conduce a ciegas: sabe hacia dónde apunta (el giroscopio), pero no sabe dónde están las paredes. El **LiDAR** es un sensor láser que gira y mide la distancia al primer obstáculo en cada dirección; una vuelta de rayos es un **escaneo**. En este paso escribes `perceive`, que convierte un escaneo en cuatro números (la `Scene`) que usará el resto de la estrategia: a qué distancia están las paredes de los lados, la pared de enfrente y dónde termina la isla.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/EYbhNSUnIdU" title="How Does LiDAR Remote Sensing Work? Light Detection and Ranging" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>How Does LiDAR Remote Sensing Work? Light Detection and Ranging</strong> · NEON Science (inglés). El tiempo de vuelo de la luz, breve y claro.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/eJZXRncGaGM" title="How do we add LIDAR to a ROS robot?" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>How do we add LIDAR to a ROS robot?</strong> · Articulated Robotics (inglés, 23 min). El mensaje LaserScan de ROS y el LiDAR real frente al de Gazebo.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 El coche espera Start, se queda quieto 0,6 s calibrando el giroscopio y avanza recto a 0,42 m/s (el comando 0,6). Mientras tanto publica en `/scene` los cuatro números de cada escaneo; los lees con `ros2 topic echo /scene`.

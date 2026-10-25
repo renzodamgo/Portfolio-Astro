@@ -10,6 +10,19 @@ compareFrom: "step-3"
 
 Con el rumbo y la percepción ya puedes mantener al coche a una distancia fija de la isla. A esa distancia (la que mide `scene.left`) la llamaremos **hueco**. En este paso escribes la ley de carril: `lateral_bias` y `lane_steer`. La idea cabe en una línea, pero tiene una decisión de diseño que importa: el coche no corrige el hueco con el volante, corrige el **rumbo** al que apunta.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/wkfEZmsQqiA" title="What Is PID Control? | Understanding PID Control, Part 1" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>What Is PID Control? | Understanding PID Control, Part 1</strong> · MATLAB (inglés, 12 min). Realimentación y los términos P, I y D sin fórmulas: la ley de carril es un control P.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 El coche calibra el giroscopio, avanza junto a la pared de la isla (a su izquierda) y se acerca poco a poco a 0,25 m de ella. Cuando la pared de enfrente llega a 1,19 m (medidos a lo largo de la pista), manda parar y frena. Meta en Gazebo: al dar la orden de parar, un hueco entre 0,20 y 0,31 m, sin tocar nada. La referencia midió 0,270, 0,241 y 0,265 m en tres ejecuciones.

@@ -10,6 +10,19 @@ compareFrom: "obstacle-step-2"
 
 El LiDAR ve las señales como grupos pequeños de puntos, pero no sabe de qué color son. La cámara ve el color, pero solo en un ángulo estrecho delante del coche. En este paso escribes `signs.py`: una **memoria por asiento** que archiva cada señal que ve el LiDAR en uno de los 24 asientos del reglamento y le suma votos de color cada vez que la cámara la ve.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/3D7O_kZi8-o" title="OpenCV Python Tutorial For Beginners 13 - Object Detection and Object Tracking Using HSV Color Space" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>OpenCV Python Tutorial For Beginners 13 - Object Detection and Object Tracking Using HSV Color Space</strong> · ProgrammingKnowledge (inglés). Detectar objetos por color con HSV, como las señales rojas y verdes.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Conduces con `keyboard_drive` como en el paso 2 y miras `ros2 topic echo /obstacle/signs`: la memoria de asientos (asiento, fila, color y veces visto) crece a medida que recorres la primera vuelta. En la segunda vuelta ya no aparecen asientos nuevos: el campo no cambia durante la ronda.

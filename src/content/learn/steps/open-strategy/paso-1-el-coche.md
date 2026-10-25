@@ -10,6 +10,23 @@ compareFrom: "step-0"
 
 Antes de que el coche mire nada, necesita saber qué hace su propio volante. En este paso escribes el **modelo de bicicleta**: tres funciones que convierten un ángulo de dirección en un giro. Con él predices el radio del círculo que dibuja el coche, y después lo comparas con el coche en Gazebo.
 
+<!-- videos:start -->
+## Para entrar en tema
+
+Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para seguir el paso).
+
+<div class="learn-videos">
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/D4AgX1zjx54" title="Self-Driving Cars - Lecture 5.2 (Vehicle Dynamics: Kinematic Bicycle Model)" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Self-Driving Cars - Lecture 5.2 (Vehicle Dynamics: Kinematic Bicycle Model)</strong> · Tübingen Machine Learning (inglés). Clase universitaria que deriva el modelo de bicicleta de este paso.</figcaption>
+</figure>
+<figure class="learn-video">
+<iframe src="https://www.youtube-nocookie.com/embed/reZiM0aKEjo" title="Ackermann Steering Geometry simply explained" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<figcaption><strong>Ackermann Steering Geometry simply explained</strong> · Skill Lync (inglés). La geometría Ackermann del coche, sin matemáticas.</figcaption>
+</figure>
+</div>
+<!-- videos:end -->
+
 ## Lo que vas a ver
 
 Primero las pruebas en Python: cinco pruebas en verde. Después, en Gazebo y en un campo sin paredes, el coche espera Start, fija el volante a un ángulo (0,25 rad por defecto) y avanza en círculos. La comprobación ajusta una circunferencia a la trayectoria real y la compara con lo que predice tu `turn_radius`. La meta es una diferencia **menor que el 4 %**; en la referencia sale por debajo del 1 %.
