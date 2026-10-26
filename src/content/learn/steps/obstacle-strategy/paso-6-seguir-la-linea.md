@@ -31,6 +31,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 Por fin el coche se conduce solo: con el `drive.py` de este paso da **una vuelta** siguiendo la línea a 0,25 m/s y se para (todavía sin salida especial, sin mirar señales desconocidas y sin aparcar; eso es el paso 7). Ya no hace falta `keyboard_drive`. Sigues pudiendo mirar `/obstacle/pose`, `/obstacle/signs` y `/obstacle/plan`.
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-6.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. Cuánto se aparta el coche de la línea en cada tramo: un par de centímetros en las rectas y en las esquinas.*
+
 ## La idea
 
 ### Lo que falló primero: perseguir un punto

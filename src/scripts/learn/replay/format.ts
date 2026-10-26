@@ -26,6 +26,9 @@ export interface SceneNumbers {
 export interface LabelEntry { t: number; state: string; corners: number | null }
 export interface ReplayEvent { t: number; text: string }
 export interface SectionExit { t: number; section: number }
+/** Obstacle replays: a traffic sign (5 x 5 x 10 cm) and the parking lot interior (metres, x east, y north). */
+export interface ReplaySign { x: number; y: number; color: 'red' | 'green' }
+export interface ReplayLot { x0: number; x1: number; y0: number; y1: number }
 
 export interface Replay {
   version: 1;
@@ -44,6 +47,9 @@ export interface Replay {
   events: ReplayEvent[];
   /** Section exits of the main track (only when `sections` is true): the score the rules would give. */
   sectionExits: SectionExit[];
+  /** Obstacle replays: the signs and the parking lot of the field. */
+  signs: ReplaySign[];
+  lot: ReplayLot | null;
 }
 
 export class ReplayError extends Error {}
@@ -130,6 +136,10 @@ export function parseReplay(raw: unknown): Replay {
     scans, scene, labels, events,
     sections: raw.sections === true && field === 'square100',
     sectionExits: [],
+    signs: list(raw.signs).flatMap((s) => isNum(s.x) && isNum(s.y) && (s.color === 'red' || s.color === 'green')
+      ? [{ x: s.x, y: s.y, color: s.color as 'red' | 'green' }] : []).slice(0, 12),
+    lot: isObject(raw.lot) && isNum(raw.lot.x0) && isNum(raw.lot.x1) && isNum(raw.lot.y0) && isNum(raw.lot.y1)
+      ? { x0: raw.lot.x0, x1: raw.lot.x1, y0: raw.lot.y0, y1: raw.lot.y1 } : null,
   };
   if (replay.sections) replay.sectionExits = sectionExits(tracks[0], replay.direction);
   return replay;

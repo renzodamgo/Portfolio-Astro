@@ -31,6 +31,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 Nada se mueve en Gazebo. Al terminar, `pytest course/tests/obstacle/test_obstacle_step_1.py` da `9 passed`, y puedes preguntar en Python, por ejemplo, dónde está el centro del carril a mitad de la primera esquina:
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-1.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. La estrategia completa del curso (la tendrás en el paso 7) dando una vuelta: los eventos marcan cada unidad de progreso. Activa las medidas o el LiDAR, cambia la cámara o la velocidad, y salta entre eventos.*
+
 ```python
 >>> from my_obstacle.lane import lane_pose
 >>> lane_pose(1.5)

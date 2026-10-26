@@ -27,6 +27,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 Conduces con `keyboard_drive` como en el paso 2 y miras `ros2 topic echo /obstacle/signs`: la memoria de asientos (asiento, fila, color y veces visto) crece a medida que recorres la primera vuelta. En la segunda vuelta ya no aparecen asientos nuevos: el campo no cambia durante la ronda.
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-3.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. Cada señal que el LiDAR ve dos veces entra en la memoria por asiento; la cámara le pone color, a veces mucho después (la del centro de la recta de arriba se ve sin color en el segundo 9 y roja en el 19).*
+
 ## La idea
 
 ### Dónde: clústeres del LiDAR

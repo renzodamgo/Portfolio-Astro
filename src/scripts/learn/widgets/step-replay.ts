@@ -26,6 +26,18 @@ const STATE_TEXT: Record<string, string> = {
   TURN: 'gira 90 grados',
   FINISH: 'avanza despacio hasta la pared de salida',
   DONE: 'parado: ronda terminada',
+  // Obstacle (my_obstacle/mission.py and park.py)
+  SETUP: 'quieto: calibra el giroscopio y elige el sentido con los muros',
+  RUN: 'sigue la línea planificada',
+  LOOK: 'parado: mira una señal de color desconocido',
+  BACKUP: 'marcha atrás: la primera señal está demasiado cerca',
+  PARK_APPROACH: 'se acerca alineado al aparcamiento',
+  PARK_BACK: 'vuelve en recta a la pose de planificar',
+  PARK_PLAN: 'quieto: planifica las maniobras (A*)',
+  PARK_STEER: 'quieto: gira las ruedas para la maniobra',
+  PARK_MOVE: 'maniobra despacio',
+  PARKED: 'aparcado del todo y en paralelo',
+  STOP: 'parado: ronda terminada',
 };
 
 interface Prefs { lidar?: boolean; measures?: boolean; mode?: CameraMode; speed?: number }

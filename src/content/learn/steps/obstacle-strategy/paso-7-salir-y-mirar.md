@@ -27,6 +27,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 La primera ronda completa: tres vueltas y parada en la sección de salida, 40 puntos. En el laboratorio, el set de prueba (5 campos × 2 sentidos × 5 semillas de ruido) pasa de 30 a **44 rondas válidas de 50** al añadir «mirar». En Gazebo, la referencia hizo **40 puntos, ronda válida, en 115,6 s** en el campo 4 CCW.
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-7.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. La ronda del reglamento: se para a mirar dos señales sin color, da tres vueltas y para en la sección de salida.*
+
 ## La idea
 
 ### Estados

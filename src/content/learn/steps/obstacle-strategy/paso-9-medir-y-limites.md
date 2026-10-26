@@ -32,6 +32,10 @@ obstacle-0-cw-park     s0  pts= 1/55 t=7.3    invalid contact:sign_green_1 park=
 valid 11/20  mean time of the valid 152.8 s  wall 73 s
 ```
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-9.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. Tres vueltas en sentido horario en el campo 3: 40 puntos.*
+
 Una línea por ronda: puntos estimados sobre el máximo, tiempo desde Start, si es válida y, si falló, la primera causa; con aparcamiento, cómo quedó (`park=`). `--early` corta una ronda 1,5 s después de un lado incorrecto claro (el juez la sigue puntuando): las tandas largas tardan la mitad.
 
 > **Con aparcamiento el número baila.** La búsqueda del aparcamiento tiene un tope de tiempo de reloj; con 12 rondas en paralelo la máquina va cargada y encuentra menos planes. La misma solución dio 11 de 20 en una tanda y 9 en otra. Compara versiones en la misma máquina y con la misma carga.

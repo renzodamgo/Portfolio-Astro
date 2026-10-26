@@ -31,6 +31,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 Hasta el paso 6 el coche no se conduce solo: el `drive.py` de los pasos 2 a 5 es un nodo **observador**. Tras Start calibra el giroscopio 0,3 s, elige el sentido con el primer escaneo (lo imprime: `Direction ccw`) y desde ahí publica en `/obstacle/pose` lo que entiende: x, y y rumbo en el campo espejado, y el progreso. Tú conduces con el teclado en otra terminal, con `ros2 run robotek_course keyboard_drive`, y miras con `ros2 topic echo /obstacle/pose` cómo el progreso avanza y la pose sigue al coche. En el laboratorio, contra la pose real, el error típico es de **2 a 6 mm** y el del rumbo de unas décimas de grado.
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-2.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. En azul, dónde cree el coche que está; en ámbar, dónde está de verdad. El sentido sale del primer escaneo (aquí horario) y el error se queda en un par de centímetros toda la vuelta.*
+
 ## La idea
 
 ### Predecir y corregir

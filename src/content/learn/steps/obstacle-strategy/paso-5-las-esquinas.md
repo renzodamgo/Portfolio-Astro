@@ -31,6 +31,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 Conduciendo con `keyboard_drive`, `/obstacle/plan` ya muestra la línea de cada esquina en vez de las rampas del paso 4. `corner.plan` devuelve, para cada par de señales en los extremos de una esquina, el margen y la línea. Los 25 casos posibles (4 tipos de señal o ninguna, en cada extremo) tienen línea con **al menos 3,4 cm** de margen sobre el papel. Las pruebas lo comprueban.
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-5.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. En cada esquina, la línea es la que eligió el plan de este paso para las señales de los dos extremos.*
+
 <div data-widget="obstacle-corner"></div>
 
 ## La idea

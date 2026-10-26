@@ -122,6 +122,23 @@ async function buildScene(renderer: THREE.WebGLRenderer, replay: Replay, assetBa
     wallMeshes.push(wall);
   }
 
+  // Obstacle replays: the traffic signs and the two magenta limits of the parking lot.
+  for (const s of replay.signs) {
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05), new THREE.MeshStandardMaterial({ color: s.color === 'red' ? 0xee2737 : 0x44d62c, roughness: 0.6 }));
+    sign.position.set(s.x, 0.05, -s.y);
+    sign.castShadow = sign.receiveShadow = true;
+    scene.add(sign);
+  }
+  if (replay.lot) {
+    const { x0, x1, y0, y1 } = replay.lot;
+    for (const x of [x0 - 0.01, x1 + 0.01]) {
+      const limit = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, y1 - y0), new THREE.MeshStandardMaterial({ color: 0xd63ad6, roughness: 0.6 }));
+      limit.position.set(x, 0.05, -(y0 + y1) / 2);
+      limit.castShadow = limit.receiveShadow = true;
+      scene.add(limit);
+    }
+  }
+
   // Mat sections, tinted as the main car drives out of them (the points the rules would give).
   const sectionMaterials: THREE.MeshBasicMaterial[] = [];
   if (replay.sections) {

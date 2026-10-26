@@ -27,6 +27,10 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 El coche sigue sin conducirse solo. Conduces con `keyboard_drive` y miras `ros2 topic echo /obstacle/plan`: el desplazamiento planificado 0, 0,5, 1 y 1,5 unidades por delante del coche. Al acercarte a una roja interior lo verás bajar a −0,15; a una verde interior, subir a +0,35. Lo seguirás en el paso 6. Las pruebas comprueban el plan contra campos armados a mano.
 
+<div data-widget="step-replay" data-src="/learn/assets/replays/obstacle-step-4.json"></div>
+
+*Repetición del laboratorio del Obstacle (la copia de la web) con la solución del curso. Cada señal se pasa por su lado: los eventos dan el desplazamiento planificado al cruzarla y la fila de la señal.*
+
 <div data-widget="obstacle-line"></div>
 
 ## La idea
