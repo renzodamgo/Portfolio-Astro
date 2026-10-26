@@ -19,13 +19,20 @@ interface Saved {
 }
 
 const $ = <T extends HTMLElement>(root: ParentNode, sel: string) => root.querySelector(sel) as T;
-const FREE_WORLD: World = { field: 'field', start: [0, -1.0, 0], view: 'chase', trail: false };
+const OPEN_FREE: World = { field: 'field', start: [0, -1.0, 0], view: 'chase', trail: false };
 
 export async function startLesson(root: HTMLElement) {
   const guide = root.dataset.guide ?? 'open-strategy';
-  const lesson = findLesson(guide, Number(root.dataset.step));
-  if (!lesson) return;
+  const found = findLesson(guide, Number(root.dataset.step));
+  if (!found) return;
+  const lesson: Lesson = found;
   const key = `learn-lesson-${guide}-${lesson.step}`;
+  const pkg = lesson.package ?? 'my_open';
+  const obstacle = pkg === 'my_obstacle';
+  const testsDir = obstacle ? 'course/tests/obstacle' : 'course/tests';
+  /** The world of `ros2 launch` and of free driving: the guide's field (with the signs of a layout in the Obstacle). */
+  const FREE_WORLD: World = lesson.freeWorld ?? OPEN_FREE;
+  const refName = (name: string) => (obstacle ? `obstacle/${name}` : name);
   const saved: Saved = { files: {}, done: [], fails: {}, seeded: [], current: 0, ...JSON.parse(localStorage.getItem(key) ?? '{}') };
   const save = () => localStorage.setItem(key, JSON.stringify({ ...saved, shell }));
 
@@ -50,14 +57,14 @@ export async function startLesson(root: HTMLElement) {
   };
 
   const shell: ShellState = saved.shell ?? (lesson.fresh
-    ? { cwd: '', cloned: false, rosSourced: false, built: false, wsSourced: false, pkgCreated: false, pkgBuilt: false }
+    ? { cwd: '', cloned: false, rosSourced: false, built: false, wsSourced: false, pkgCreated: false, pkgBuilt: false, ...lesson.shellStart }
     : { cwd: 'robotek-learn', cloned: true, rosSourced: true, built: true, wsSourced: true, pkgCreated: true, pkgBuilt: true });
 
   // Files: the student's saved text, else the starter, else the course's reference (with its gaps cut out).
   const files: EditorFile[] = await Promise.all(lesson.files.map(async (f) => {
     let text = saved.files[f.name];
     if (text === undefined) {
-      text = f.starter ?? (f.ref ? await PY.referenceModule(f.ref) : '');
+      text = f.starter ?? (f.ref ? await PY.referenceModule(refName(f.ref)) : '');
       for (const [cut, todo] of f.gaps ?? []) text = text.replace(cut, todo);
     }
     return { name: f.name, text, readonly: f.readonly, note: f.note };
@@ -80,31 +87,29 @@ export async function startLesson(root: HTMLElement) {
     complete: (word, first) => sh!.complete(word, first),
     interrupt: () => sim.stop(),
   });
-  PY.setOutput((text) => term.write(text));
+  PY.setOutput((text) => term.write(text), (text) => term.write(text.replace(/\n?$/, '\n'), 'dim'));
 
   const sim = createLessonSim($(root, '[data-lesson-sim]'));
 
   // ---------------------------------------------------------------- Python (loaded in the background)
   const status = (text: string) => { els.simStatus.textContent = text; };
-  let pyReady: ReturnType<typeof PY.python> | null = null;
+  let pyReady: Promise<void> | null = null;
   const loadPython = () => {
-    pyReady ??= (async () => {
-      const py = await PY.ensurePackages(['pytest', ...(lesson.packages ?? [])], (t) => term.write(t + '\n', 'dim'));
-      term.write('Python listo.\n', 'dim');
-      return py;
-    })();
+    pyReady ??= PY.start(['pytest', ...(lesson.packages ?? [])]).then(() => { term.write('Python listo.\n', 'dim'); });
     pyReady.catch((error) => { term.write(`No se pudo cargar Python: ${error}\n`, 'err'); pyReady = null; });
     return pyReady;
   };
+  /** Python ready, with the student's latest files written into the package. */
   async function py() {
-    const p = await loadPython();
-    PY.writeFiles(p, fileText());
-    return p;
+    await loadPython();
+    await PY.writeFiles(pkg, fileText());
   }
 
   // ---------------------------------------------------------------- the shell's host
   sh = createShell({
     term,
+    pkg,
+    testsDir,
     state: shell,
     files: fileText,
     openFile(name) {
@@ -113,18 +118,18 @@ export async function startLesson(root: HTMLElement) {
       editor.focus();
       return true;
     },
-    async compile() { return PY.compileAll(await py()); },
-    async pytest(args) { return PY.pytest(await py(), args); },
-    async python(code, filename) { return PY.runPython(await py(), code, filename); },
+    async compile() { await py(); return PY.compileAll(pkg); },
+    async pytest(args) { await py(); return PY.pytest(args); },
+    async python(code, filename) { await py(); return PY.runPython(code, filename); },
     async testSource(name) {
-      const r = await fetch(`/learn/py/tests/${name}`);
+      const r = await fetch(name.startsWith('obstacle/') ? `/learn/py/obstacle/tests/${name.slice(9)}` : `/learn/py/tests/${name}`);
       return r.ok ? r.text() : null;
     },
     runDrive,
     async launchSim() {
       showSim(true);
       await sim.show(FREE_WORLD);
-      term.write('[gazebo] El campo del reto Open está en la vista 3D (arriba). El coche espera órdenes.\n', 'info');
+      term.write(`[gazebo] El campo del reto ${obstacle ? 'Obstacle' : 'Open'} está en la vista 3D (arriba). El coche espera órdenes.\n`, 'info');
       save();
     },
     async keyboardDrive() {
@@ -138,13 +143,10 @@ export async function startLesson(root: HTMLElement) {
     async compareStep() {
       const mine = lesson.files.find((f) => !f.readonly && f.name !== 'drive.py');
       if (!mine?.name) { term.write('En este paso no hay un módulo tuyo que comparar.\n', 'info'); return; }
-      const reference = await PY.referenceModule(mine.name.replace(/\.py$/, '')).catch(() => '');
+      const reference = await PY.referenceModule(refName(mine.name.replace(/\.py$/, ''))).catch(() => '');
       if (!reference) { term.write('No hay referencia para comparar.\n', 'info'); return; }
-      const p = await py();
-      p.globals.set('_a', editor.get(mine.name) ?? '');
-      p.globals.set('_b', reference);
-      p.globals.set('_n', mine.name);
-      const diff = p.runPython(`import difflib\n''.join(difflib.unified_diff(_a.splitlines(True), _b.splitlines(True), 'tu ' + _n, 'referencia ' + _n))`) as string;
+      await loadPython();
+      const diff = await PY.diff(editor.get(mine.name) ?? '', reference, mine.name);
       term.write(diff || 'Tu archivo es igual a la referencia.\n', diff ? 'out' : 'ok');
     },
     interrupt() { sim.stop(); },
@@ -318,18 +320,19 @@ export async function startLesson(root: HTMLElement) {
     const c = task.check;
     save();
     if (c.kind === 'pytest') {
-      await term.type(`python3 -m pytest course/tests/${c.file}${c.k ? ` -k "${c.k}"` : ''} -q`);
+      await term.type(`python3 -m pytest ${testsDir}/${c.file}${c.k ? ` -k "${c.k}"` : ''} -q`);
     } else if (c.kind === 'python') {
       running = true;
       setFeedback('info', 'Comprobando…');
       term.write('Comprobando tu código…\n', 'dim');
       try {
-        const code = await PY.runPython(await py(), c.code, '<comprobación>');
+        await py();
+        const code = await PY.runPython(c.code, '<comprobación>');
         if (code === 0) pass(task, 'Tu código hace lo que debe.');
         else fail(task, 'La comprobación falló: mira el mensaje en la terminal.');
       } finally { running = false; }
     } else if (c.kind === 'sim') {
-      await term.type('ros2 run my_open drive');
+      await term.type(`ros2 run ${pkg} drive`);
     } else if (c.kind === 'keyboard') {
       await term.type('ros2 run robotek_course keyboard_drive');
     }
@@ -349,8 +352,10 @@ export async function startLesson(root: HTMLElement) {
       if (e.ok) {
         const filtered = e.argv.includes('-k');
         const k = filtered ? e.argv[e.argv.indexOf('-k') + 1] : '';
-        if (!c.k || !filtered || k === c.k) pass(task, 'Las pruebas pasan.');
-        else setFeedback('info', `Pasan las pruebas que elegiste. Para esta tarea corre: -k "${c.k}" (o el archivo entero).`);
+        // A filtered run counts only for the task's own filter; a task without one needs the whole file.
+        if (!filtered || (c.k && k === c.k)) pass(task, 'Las pruebas pasan.');
+        else setFeedback('info', c.k ? `Pasan las pruebas que elegiste. Para esta tarea corre: -k "${c.k}" (o el archivo entero).`
+          : 'Pasan las pruebas que elegiste. Para esta tarea corre el archivo entero, sin -k.');
       } else {
         fail(task, 'Alguna prueba falla: lee el error en la terminal (la línea con «assert» dice qué esperaba).');
       }
@@ -359,10 +364,11 @@ export async function startLesson(root: HTMLElement) {
     save();
   }
 
-  /** ros2 run my_open drive: step 0 prints the template's greeting; later steps run the 3D task. */
+  /** ros2 run <package> drive: step 0 prints the template's greeting; later steps run the 3D task. */
   async function runDrive() {
     if (lesson.fresh) {
-      await PY.runPython(await py(), (editor.get('drive.py') ?? '') + '\n', 'drive.py');
+      await py();
+      await PY.runPython((editor.get('drive.py') ?? '') + '\n', 'drive.py');
       return;
     }
     const task = tasks[viewing];
@@ -371,22 +377,23 @@ export async function startLesson(root: HTMLElement) {
     if (c.kind !== 'sim') {
       term.write('Esta tarea no usa el coche: tu drive.py corre libre 20 s (Ctrl+C para parar).\n', 'info');
       const world = lesson.tasks.map((t) => t.check).find((x) => x.kind === 'sim')?.world ?? FREE_WORLD;
-      const outcome = await sim.run(await py(), world, { seconds: 20, done: () => false, passAtTimeout: () => true });
+      await py();
+      const outcome = await sim.run(world, { seconds: 20, done: () => false, passAtTimeout: () => true });
       report(outcome, null);
       return;
     }
     running = true;
     try {
-      const p = await py();
+      await py();
       if (c.tests) {
-        term.write(`Antes del coche, las pruebas: pytest course/tests/${c.tests.file}${c.tests.k ? ` -k "${c.tests.k}"` : ''}\n`, 'dim');
-        const code = await PY.pytest(p, [`course/tests/${c.tests.file}`, ...(c.tests.k ? ['-k', c.tests.k] : []), '-q']);
+        term.write(`Antes del coche, las pruebas: pytest ${testsDir}/${c.tests.file}${c.tests.k ? ` -k "${c.tests.k}"` : ''}\n`, 'dim');
+        const code = await PY.pytest([`${testsDir}/${c.tests.file}`, ...(c.tests.k ? ['-k', c.tests.k] : []), '-q']);
         if (code !== 0) { fail(task, 'Primero tienen que pasar las pruebas de tu módulo (mira la terminal).'); return; }
       }
       setFeedback('info', 'El coche está corriendo tu código…');
-      term.write('[my_open] drive.py arrancó (Ctrl+C para parar)\n', 'dim');
+      term.write(`[${pkg}] ${obstacle ? 'tu estrategia' : 'drive.py'} arrancó (Ctrl+C para parar)\n`, 'dim');
       els.banner.hidden = true;
-      const outcome = await sim.run(p, c.world, c.goal, (m) => showMetrics(m));
+      const outcome = await sim.run(c.world, c.goal, (m) => showMetrics(m));
       report(outcome, task);
     } finally {
       running = false;
@@ -396,14 +403,18 @@ export async function startLesson(root: HTMLElement) {
   function showMetrics(m: Metrics) {
     const r = m.round;
     const c = (n: number, d: number) => n.toFixed(d).replace('.', ',');
+    if (m.memo.thinking) {
+      status(`El coche está pensando: ${c(m.memo.thinking, 0)} s (${m.status === 'PARK' ? 'planifica las maniobras de aparcar' : 'calcula'})…`);
+      return;
+    }
     status(`t ${c(m.time, 1)} s · v ${c(m.speed, 2)} m/s · volante ${c(m.steer * 180 / Math.PI, 1)}° · giro ${c(m.turned * 180 / Math.PI, 0)}°`
       + (m.status ? ` · ${m.status}` : '') + (r ? ` · ${r.sections}/24 secciones` : ''));
   }
 
   function report(outcome: Outcome, task: Task | null) {
     if (outcome.error) {
-      term.write(outcome.error.replaceAll(PY.PKG + '/', 'my_open/my_open/') + '\n', 'err');
-      const m = [...outcome.error.matchAll(/my_open\/my_open\/(\w+\.py)", line (\d+)/g)].pop();
+      term.write(outcome.error.replaceAll(`${PY.REPO}/src/`, '') + '\n', 'err');
+      const m = [...outcome.error.matchAll(new RegExp(`${pkg}/${pkg}/(\\w+\\.py)", line (\\d+)`, 'g'))].pop();
       if (m && files.some((f) => f.name === m[1])) editor.markError(m[1], Number(m[2]));
     }
     term.write(`${outcome.passed ? '✓' : '✗'} ${outcome.message}\n`, outcome.passed ? 'ok' : 'err');
@@ -467,5 +478,5 @@ export async function startLesson(root: HTMLElement) {
   renderTask();
   void loadPython();
   // For debugging in the browser console: the Python instance and the 3D view of this lesson.
-  (window as unknown as { __lesson: unknown }).__lesson = { python: () => loadPython(), sim, lesson };
+  (window as unknown as { __lesson: unknown }).__lesson = { python: PY, sim, lesson };
 }

@@ -9,12 +9,16 @@ export interface ShellState {
   rosSourced: boolean;    // source /opt/ros/jazzy/setup.bash
   built: boolean;         // colcon build of the course packages
   wsSourced: boolean;     // source install/setup.bash
-  pkgCreated: boolean;    // ros2 pkg create ... my_open
-  pkgBuilt: boolean;      // my_open built after it was created
+  pkgCreated: boolean;    // ros2 pkg create ... (my_open or my_obstacle)
+  pkgBuilt: boolean;      // the package built after it was created
 }
 
 export interface ShellHost {
   term: Terminal;
+  /** The student's package: my_open (Open guide) or my_obstacle (Obstacle guide). */
+  pkg: string;
+  /** Where its tests are, from the repository root: course/tests or course/tests/obstacle. */
+  testsDir: string;
   state: ShellState;
   /** The student's package files (name relative to my_open/my_open). */
   files(): Record<string, string>;
@@ -35,17 +39,17 @@ export interface ShellHost {
 }
 
 const COURSE_PACKAGES = ['robotek_common', 'robotek_course', 'robotek_description', 'robotek_evaluation', 'robotek_gazebo', 'robotek_hardware'];
-const HELP = `Comandos de esta terminal (simulada, con Python de verdad):
+const helpText = (P: string, T: string) => `Comandos de esta terminal (simulada, con Python de verdad):
   ls, cd, pwd, cat ARCHIVO, clear, echo
   source /opt/ros/jazzy/setup.bash    activa ROS 2 en esta terminal
-  colcon build [--symlink-install] [--packages-select my_open]
+  colcon build [--symlink-install] [--packages-select ${P}]
   source install/setup.bash           activa lo que compilaste
   ros2 pkg list | grep robotek
   ros2 launch robotek_course sim.launch.py [rviz:=true]
   ros2 run robotek_course keyboard_drive
-  ros2 pkg create --build-type ament_python my_open --node-name drive ...
-  ros2 run my_open drive              corre tu código en el coche 3D
-  python3 -m pytest course/tests/test_step_N.py [-k nombre]
+  ros2 pkg create --build-type ament_python ${P} --node-name drive ...
+  ros2 run ${P} drive  corre tu código en el coche 3D
+  python3 -m pytest ${T}/<prueba>.py [-k nombre]
   python3 ARCHIVO.py  |  python3 -c "print(1 + 1)"
   code ARCHIVO  (o nano)              abre el archivo en el editor
   bash tools/compare-step.sh N        compara tu código con la referencia
@@ -66,10 +70,11 @@ export function splitArgs(line: string): string[] {
 }
 
 export function createShell(host: ShellHost) {
+  const P = host.pkg;
   const { term, state } = host;
   const home = '~';
   const repoDirs = () => ['src', 'course', 'tools', ...(state.built ? ['build', 'install', 'log'] : [])];
-  const srcDirs = () => [...COURSE_PACKAGES, ...(state.pkgCreated ? ['my_open'] : [])];
+  const srcDirs = () => [...COURSE_PACKAGES, ...(state.pkgCreated ? [P] : [])];
 
   function prompt() {
     const where = state.cwd ? `~/${state.cwd}` : '~';
@@ -84,11 +89,12 @@ export function createShell(host: ShellHost) {
     if (p === 'robotek-learn') return [...repoDirs().map((d) => d + '/'), 'README.md'];
     if (p === 'robotek-learn/src') return srcDirs().map((d) => d + '/');
     if (p === 'robotek-learn/course') return ['tests/', 'verify_step.py'];
-    if (p === 'robotek-learn/course/tests') return ['conftest.py', 'helpers.py', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `test_step_${n}.py`)];
+    if (p === 'robotek-learn/course/tests') return ['obstacle/', 'conftest.py', 'helpers.py', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `test_step_${n}.py`)];
+    if (p === 'robotek-learn/course/tests/obstacle') return ['conftest.py', 'fieldsim.py', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `test_obstacle_step_${n}.py`)];
     if (p === 'robotek-learn/tools') return ['install-ubuntu.sh', 'macos_env.sh', 'compare-step.sh', 'setup-pi.sh'];
-    if (p === 'robotek-learn/install' && state.built) return [...COURSE_PACKAGES, ...(state.pkgBuilt ? ['my_open'] : [])].map((d) => d + '/').concat(['setup.bash']);
-    if (p === 'robotek-learn/src/my_open' && state.pkgCreated) return ['LICENSE', 'package.xml', 'setup.py', 'setup.cfg', 'resource/', 'my_open/', 'test/'];
-    if (p === 'robotek-learn/src/my_open/my_open' && state.pkgCreated) return Object.keys(host.files()).sort();
+    if (p === 'robotek-learn/install' && state.built) return [...COURSE_PACKAGES, ...(state.pkgBuilt ? [P] : [])].map((d) => d + '/').concat(['setup.bash']);
+    if (p === `robotek-learn/src/${P}` && state.pkgCreated) return ['LICENSE', 'package.xml', 'setup.py', 'setup.cfg', 'resource/', `${P}/`, 'test/'];
+    if (p === `robotek-learn/src/${P}/${P}` && state.pkgCreated) return Object.keys(host.files()).sort();
     if (p.startsWith('robotek-learn/src/') && COURSE_PACKAGES.includes(p.split('/')[2]) && p.split('/').length === 3) {
       return ['package.xml', p.endsWith('robotek_course') ? 'robotek_course/' : 'resource/'];
     }
@@ -106,7 +112,7 @@ export function createShell(host: ShellHost) {
   }
   /** A file of the student's package from a path, or null. */
   function packageFile(path: string): string | null {
-    const m = path.match(/^robotek-learn\/src\/my_open\/my_open\/([\w.]+\.py)$/);
+    const m = path.match(new RegExp(`^robotek-learn/src/${P}/${P}/([\\w.]+\\.py)$`));
     if (m && state.pkgCreated && m[1] in host.files()) return m[1];
     return null;
   }
@@ -116,7 +122,7 @@ export function createShell(host: ShellHost) {
     const path = resolve(arg);
     const own = packageFile(path);
     if (own) { term.write(host.files()[own].replace(/\n?$/, '\n')); return true; }
-    const test = path.match(/^robotek-learn\/course\/tests\/(\w+\.py)$/);
+    const test = path.match(/^robotek-learn\/course\/tests\/((?:obstacle\/)?\w+\.py)$/);
     if (test) {
       const text = await host.testSource(test[1]);
       if (text) { term.write(text.replace(/\n?$/, '\n')); return true; }
@@ -149,22 +155,22 @@ export function createShell(host: ShellHost) {
     }
     const select = args.indexOf('--packages-select');
     const only = select >= 0 ? args.slice(select + 1).filter((a) => !a.startsWith('-')) : null;
-    const packages = only ?? [...COURSE_PACKAGES, ...(state.pkgCreated ? ['my_open'] : [])];
-    const unknown = packages.filter((p) => !COURSE_PACKAGES.includes(p) && !(p === 'my_open' && state.pkgCreated));
+    const packages = only ?? [...COURSE_PACKAGES, ...(state.pkgCreated ? [P] : [])];
+    const unknown = packages.filter((p) => !COURSE_PACKAGES.includes(p) && !(p === P && state.pkgCreated));
     if (unknown.length) { term.write(`colcon: paquete desconocido: ${unknown.join(', ')}\n`, 'err'); return false; }
     for (const p of packages) term.write(`Starting >>> ${p}\n`, 'dim');
-    if (packages.includes('my_open')) {
+    if (packages.includes(P)) {
       const errors = await host.compile();
       if (errors) {
-        term.write(`--- stderr: my_open\n${errors}\n---\nFailed   <<< my_open\n`, 'err');
-        term.write(`\nSummary: ${packages.length - 1} packages finished\n  1 package failed: my_open\n`, 'err');
+        term.write(`--- stderr: ${P}\n${errors}\n---\nFailed   <<< ${P}\n`, 'err');
+        term.write(`\nSummary: ${packages.length - 1} packages finished\n  1 package failed: ${P}\n`, 'err');
         return false;
       }
     }
     for (const p of packages) term.write(`Finished <<< ${p} [${(0.4 + Math.random() * 1.5).toFixed(2)}s]\n`, 'dim');
     term.write(`\nSummary: ${packages.length} packages finished\n`, 'ok');
     state.built = true;
-    if (packages.includes('my_open')) state.pkgBuilt = true;
+    if (packages.includes(P)) state.pkgBuilt = true;
     return true;
   }
 
@@ -173,7 +179,7 @@ export function createShell(host: ShellHost) {
     const [sub, ...rest] = args;
     if (sub === 'pkg' && rest[0] === 'list') {
       const pkgs = ['ament_index_python', 'geometry_msgs', 'rclpy', 'ros_gz_bridge', 'ros_gz_sim', 'rviz2', 'sensor_msgs', 'std_msgs',
-        ...(state.wsSourced ? COURSE_PACKAGES : []), ...(state.wsSourced && state.pkgBuilt ? ['my_open'] : [])].sort();
+        ...(state.wsSourced ? COURSE_PACKAGES : []), ...(state.wsSourced && state.pkgBuilt ? [P] : [])].sort();
       const shown = pipeGrep ? pkgs.filter((p) => p.includes(pipeGrep)) : pkgs;
       term.write(shown.join('\n') + (shown.length ? '\n' : ''));
       if (pipeGrep === 'robotek' && !state.wsSourced) term.write('(nada: falta  source install/setup.bash  tras compilar)\n', 'info');
@@ -185,22 +191,26 @@ export function createShell(host: ShellHost) {
         return false;
       }
       const name = rest.find((a, i) => i > 0 && !a.startsWith('-') && !['ament_python', 'ament_cmake', 'drive', 'MIT'].includes(a) && !rest[i - 1].startsWith('--'));
-      if (name !== 'my_open') { term.write('En el curso el paquete se llama my_open:  ros2 pkg create --build-type ament_python my_open --node-name drive\n', 'err'); return false; }
+      if (name !== P) { term.write(`En el curso el paquete se llama ${P}:  ros2 pkg create --build-type ament_python ${P} --node-name drive\n`, 'err'); return false; }
       if (!rest.includes('ament_python')) { term.write('Falta  --build-type ament_python  (el paquete es de Python)\n', 'err'); return false; }
-      if (state.pkgCreated) { term.write('Aborted!\nThe directory already exists: ./my_open\n', 'err'); return false; }
-      term.write(['going to create a new package', 'package name: my_open', 'destination directory: ~/robotek-learn/src',
+      if (state.pkgCreated) { term.write(`Aborted!\nThe directory already exists: ./${P}\n`, 'err'); return false; }
+      term.write(['going to create a new package', `package name: ${P}`, 'destination directory: ~/robotek-learn/src',
         'package format: 3', 'build type: ament_python', 'node_name: drive',
-        'creating folder ./my_open', 'creating ./my_open/package.xml', 'creating source folder', 'creating folder ./my_open/my_open',
-        'creating ./my_open/setup.py', 'creating ./my_open/setup.cfg', 'creating folder ./my_open/resource',
-        'creating ./my_open/resource/my_open', 'creating ./my_open/my_open/__init__.py', 'creating folder ./my_open/test',
-        'creating ./my_open/my_open/drive.py'].join('\n') + '\n', 'dim');
+        `creating folder ./${P}`, `creating ./${P}/package.xml`, 'creating source folder', `creating folder ./${P}/${P}`,
+        `creating ./${P}/setup.py`, `creating ./${P}/setup.cfg`, `creating folder ./${P}/resource`,
+        `creating ./${P}/resource/${P}`, `creating ./${P}/${P}/__init__.py`, `creating folder ./${P}/test`,
+        `creating ./${P}/${P}/drive.py`].join('\n') + '\n', 'dim');
       state.pkgCreated = true;
       return true;
     }
     if (sub === 'launch') {
       if (rest[0] !== 'robotek_course' || !rest[1]) { term.write('uso: ros2 launch robotek_course sim.launch.py\n', 'err'); return false; }
       if (!state.wsSourced) { term.write(`Package 'robotek_course' not found\nPista: compila y luego  source install/setup.bash\n`, 'err'); return false; }
-      if (rest[1] !== 'sim.launch.py') { term.write(`En esta terminal web solo está  sim.launch.py  (round.launch.py corre en tu ordenador).\n`, 'err'); return false; }
+      const launchFile = P === 'my_obstacle' ? 'obstacle_round.launch.py' : 'sim.launch.py';
+      if (rest[1] !== launchFile && rest[1] !== 'sim.launch.py') {
+        term.write(`En esta terminal web está  ${launchFile}  (las rondas con juez corren en tu ordenador).\n`, 'err');
+        return false;
+      }
       await host.launchSim(rest.includes('rviz:=true'));
       return true;
     }
@@ -211,11 +221,11 @@ export function createShell(host: ShellHost) {
         await host.keyboardDrive();
         return true;
       }
-      if (pkg === 'my_open' && exe === 'drive') {
+      if (pkg === P && exe === 'drive') {
         if (!state.pkgCreated || !state.pkgBuilt || !state.wsSourced) {
-          term.write(`Package 'my_open' not found\n`, 'err');
+          term.write(`Package '${P}' not found\n`, 'err');
           term.write(!state.pkgCreated ? 'Pista: primero crea el paquete (ros2 pkg create ...)\n'
-            : !state.pkgBuilt ? 'Pista: compílalo:  colcon build --packages-select my_open\n'
+            : !state.pkgBuilt ? `Pista: compílalo:  colcon build --packages-select ${P}\n`
               : 'Pista: carga lo compilado:  source install/setup.bash\n', 'info');
           return false;
         }
@@ -239,7 +249,7 @@ export function createShell(host: ShellHost) {
     const [cmd, ...args] = argv;
     switch (cmd) {
       case undefined: return true;
-      case 'help': term.write(HELP + '\n', 'info'); return true;
+      case 'help': term.write(helpText(P, host.testsDir) + '\n', 'info'); return true;
       case 'clear': term.clear(); return true;
       case 'pwd': term.write(`/home/robotek${state.cwd ? '/' + state.cwd : ''}\n`); return true;
       case 'whoami': term.write('robotek\n'); return true;
@@ -272,9 +282,10 @@ export function createShell(host: ShellHost) {
           return true;
         }
         if (!inRepo()) { term.write('fatal: no es un repositorio git\n', 'err'); return false; }
-        if (args[0] === 'status') { term.write('En la rama main\nnada para hacer commit (src/my_open está en .gitignore: es tu código)\n'); return true; }
+        if (args[0] === 'status') { term.write(`En la rama main\nnada para hacer commit (src/${P} está en .gitignore: es tu código)\n`); return true; }
+        if (args[0] === 'pull') { term.write('Desde https://github.com/renzodamgo/robotek-learn\nActualizando... Avance rápido\n', 'dim'); return true; }
         if (args[0] === 'fetch') { term.write('Desde https://github.com/renzodamgo/robotek-learn\n * [nueva etiqueta] step-0 ... step-9\n', 'dim'); return true; }
-        term.write('Esta terminal web entiende git clone, git status y git fetch --tags.\n', 'err');
+        term.write('Esta terminal web entiende git clone, git pull, git status y git fetch --tags.\n', 'err');
         return false;
       }
       case 'sudo': {
@@ -323,7 +334,7 @@ export function createShell(host: ShellHost) {
       }
       case 'code': case 'nano': case 'vim': case 'vi': {
         const name = (args[0] ?? '').split('/').pop() ?? '';
-        if (!host.openFile(name)) { term.write(`${cmd}: ${args[0] ?? ''}: en el editor solo están los archivos de my_open/my_open\n`, 'err'); return false; }
+        if (!host.openFile(name)) { term.write(`${cmd}: ${args[0] ?? ''}: en el editor solo están los archivos de ${P}/${P}\n`, 'err'); return false; }
         term.write(`Abierto en el editor: ${name} (Ctrl+S guarda)\n`, 'info');
         return true;
       }
@@ -366,7 +377,7 @@ export function createShell(host: ShellHost) {
     const dir = slash >= 0 ? word.slice(0, slash + 1) : '';
     const base = word.slice(slash + 1);
     const items = list(resolve(dir || '.')) ?? [];
-    const fixed = ['/opt/ros/jazzy/setup.bash', 'install/setup.bash', 'sim.launch.py', 'robotek_course', 'keyboard_drive', 'my_open', '--symlink-install', '--packages-select'];
+    const fixed = ['/opt/ros/jazzy/setup.bash', 'install/setup.bash', 'sim.launch.py', 'robotek_course', 'keyboard_drive', P, '--symlink-install', '--packages-select'];
     return [...items.filter((i) => i.startsWith(base)).map((i) => dir + i), ...fixed.filter((f) => f.startsWith(word))];
   }
 

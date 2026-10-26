@@ -6,12 +6,21 @@ import type { ShellState } from './shell';
 export type { Box, LessonMark };
 
 /** A world for the 3D view and the mini simulator (sim frame: x forward/east, y left/north, metres, radians). */
+/** A traffic sign of the Obstacle field (5 x 5 x 10 cm); `side` is the straight it stands on. */
+export interface Sign { x: number; y: number; color: 'red' | 'green'; side: 'bottom' | 'right' | 'top' | 'left' }
+
 export interface World {
-  /** 'field': the Open field (outer walls and island); 'floor': only the outer walls. */
-  field: 'field' | 'floor';
+  /** 'field': the Open field (outer walls and island); 'floor': only the outer walls; 'obstacle': the Obstacle
+   * field of the rules (signs, optional parking lot), run by obstacle_runtime.py with the student's Strategy. */
+  field: 'field' | 'floor' | 'obstacle';
+  /** Obstacle: the signs, the lot and the direction of the round (the car starts on the start straight). */
+  signs?: Sign[];
+  parking?: boolean;
+  direction?: 'ccw' | 'cw';
   rocks?: Box[];
   marks?: LessonMark[];
-  start: [number, number, number];
+  /** Where the car starts; the Obstacle field puts it at the spawn of the rules when omitted. */
+  start?: [number, number, number];
   steer0?: number;       // wheel angle at the start (rad), e.g. already on the circle
   speed0?: number;       // m/s at the start
   bias?: number;         // gyroscope bias (rad/s); the course's is 0.006
@@ -34,6 +43,9 @@ export interface Metrics {
   /** Metres driven. */
   distance: number;
   status: string;
+  /** Obstacle: the strategy says it is parked / done. */
+  parked: boolean;
+  done: boolean;
   round: RoundSnapshot | null;
   /** Free counters a task can keep (e.g. time inside a band). */
   memo: Record<string, number>;
@@ -94,6 +106,9 @@ export interface LessonFile {
 }
 
 export interface Lesson {
+  /** The guide ('open-strategy' or 'obstacle-strategy') and the student's package. */
+  guide?: string;
+  package?: 'my_open' | 'my_obstacle';
   step: number;
   title: string;
   summary: string;
@@ -102,7 +117,11 @@ export interface Lesson {
   files: LessonFile[];
   /** Pyodide packages besides pytest (e.g. numpy). */
   packages?: string[];
-  /** Step 0: the terminal starts from scratch (nothing sourced, no my_open yet). */
+  /** Step 0: the terminal starts from scratch (nothing sourced, no package yet). */
   fresh?: boolean;
+  /** With `fresh`: what is already done (the Obstacle's step 0 starts with the repository cloned). */
+  shellStart?: Partial<ShellState>;
+  /** The world of `ros2 launch ... sim.launch.py` and of free keyboard driving (default: the Open field). */
+  freeWorld?: World;
   tasks: Task[];
 }

@@ -35,6 +35,9 @@ export interface LessonWorld {
   walls: readonly Box[];
   rocks?: readonly Box[];
   marks?: readonly LessonMark[];
+  /** Obstacle lessons: the traffic signs and the parking lot (its interior; the limits are drawn on its ends). */
+  signs?: readonly { x: number; y: number; color: 'red' | 'green' }[];
+  lot?: { x0: number; x1: number; y0: number; y1: number } | null;
   start?: { x: number; y: number; yaw: number } | null;
 }
 
@@ -150,6 +153,22 @@ export function startEngine(opts: EngineOptions): Engine {
     clearGroup(lessonGroup);
     (world.rocks ?? []).forEach((box, i) => lessonGroup.add(makeRock(box, i * 1.7 + 0.3)));
     (world.marks ?? []).forEach((mark) => lessonGroup.add(makeMark(mark)));
+    for (const s of world.signs ?? []) {
+      const sign = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05),
+        new THREE.MeshStandardMaterial({ color: s.color === 'red' ? 0xee2737 : 0x44d62c, roughness: 0.6 }));
+      sign.position.set(s.x, 0.05, -s.y);
+      sign.castShadow = sign.receiveShadow = true;
+      lessonGroup.add(sign);
+    }
+    if (world.lot) {
+      const { x0, x1, y0, y1 } = world.lot;
+      for (const x of [x0 - 0.01, x1 + 0.01]) {          // the two magenta limits, 20 cm long, against the outer wall
+        const limit = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, y1 - y0), new THREE.MeshStandardMaterial({ color: 0xd63ad6, roughness: 0.6 }));
+        limit.position.set(x, 0.05, -(y0 + y1) / 2);
+        limit.castShadow = limit.receiveShadow = true;
+        lessonGroup.add(limit);
+      }
+    }
     startZone.visible = world.start !== null;
     if (world.start) {
       startZone.position.set(world.start.x, 0.002, -world.start.y);

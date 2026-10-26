@@ -74,14 +74,17 @@ class Run:
             self.error = traceback.format_exc(limit=4)
 
     def advance(self, seconds):
-        """Simulate ``seconds`` (in 0.02 s ticks). Returns [x, y, yaw, steer, speed, time, crashed, error, status]."""
+        """Simulate ``seconds`` (in 0.02 s ticks). Returns [x, y, yaw, steer, speed, time, crashed, error, status,
+        samples], ``samples`` being [x, y, yaw, speed, time] after every tick (for the judge)."""
         steps = max(0, round(seconds / self.dt))
+        c = self.car
+        samples = []
         for _ in range(steps):
             if self.crashed or self.error:
                 break
             self._tick()
-        c = self.car
-        return [c.x, c.y, c.yaw, c.steer, c.speed, c.time, self.crashed, self.error, self.status]
+            samples.append([c.x, c.y, c.yaw, c.speed, c.time])
+        return [c.x, c.y, c.yaw, c.steer, c.speed, c.time, self.crashed, self.error, self.status, samples]
 
     def _tick(self):
         c, s = self.car, self.s
