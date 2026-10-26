@@ -41,6 +41,8 @@ Hasta el paso 6 el coche no se conduce solo: el `drive.py` de los pasos 2 a 5 es
 
 Cada tick (50 por segundo) el localizador **predice**: avanza la distancia que da la odometría del LiDAR (la clase base la calcula por ti, una vez por escaneo) en la dirección del rumbo del giroscopio. Una predicción sola se desvía: la distancia tiene unos milímetros de error por escaneo y el giroscopio un sesgo pequeño.
 
+<div data-widget="obstacle-localize"></div>
+
 Por eso, con cada escaneo nuevo, **corrige**: pasa los puntos del escaneo al campo con la pose actual y mide cuánto se separan de los muros conocidos (los cuatro exteriores a ±1,5 m y los cuatro de la isla a ±0,5 m). Luego mueve un poco la pose (x, y y rumbo) para que esa separación sea mínima. Es un **ajuste por mínimos cuadrados** de tres números.
 
 | Detalle | Valor | Por qué |
@@ -75,33 +77,257 @@ Para CW, `scan_points(scan, sign)` cambia el signo de la `y` de cada punto: el e
 git show obstacle-step-2:src/my_obstacle/my_obstacle/drive.py > src/my_obstacle/my_obstacle/drive.py
 ```
 
+Crea `src/my_obstacle/my_obstacle/localizer.py` con su cabecera y sus constantes (ya hechas):
+
+```python
+"""Where the car is (step 2): the known walls fitted to the LiDAR, predicted with distance + gyro."""
+
+import math
+
+import numpy as np
+
+from robotek_common.vehicle import LIDAR_OFFSET_X
+
+from .lane import INNER, OUTER, wrap
+```
+
 ### Paso 2.1: los puntos del escaneo
 
-`scan_points(scan, sign)` devuelve dos arreglos `bx, by` en el sistema del coche (origen en `base_link`): `r cos(a) + LIDAR_X` y `sign · r sin(a)`, solo con los rayos válidos (finitos, entre 0,16 y 4 m). `LIDAR_X` = 0,128 m viene de `robotek_common.vehicle`.
+El LiDAR da 306 distancias; para compararlas con los muros hay que convertirlas en puntos. En sentido horario todo se trabaja en espejo, así que los puntos también.
+
+Y debajo, este esqueleto:
+
+```python
+def scan_points(scan, sign):
+    """Valid LiDAR returns as points of the car frame (x ahead, y left), mirrored for CW (sign = -1)."""
+    ...  # TODO 2.1
+```
+
+**Qué va dentro:** Ángulo de cada rayo: `angle_min + i · angle_increment`. Quédate con los válidos (finitos, entre 0,16 y 4 m). Cada punto es `x = r·cos(a) + LIDAR_OFFSET_X` (el LiDAR está 12,8 cm delante del centro) y `y = sign · r·sin(a)`.
+
+**Un ejemplo:** Un rayo de 0,5 m a 90° (a la izquierda) da el punto (0,128, 0,5); en horario, (0,128, −0,5).
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_2.py -q -k "scan_points"
+```
+
+Debes ver `1 passed`: que los puntos están en el sistema del coche y en espejo en horario.
+
+<details>
+<summary>Ver la solución de scan_points</summary>
+
+```python
+def scan_points(scan, sign):
+    """Valid LiDAR returns as points of the car frame (x ahead, y left), mirrored for CW (sign = -1)."""
+    r = np.asarray(scan.ranges, dtype=float)
+    a = scan.angle_min + np.arange(r.size) * scan.angle_increment
+    ok = np.isfinite(r) & (r > 0.16) & (r < 4.0)
+    return r[ok] * np.cos(a[ok]) + LIDAR_OFFSET_X, sign * r[ok] * np.sin(a[ok])
+```
+
+</details>
 
 ### Paso 2.2: predecir
 
-`predict(distance, heading)` usa el rumbo medio entre el anterior y el nuevo (`th + wrap(heading - th) / 2`) para avanzar `distance`. Así una curva no se convierte en una recta torcida.
+Entre escaneo y escaneo el coche avanza a ciegas: sabe cuánto (la odometría del LiDAR) y hacia dónde (el giroscopio). Usar el rumbo **medio** del tramo evita que una curva se convierta en una recta torcida.
 
-### Paso 2.3: corregir
+Y debajo, este esqueleto:
 
-`_fit(bx, by, x, y, th, gate)` hace los puntos 1 a 3 de abajo y devuelve los puntos que quedan con su normal y su error; `correct(bx, by, gain=1.0, gate=0.08, iterations=2, damping=2.0)` llama a `_fit` y hace el 4:
+```python
+class Localizer:
+    def __init__(self):
+        ...  # TODO 2.2
 
-1. Pasa los puntos al campo con la pose actual.
-2. Para cada punto, decide su muro: el exterior según el eje dominante (`|x| ≥ |y|` → muro de x) y el de la isla solo si el punto está frente a una de sus caras. Su error `r` es la distancia con signo a ese muro, y su normal `(nx, ny)`.
-3. Descarta los puntos con `|r| ≥ gate`. Con menos de 20, no corrige.
-4. Resuelve el sistema `J ᵀ W J + damping · I` con `J = [nx, ny, nx·−(py − y) + ny·(px − x)]` y pesos de Huber, y mueve la pose `gain` veces la solución.
+    def predict(self, distance, heading):
+        """Move ``distance`` metres along the mean of the old and new heading."""
+        ...  # TODO 2.2
+```
 
-### Paso 2.4: empezar y elegir el sentido
+**Qué va dentro:** `mid = th + 0.5 · wrap(heading − th)`; suma `distance · cos(mid)` a x y `distance · sin(mid)` a y; el rumbo nuevo es `heading`.
 
-`initialize(bx, by, heading)` prueba las tres x de partida con puertas 0,45, 0,3, 0,2, 0,12, 0,08 y 0,06 y se queda con la mejor. `direction_from_scan(scan)` devuelve `(sign, margin)`.
+**Un ejemplo:** Desde (0, 0, 0), `predict(0.1, 0.2)` deja el coche en (0,0995, 0,0100, 0,2): 10 cm por el rumbo medio, 0,1 rad.
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_2.py -q -k "predict"
+```
+
+Debes ver `1 passed`: un paso de 10 cm con el rumbo medio.
+
+<details>
+<summary>Ver la solución de __init__, predict</summary>
+
+```python
+    def __init__(self):
+        self.x = self.y = self.th = 0.0
+        self.ready = False
+        self.inliers = 0
+        self.rms = math.nan
+
+    def predict(self, distance, heading):
+        """Move ``distance`` metres along the mean of the old and new heading."""
+        mid = self.th + 0.5 * wrap(heading - self.th)
+        self.x += distance * math.cos(mid)
+        self.y += distance * math.sin(mid)
+        self.th = heading
+```
+
+</details>
+
+### Paso 2.3: corregir con los muros
+
+La predicción se desvía unos milímetros por escaneo. Cada escaneo la corrige: se mueve la pose hasta que los puntos caen sobre los muros que el campo tiene seguro (los cuatro de fuera y la isla), como encajar una plantilla sobre un dibujo.
+
+Y debajo, este esqueleto:
+
+```python
+class Localizer:
+    # ... (lo de los pasos anteriores)
+
+    def _fit(self, bx, by, x, y, th, gate):
+        """Scan points near a known wall: their positions, the wall normals and the residuals."""
+        ...  # TODO 2.3
+
+    def correct(self, bx, by, gain=1.0, gate=0.08, iterations=2, damping=2.0):
+        """Pull the pose toward the wall fit by ``gain`` (1 = all the way). False if too few points."""
+        ...  # TODO 2.3
+```
+
+**Qué va dentro:** `_fit`: pasa los puntos al campo con la pose; a cada punto le toca el muro exterior de su eje dominante (`|x| ≥ |y|` → muro de x) o la cara de la isla que tiene enfrente, la que esté más cerca; su error `r` es la distancia con signo a ese muro y su normal `(nx, ny)`; quédate con los de `|r| < gate`. `correct`: dos iteraciones de Gauss-Newton con `J = [nx, ny, nx·−(py − y) + ny·(px − x)]`, pesos de Huber `min(1, 0,02/|r|)` y `damping · I`; con menos de 20 puntos, no corrige. Mueve la pose `gain` veces la solución.
+
+**Un ejemplo:** Con una pose 8 cm y 6° desviada, cinco correcciones la dejan a 2 mm (prueba el widget de arriba).
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_2.py -q -k "correct_pulls"
+```
+
+Debes ver `1 passed`: que una pose equivocada vuelve a los muros.
+
+<details>
+<summary>Ver la solución de _fit, correct</summary>
+
+```python
+    def _fit(self, bx, by, x, y, th, gate):
+        """Scan points near a known wall: their positions, the wall normals and the residuals."""
+        c, s = math.cos(th), math.sin(th)
+        px, py = x + c * bx - s * by, y + s * bx + c * by
+        ax, ay = np.abs(px), np.abs(py)
+        # Outer walls: the dominant axis gives the nearest wall from inside.
+        onx = np.where(ax >= ay, np.sign(px), 0.0)
+        ony = np.where(ax < ay, np.sign(py), 0.0)
+        r_out = onx * px + ony * py - OUTER
+        # Island walls: only the face a point is directly beside.
+        inx = (ay <= INNER) & (ax > INNER - 0.05)
+        iny = (ax <= INNER) & (ay > INNER - 0.05)
+        nx = np.where(inx, np.sign(px), np.where(iny, 0.0, onx))
+        ny = np.where(inx, 0.0, np.where(iny, np.sign(py), ony))
+        r_in = np.where(inx, ax - INNER, np.where(iny, ay - INNER, np.inf))
+        use_in = np.abs(r_in) < np.abs(r_out)
+        nx = np.where(use_in, nx, onx)
+        ny = np.where(use_in, ny, ony)
+        r = np.where(use_in, r_in, r_out)
+        keep = np.abs(r) < gate
+        return px[keep], py[keep], nx[keep], ny[keep], r[keep]
+
+    def correct(self, bx, by, gain=1.0, gate=0.08, iterations=2, damping=2.0):
+        """Pull the pose toward the wall fit by ``gain`` (1 = all the way). False if too few points."""
+        x, y, th = self.x, self.y, self.th
+        for _ in range(iterations):
+            px, py, nx, ny, r = self._fit(bx, by, x, y, th, gate)
+            if r.size < 20:
+                return False
+            w = np.minimum(1.0, 0.02 / np.maximum(np.abs(r), 1e-6))  # Huber
+            J = np.stack([nx, ny, nx * -(py - y) + ny * (px - x)], axis=1)
+            H = J.T @ (J * w[:, None]) + damping * np.eye(3)
+            delta = -np.linalg.solve(H, J.T @ (w * r))
+            x, y, th = x + delta[0], y + delta[1], wrap(th + delta[2])
+        self.inliers = int(r.size)
+        self.rms = float(np.sqrt(np.mean(r ** 2)))
+        self.x += gain * (x - self.x)
+        self.y += gain * (y - self.y)
+        self.th = wrap(self.th + gain * wrap(th - self.th))
+        return True
+```
+
+</details>
+
+### Paso 2.4: empezar sin saber dónde
+
+Al arrancar el coche no sabe en qué parte de la recta de salida está. Prueba tres sitios y se queda con el que mejor encaja.
+
+Y debajo, este esqueleto:
+
+```python
+class Localizer:
+    # ... (lo de los pasos anteriores)
+
+    def initialize(self, bx, by, heading):
+        """Global start in the bottom straight: try a few along-track guesses, keep the best fit."""
+        ...  # TODO 2.4
+```
+
+**Qué va dentro:** Para `x0` en −0,35, 0 y 0,35: pose `(x0, −1, heading)` y `correct` con puertas cada vez más estrechas (0,45, 0,3, 0,2, 0,12, 0,08, 0,06; `gain` 1, `damping` 0,5). Puntúa cada una con `puntos − 2000 · rms` (con `_fit` a 5 cm) y quédate con la mejor.
+
+**Un ejemplo:** Desde x = −0,3, 0, 0,2 en la recta, `initialize` encuentra la pose real a menos de 2 cm.
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_2.py -q -k "initialize or cw_is_the_mirror"
+```
+
+Debes ver `5 passed`: el arranque en cuatro puntos de la recta de salida y el espejo en horario.
+
+<details>
+<summary>Ver la solución de initialize</summary>
+
+```python
+    def initialize(self, bx, by, heading):
+        """Global start in the bottom straight: try a few along-track guesses, keep the best fit."""
+        best = None
+        for x0 in (-0.35, 0.0, 0.35):
+            self.x, self.y, self.th = x0, -1.0, heading
+            for gate in (0.45, 0.3, 0.2, 0.12, 0.08, 0.06):
+                self.correct(bx, by, 1.0, gate, 2, 0.5)
+            px, py, nx, ny, r = self._fit(bx, by, self.x, self.y, self.th, 0.05)
+            score = r.size - 2000 * (float(np.sqrt(np.mean(r ** 2))) if r.size else 1.0)
+            if best is None or score > best[0]:
+                best = (score, self.x, self.y, self.th)
+        _, self.x, self.y, self.th = best
+        self.ready = True
+```
+
+</details>
+
+### Paso 2.5: el sentido con un escaneo
+
+Nadie le dice al coche el sentido de la ronda. Pero la isla mide 1 m y el muro de fuera 3 m: con la hipótesis equivocada, menos puntos caen sobre un muro.
+
+Y debajo, este esqueleto:
+
+```python
+def direction_from_scan(scan):
+    """Island on the left (CCW, +1) or on the right (CW, -1), assuming the car faces the way it
+    will drive. Fits the walls under both hypotheses: the fraction of points on a wall differs by
+    about 0.2 (the 1 m island against the 3 m outer wall). Returns (sign, margin)."""
+    ...  # TODO 2.5
+```
+
+**Qué va dentro:** Para `sign` en +1 y −1: `scan_points(scan, sign)` (menos de 50 puntos: `(0, 0)`), un `Localizer` nuevo con `initialize(bx, by, 0)`, y la fracción de puntos a menos de 5 cm de un muro. Devuelve el signo con más fracción y la diferencia (el margen).
+
+**Un ejemplo:** En la salida antihoraria: 100 % de puntos en un muro con la isla a la izquierda y 82 % a la derecha: margen 0,18.
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_2.py -q -k "direction_from_the_walls"
+```
+
+Debes ver `1 passed`: antihorario y horario desde la salida, con margen de más de 0,10.
 
 <details>
 <summary>Ver la solución de direction_from_scan</summary>
 
 ```python
 def direction_from_scan(scan):
-    """Island on the left (CCW, +1) or on the right (CW, -1), and the margin of the choice."""
+    """Island on the left (CCW, +1) or on the right (CW, -1), assuming the car faces the way it
+    will drive. Fits the walls under both hypotheses: the fraction of points on a wall differs by
+    about 0.2 (the 1 m island against the 3 m outer wall). Returns (sign, margin)."""
     fractions = {}
     for sign in (1.0, -1.0):
         bx, by = scan_points(scan, sign)
@@ -125,6 +351,17 @@ ros2 launch robotek_course obstacle_round.launch.py strategy:=my_obstacle seed:=
 ```
 
 En otra terminal, `ros2 run robotek_course keyboard_drive` para conducir y `ros2 topic echo /obstacle/pose` para mirar. En la terminal del lanzador verás `Direction cw`. Prueba los dos sentidos.
+
+### Prueba esto
+
+- En el widget de arriba, pulsa **Error de 20 cm** y luego **Corregir (una vez)**: mira cuántos puntos caen en un muro antes y después. Repite con **Torcido 20°**.
+- Pulsa **Empezar sin saber dónde**: es `initialize`, que prueba tres sitios de la recta de salida.
+- En la repetición, sigue la pose en azul (lo que cree el coche) contra la ámbar (la real): se quedan a un par de centímetros toda la vuelta.
+
+### Rómpelo
+
+1. En `scan_points`, olvida el `sign` de la `y`: las dos hipótesis de `direction_from_scan` ven los mismos puntos, el margen es 0 y la misión se queda en `SETUP` esperando un sentido.
+2. Quita el `LIDAR_OFFSET_X`: los puntos se dibujan 12,8 cm por detrás de donde están; mira en el widget cómo se ponen rojos.
 
 ## Si algo falla
 

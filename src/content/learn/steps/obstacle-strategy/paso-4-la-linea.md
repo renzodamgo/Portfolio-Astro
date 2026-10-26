@@ -83,32 +83,109 @@ Si la señal sin color está al **inicio de la recta siguiente** (asiento 2k + 2
 git show obstacle-step-4:src/my_obstacle/my_obstacle/drive.py > src/my_obstacle/my_obstacle/drive.py
 ```
 
+Crea `src/my_obstacle/my_obstacle/plan.py` con su cabecera y sus constantes (ya hechas):
+
 ```python
+"""The line (step 4): one side offset per sign, held around it, straight ramps in between."""
+
+from .lane import UNITS_PER_LAP, clamp
+
 UNKNOWN_OFFSET = 0.12   # m away from a sign whose colour is still unknown
 LOOKOUT = 0.15          # m to the island side to see an inner sign ahead
 HOLD = 0.15             # track units before and after a sign the side offset is held
 HORIZON = 3.0           # track units of remembered signs the plan covers
-OFFSET_LIMIT = 0.36     # m from the lane centre
+OFFSET_LIMIT = 0.36     # m from the lane centre (the car is 0.148 m wide, the lane 1 m)
 LOT_OFFSET = -0.19      # m; beside the parking lot the car keeps off its limits
 ```
 
-### Paso 4.1: `side_offset(lateral, colour, clearance)`
+### Paso 4.1: el lado de una señal
 
-`clearance` ya incluye el medio coche: la misión le pasa `pillar_clearance + OUTLINE_HALF_WIDTH` (0,18 + 0,074). Devuelve `lateral − clearance` para una roja, `lateral + clearance` para una verde, limitado a ±`OFFSET_LIMIT`; con `colour` `None`, apartarse `UNKNOWN_OFFSET`.
+El reglamento: las rojas por la derecha, las verdes por la izquierda. En el carril, «izquierda» es hacia la isla (positivo). El coche pasa a una distancia de la fila igual al margen más medio coche.
 
-### Paso 4.2: `with_offsets(signs, clearance)` y `lookouts(signs, phi)`
-
-`with_offsets` toma el `{progreso: (lateral, color)}` de `SeatMemory.ahead` y añade el desplazamiento: `{progreso: (lateral, color, desplazamiento)}`. `lookouts` devuelve los nudos `(s − 1,5, LOOKOUT o 0)` de las señales sin color al inicio de una recta (progreso par), si ese punto queda por delante del coche y no hay otra señal a menos de 0,4 unidades.
-
-### Paso 4.3: `sign_knots(signs, phi)` y `offset_at(knots, progress)`
-
-`sign_knots` da dos nudos por señal, `(s − HOLD, d)` y `(s + HOLD, d)`, más los de `lookouts`, **sin ordenar** (el paso 5 mete las esquinas y ordena). `offset_at` interpola entre nudos ordenados; antes del primero, el primero; después del último, el último; sin nudos, 0.
-
-<details>
-<summary>Ver la solución de offset_at</summary>
+Y debajo, este esqueleto:
 
 ```python
+def side_offset(lateral, colour, clearance):
+    """Lateral offset (m, + island side) that passes a sign on its side; away from it if unknown."""
+    ...  # TODO 4.1
+```
+
+**Qué va dentro:** Sin color: aléjate `UNKNOWN_OFFSET` de la fila (`−0,12` de una interior, `+0,12` de una exterior). Roja: `lateral − clearance`; verde: `lateral + clearance`. Limita a `±OFFSET_LIMIT`.
+
+**Un ejemplo:** `clearance` = 0,18 + 0,074 = 0,254. Una roja interior (+0,1) pide −0,154; una verde exterior (−0,1), +0,154; una verde interior, +0,354 → limitado a +0,36.
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_4.py -q -k "red_on_the_right or unknown_colour"
+```
+
+Debes ver `2 passed`: roja por la derecha, verde por la izquierda y el color desconocido.
+
+<details>
+<summary>Ver la solución de side_offset</summary>
+
+```python
+def side_offset(lateral, colour, clearance):
+    """Lateral offset (m, + island side) that passes a sign on its side; away from it if unknown."""
+    if colour is None:
+        # Sign rows are 0.1 m off the centre and the car is 0.148 m wide.
+        return -UNKNOWN_OFFSET if lateral >= 0.0 else UNKNOWN_OFFSET
+    offset = lateral - clearance if colour == 'red' else lateral + clearance
+    return clamp(offset, -OFFSET_LIMIT, OFFSET_LIMIT)
+```
+
+</details>
+
+### Paso 4.2: nudos y rampas
+
+La línea se describe con nudos (progreso, desplazamiento): uno 0,15 antes y otro 0,15 después de cada señal (el coche mide 0,233 m y tiene que estar de su lado mientras la cruza), y rampas rectas en medio.
+
+Y debajo, este esqueleto:
+
+```python
+def with_offsets(signs, clearance):
+    """{progress: (lateral, colour)} -> {progress: (lateral, colour, offset)}."""
+    ...  # TODO 4.2
+
+
+def sign_knots(signs, phi):
+    """The knots of the signs (held offsets) and of the lookouts, not sorted."""
+    ...  # TODO 4.2
+
+
 def offset_at(knots, progress):
+    """Planned offset at a progress value: linear between sorted knots, constant past the ends
+    (0 without knots)."""
+    ...  # TODO 4.2
+```
+
+**Qué va dentro:** `with_offsets` añade `side_offset` a cada señal de `{progreso: (lateral, color)}`. `sign_knots` da `(s − HOLD, d)` y `(s + HOLD, d)` por señal, más los de `lookouts`, sin ordenar. `offset_at` interpola entre nudos ordenados: antes del primero, el primero; después del último, el último; sin nudos, 0.
+
+**Un ejemplo:** Una roja interior en 0,5 y una verde exterior en 1,0: −0,154 de 0,35 a 0,65, rampa hasta +0,154 en 0,85, y así hasta 1,15.
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_4.py -q -k "held_around_a_sign"
+```
+
+Debes ver `1 passed`: el desplazamiento sostenido junto a una señal y las rampas.
+
+<details>
+<summary>Ver la solución de with_offsets, sign_knots, offset_at</summary>
+
+```python
+def with_offsets(signs, clearance):
+    """{progress: (lateral, colour)} -> {progress: (lateral, colour, offset)}."""
+    return {s: (lateral, colour, side_offset(lateral, colour, clearance)) for s, (lateral, colour) in signs.items()}
+
+
+def sign_knots(signs, phi):
+    """The knots of the signs (held offsets) and of the lookouts, not sorted."""
+    knots = [(s + d, sign[2]) for s, sign in signs.items() for d in (-HOLD, HOLD)]
+    return knots + lookouts(signs, phi)
+
+
+def offset_at(knots, progress):
+    """Planned offset at a progress value: linear between sorted knots, constant past the ends
+    (0 without knots)."""
     if not knots:
         return 0.0
     if progress <= knots[0][0]:
@@ -121,15 +198,110 @@ def offset_at(knots, progress):
 
 </details>
 
-### Paso 4.4: `lot_zone(progress, direction)`
+### Paso 4.3: mirar por adelantado
 
-Si hay aparcamiento, junto a él el desplazamiento no baja de `LOT_OFFSET`. `lot_zone` dice si un progreso está en esa zona de la recta de salida: de 0,43 a 1,18 en CCW y de −0,18 a 0,57 en CW (el aparcamiento más el largo del coche).
+Una señal sin color al principio de la recta siguiente no entra en la cámara desde el lado de fuera. Si el coche pasa 1,5 unidades antes por el lado de la isla, la ve casi toda la recta.
+
+Y debajo, este esqueleto:
+
+```python
+def lookouts(signs, phi):
+    """Knots that bring a corner-exit sign of unknown colour into the camera's view.
+
+    The camera sees a sign at the start of the next straight from the middle of the current one
+    only from the island side of the lane (+0.15 m; 0 m for the outer row), so the line passes
+    there 1.5 track units before the sign when no other sign is near.
+    """
+    ...  # TODO 4.3
+```
+
+**Qué va dentro:** Para cada señal sin color en una recta (progreso par) cuyo punto `s − 1,5` está al menos 0,1 por delante y sin otra señal a menos de 0,4: un nudo `(s − 1,5, LOOKOUT)` si es interior, o `(s − 1,5, 0)` si es exterior.
+
+**Un ejemplo:** Una interior sin color en 2,0 con el coche en 0,2: un nudo en (0,5, +0,15).
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_4.py -q -k "lookout"
+```
+
+Debes ver `1 passed`: el nudo para mirar una señal de la recta siguiente.
+
+<details>
+<summary>Ver la solución de lookouts</summary>
+
+```python
+def lookouts(signs, phi):
+    """Knots that bring a corner-exit sign of unknown colour into the camera's view.
+
+    The camera sees a sign at the start of the next straight from the middle of the current one
+    only from the island side of the lane (+0.15 m; 0 m for the outer row), so the line passes
+    there 1.5 track units before the sign when no other sign is near.
+    """
+    out = []
+    for s, (lateral, colour, _) in signs.items():
+        look = s - 1.5
+        if colour is not None or round(s) % 2 or look - phi < 0.1:
+            continue
+        if any(abs(other - look) < 0.4 for other in signs):
+            continue
+        out.append((look, LOOKOUT if lateral > 0.0 else 0.0))
+    return out
+```
+
+</details>
+
+### Paso 4.4: junto al aparcamiento
+
+Los topes del aparcamiento sobresalen 20 cm del muro de la recta de salida: ahí la línea no puede ir pegada al muro.
+
+Y debajo, este esqueleto:
+
+```python
+def lot_zone(progress, direction):
+    """Whether a progress value is on the start straight beside the parking lot (track frame:
+    x 0.13..0.48 in CCW, -0.48..-0.13 in CW, plus the car's length)."""
+    ...  # TODO 4.4
+```
+
+**Qué va dentro:** Con `s = progress % 8`: en antihorario la zona va de 0,43 a 1,18; en horario, de −0,18 a 0,57 (también cuenta `s − 8`).
+
+**Un ejemplo:** `lot_zone(0.6, "ccw")` es `True`; `lot_zone(1.5, "ccw")`, `False`.
+
+```bash
+python -m pytest course/tests/obstacle/test_obstacle_step_4.py -q -k "lot_zone"
+```
+
+Debes ver `1 passed`: la zona del aparcamiento en los dos sentidos.
+
+<details>
+<summary>Ver la solución de lot_zone</summary>
+
+```python
+def lot_zone(progress, direction):
+    """Whether a progress value is on the start straight beside the parking lot (track frame:
+    x 0.13..0.48 in CCW, -0.48..-0.13 in CW, plus the car's length)."""
+    s = progress % UNITS_PER_LAP
+    low, high = (0.43, 1.18) if direction == 'ccw' else (-0.18, 0.57)
+    return low <= s <= high or low <= s - UNITS_PER_LAP <= high
+```
+
+</details>
 
 ## Pruébalo
 
 ```bash
 python -m pytest course/tests/obstacle/test_obstacle_step_4.py -q        # 5 passed
 ```
+
+### Prueba esto
+
+- En el widget de la línea, elige **Cruzar el carril**: una verde interior y una roja exterior seguidas. Mira la rampa y los centímetros libres en cada señal; baja `pillar_clearance` y mira cómo cambian.
+- Elige **Mirar por adelantado**: aparece un nudo 1,5 unidades antes de la señal sin color.
+- En la **lección interactiva** de este paso, tu `plan.py` pasa cada señal en el simulador; el juez para el intento en la primera señal mal pasada.
+
+### Rómpelo
+
+1. En `side_offset`, cambia `'red'` por `'green'`: en la lección interactiva el juez para el coche en la primera señal, por el lado equivocado.
+2. Cambia `HOLD` a 0: la línea ya no se sostiene junto a la señal y el coche la cruza todavía cambiando de lado.
 
 ## Si algo falla
 

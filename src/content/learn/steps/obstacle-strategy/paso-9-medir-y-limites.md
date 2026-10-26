@@ -46,6 +46,8 @@ Una línea por ronda: puntos estimados sobre el máximo, tiempo desde Start, si 
 
 El juez del curso es el que usa el equipo en sus rondas de Gazebo: secciones (24), vueltas (3), parar en la sección de salida (3), señales sin mover tras las tres vueltas (10) y aparcamiento (15 del todo y en paralelo, 7 a medias). Con aparcamiento el máximo de este curso es **55**. Una ronda con un lado incorrecto termina en ese momento: cuenta lo hecho hasta ahí.
 
+<div data-widget="obstacle-score"></div>
+
 Una ronda es **válida** si además tiene el máximo, no tiene faltas, tiene los 30 s de parada observados, dura menos de 180 s y deja al menos 1 cm a los muros durante las vueltas (al aparcar se va pegado al muro: ahí no cuenta). Todo es una **estimación de simulación**, no una puntuación oficial.
 
 ### Medir bien
@@ -100,6 +102,12 @@ ros2 run robotek_course score_obstacle
 ```
 
 Anota en `src/my_obstacle/RESULTADOS.md` cada versión: qué cambiaste, los tres números del laboratorio y las rondas de Gazebo (puntos, tiempo, válida o no y por qué).
+
+### Prueba esto
+
+- En el widget de los puntos, quita **Para en la sección de salida** a la ronda A: pierde 3 puntos. Pon a la B aparcada del todo: aunque tarde 50 s más, gana.
+- Iguala los puntos de las dos rondas: entonces decide el tiempo.
+- En la repetición de este paso, la ronda horaria del campo 3: 40 puntos.
 
 ## Si algo falla
 

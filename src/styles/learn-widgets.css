@@ -75,6 +75,7 @@
 .lw-axis { fill: var(--lw-muted); font-size: 12px; }
 .lw-tag { font-size: 12px; font-weight: 600; }
 .lw-body { fill: var(--lw-amber); stroke: #0c0a07; stroke-width: 0.004; }
+.lw-body-blue { fill: var(--lw-blue); stroke: #0c0a07; stroke-width: 0.004; }
 .lw-nose { fill: #0c0a07; }
 .lw-wheel { fill: #0c0a07; stroke: var(--lw-text); stroke-width: 0.003; }
 .lw-lidar { fill: var(--lw-text); }

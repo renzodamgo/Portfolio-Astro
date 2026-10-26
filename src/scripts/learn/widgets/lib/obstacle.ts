@@ -384,3 +384,125 @@ export function search(lot: Lot, pose: Pose, gear: number | null, steerLimit: nu
 }
 /** The planning pose: on the approach line, AHEAD past the lot's far limit (park.nominal_plan). */
 export const planningPose = (lot: Lot): Pose => [lot.xb + AHEAD, lot.y1 + HW + GAP, 0];
+
+// ------------------------------------------------------------------------------------------------ localizer.py
+export const LIDAR_OFFSET_X = 0.128;
+const RAYS = 306, HALF_ANGLE = (110 * Math.PI) / 180;
+export type BoxXY = [number, number, number, number];   // xmin, xmax, ymin, ymax
+/** The field of the tests (fieldsim.field_boxes): outer walls, island and the signs as boxes. */
+export function fieldBoxes(signs: { x: number; y: number }[] = []): BoxXY[] {
+  const W = 0.02;
+  return [[-1.5 - W, 1.5 + W, -1.5 - W, -1.5], [-1.5 - W, 1.5 + W, 1.5, 1.5 + W], [-1.5 - W, -1.5, -1.5, 1.5], [1.5, 1.5 + W, -1.5, 1.5],
+    [-0.5, 0.5, -0.5, 0.5], ...signs.map((s): BoxXY => [s.x - 0.025, s.x + 0.025, s.y - 0.025, s.y + 0.025])];
+}
+/** One LiDAR scan from base_link pose (x, y, yaw) (fieldsim.scan): 306 ranges over ±110°, Infinity when nothing. */
+export function scanAt(x: number, y: number, yaw: number, boxes: BoxXY[], noise = 0, rng: () => number = Math.random): number[] {
+  const ox = x + LIDAR_OFFSET_X * Math.cos(yaw), oy = y + LIDAR_OFFSET_X * Math.sin(yaw);
+  const inc = (2 * HALF_ANGLE) / (RAYS - 1);
+  const out: number[] = [];
+  for (let i = 0; i < RAYS; i++) {
+    const a = -HALF_ANGLE + inc * i + yaw, dx = Math.cos(a), dy = Math.sin(a);
+    let best = Infinity;
+    for (const [x0, x1, y0, y1] of boxes) {
+      const tx0 = (x0 - ox) / dx, tx1 = (x1 - ox) / dx, ty0 = (y0 - oy) / dy, ty1 = (y1 - oy) / dy;
+      const near = Math.max(Math.min(tx0, tx1), Math.min(ty0, ty1)), far = Math.min(Math.max(tx0, tx1), Math.max(ty0, ty1));
+      if (far >= near && near > 1e-6) best = Math.min(best, near);
+    }
+    if (noise && Number.isFinite(best)) best += noise * Math.sqrt(-2 * Math.log(rng() || 1e-12)) * Math.cos(2 * Math.PI * rng());
+    out.push(best);
+  }
+  return out;
+}
+/** Valid returns as points of the car frame, mirrored for CW (localizer.scan_points). */
+export function scanPoints(ranges: number[], sign: number): [number[], number[]] {
+  const inc = (2 * HALF_ANGLE) / (RAYS - 1), bx: number[] = [], by: number[] = [];
+  ranges.forEach((r, i) => {
+    if (!(Number.isFinite(r) && r > 0.16 && r < 4)) return;
+    const a = -HALF_ANGLE + inc * i;
+    bx.push(r * Math.cos(a) + LIDAR_OFFSET_X); by.push(sign * r * Math.sin(a));
+  });
+  return [bx, by];
+}
+export interface Fit { px: number[]; py: number[]; nx: number[]; ny: number[]; r: number[] }
+/** Scan points near a known wall: positions, wall normals and residuals (Localizer._fit). */
+export function fitWalls(bx: number[], by: number[], x: number, y: number, th: number, gate: number): Fit {
+  const c = Math.cos(th), s = Math.sin(th), out: Fit = { px: [], py: [], nx: [], ny: [], r: [] };
+  for (let i = 0; i < bx.length; i++) {
+    const px = x + c * bx[i] - s * by[i], py = y + s * bx[i] + c * by[i];
+    const ax = Math.abs(px), ay = Math.abs(py);
+    const onx = ax >= ay ? Math.sign(px) : 0, ony = ax < ay ? Math.sign(py) : 0;
+    const rOut = onx * px + ony * py - OUTER;
+    const inx = ay <= INNER && ax > INNER - 0.05, iny = ax <= INNER && ay > INNER - 0.05;
+    let nx = inx ? Math.sign(px) : iny ? 0 : onx, ny = inx ? 0 : iny ? Math.sign(py) : ony;
+    const rIn = inx ? ax - INNER : iny ? ay - INNER : Infinity;
+    const useIn = Math.abs(rIn) < Math.abs(rOut);
+    if (!useIn) { nx = onx; ny = ony; }
+    const r = useIn ? rIn : rOut;
+    if (Math.abs(r) < gate) { out.px.push(px); out.py.push(py); out.nx.push(nx); out.ny.push(ny); out.r.push(r); }
+  }
+  return out;
+}
+function solve3(H: number[][], b: number[]): number[] {
+  const m = H.map((row, i) => [...row, b[i]]);
+  for (let c = 0; c < 3; c++) {
+    let p = c;
+    for (let r = c + 1; r < 3; r++) if (Math.abs(m[r][c]) > Math.abs(m[p][c])) p = r;
+    [m[c], m[p]] = [m[p], m[c]];
+    for (let r = 0; r < 3; r++) {
+      if (r === c) continue;
+      const f = m[r][c] / m[c][c];
+      for (let k = c; k < 4; k++) m[r][k] -= f * m[c][k];
+    }
+  }
+  return [m[0][3] / m[0][0], m[1][3] / m[1][1], m[2][3] / m[2][2]];
+}
+export class Localizer {
+  x = 0; y = 0; th = 0; inliers = 0; rms = NaN;
+  /** Pull the pose toward the wall fit by `gain` (Localizer.correct). False if too few points. */
+  correct(bx: number[], by: number[], gain = 1, gate = 0.08, iterations = 2, damping = 2): boolean {
+    let { x, y, th } = this;
+    let f: Fit = { px: [], py: [], nx: [], ny: [], r: [] };
+    for (let it = 0; it < iterations; it++) {
+      f = fitWalls(bx, by, x, y, th, gate);
+      if (f.r.length < 20) return false;
+      const H = [[damping, 0, 0], [0, damping, 0], [0, 0, damping]], g = [0, 0, 0];
+      for (let i = 0; i < f.r.length; i++) {
+        const w = Math.min(1, 0.02 / Math.max(Math.abs(f.r[i]), 1e-6));
+        const J = [f.nx[i], f.ny[i], f.nx[i] * -(f.py[i] - y) + f.ny[i] * (f.px[i] - x)];
+        for (let a = 0; a < 3; a++) { g[a] += J[a] * w * f.r[i]; for (let b = 0; b < 3; b++) H[a][b] += J[a] * w * J[b]; }
+      }
+      const d = solve3(H, g).map((v) => -v);
+      x += d[0]; y += d[1]; th = wrap(th + d[2]);
+    }
+    this.inliers = f.r.length;
+    this.rms = Math.sqrt(f.r.reduce((s, r) => s + r * r, 0) / f.r.length);
+    this.x += gain * (x - this.x); this.y += gain * (y - this.y); this.th = wrap(this.th + gain * wrap(th - this.th));
+    return true;
+  }
+  /** Global start on the bottom straight: three along-track guesses, the best fit (Localizer.initialize). */
+  initialize(bx: number[], by: number[], heading: number): void {
+    let best: [number, number, number, number] | null = null;
+    for (const x0 of [-0.35, 0, 0.35]) {
+      this.x = x0; this.y = -1; this.th = heading;
+      for (const gate of [0.45, 0.3, 0.2, 0.12, 0.08, 0.06]) this.correct(bx, by, 1, gate, 2, 0.5);
+      const f = fitWalls(bx, by, this.x, this.y, this.th, 0.05);
+      const rms = f.r.length ? Math.sqrt(f.r.reduce((s, r) => s + r * r, 0) / f.r.length) : 1;
+      const score = f.r.length - 2000 * rms;
+      if (!best || score > best[0]) best = [score, this.x, this.y, this.th];
+    }
+    [, this.x, this.y, this.th] = best!;
+  }
+}
+/** Island on the left (CCW, +1) or the right (CW, -1), and the margin (localizer.direction_from_scan). */
+export function directionFromScan(ranges: number[]): { sign: number; margin: number; fractions: Record<string, number> } {
+  const fractions: Record<string, number> = {};
+  for (const sign of [1, -1]) {
+    const [bx, by] = scanPoints(ranges, sign);
+    if (bx.length < 50) return { sign: 0, margin: 0, fractions };
+    const loc = new Localizer();
+    loc.initialize(bx, by, 0);
+    fractions[sign] = fitWalls(bx, by, loc.x, loc.y, loc.th, 0.05).r.length / bx.length;
+  }
+  const sign = fractions[1] >= fractions[-1] ? 1 : -1;
+  return { sign, margin: fractions[sign] - fractions[-sign], fractions };
+}
