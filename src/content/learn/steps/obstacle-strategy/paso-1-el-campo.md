@@ -66,7 +66,7 @@ Los puntos que cuenta el juez del curso:
 
 El reglamento da 7 más por **arrancar dentro del aparcamiento** (1.8.1, máximo 62): no lo hacemos en esta guía.
 
-![El campo: isla, carril, asientos de las señales, progreso y aparcamiento](/learn/obstacle/campo.svg)
+<div data-widget="obstacle-field"></div>
 
 ### El carril y el progreso
 

@@ -1,0 +1,17 @@
+// The signs of the rules' layouts 0 to 4 (robotek_evaluation.obstacle_field.regulation_signs), with and without the
+// parking lot (with it the signs of the start straight move to the inner row). Generated with that function.
+export interface FieldSign { x: number; y: number; color: 'red' | 'green'; side: 'bottom' | 'right' | 'top' | 'left' }
+export const LAYOUTS: Record<string, FieldSign[]> = {
+  '0-0': [{ x: 1.1, y: 0.0, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'red', side: 'bottom' }, { x: -1.1, y: -0.5, color: 'green', side: 'left' }, { x: 0.5, y: 0.9, color: 'red', side: 'top' }, { x: -0.5, y: 1.1, color: 'green', side: 'top' }],
+  '0-1': [{ x: 1.1, y: 0.0, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'red', side: 'bottom' }, { x: -1.1, y: -0.5, color: 'green', side: 'left' }, { x: 0.5, y: 0.9, color: 'red', side: 'top' }, { x: -0.5, y: 1.1, color: 'green', side: 'top' }],
+  '1-0': [{ x: -1.1, y: 0.0, color: 'green', side: 'left' }, { x: -0.5, y: 1.1, color: 'green', side: 'top' }, { x: 0.9, y: 0.0, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'green', side: 'bottom' }, { x: 0.5, y: -1.1, color: 'red', side: 'bottom' }],
+  '1-1': [{ x: -1.1, y: 0.0, color: 'green', side: 'left' }, { x: -0.5, y: 1.1, color: 'green', side: 'top' }, { x: 0.9, y: 0.0, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'green', side: 'bottom' }, { x: 0.5, y: -0.9, color: 'red', side: 'bottom' }],
+  '2-0': [{ x: 0.0, y: -1.1, color: 'green', side: 'bottom' }, { x: -0.9, y: 0.0, color: 'green', side: 'left' }, { x: 0.5, y: 0.9, color: 'green', side: 'top' }, { x: -0.5, y: 0.9, color: 'red', side: 'top' }, { x: 0.9, y: 0.5, color: 'red', side: 'right' }],
+  '2-1': [{ x: 0.0, y: -0.9, color: 'green', side: 'bottom' }, { x: -0.9, y: 0.0, color: 'green', side: 'left' }, { x: 0.5, y: 0.9, color: 'green', side: 'top' }, { x: -0.5, y: 0.9, color: 'red', side: 'top' }, { x: 0.9, y: 0.5, color: 'red', side: 'right' }],
+  '3-0': [{ x: -1.1, y: 0.0, color: 'green', side: 'left' }, { x: 0.5, y: 0.9, color: 'green', side: 'top' }, { x: -0.5, y: 0.9, color: 'red', side: 'top' }, { x: 1.1, y: -0.5, color: 'green', side: 'right' }, { x: 0.9, y: 0.5, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'green', side: 'bottom' }, { x: 0.5, y: -1.1, color: 'red', side: 'bottom' }],
+  '3-1': [{ x: -1.1, y: 0.0, color: 'green', side: 'left' }, { x: 0.5, y: 0.9, color: 'green', side: 'top' }, { x: -0.5, y: 0.9, color: 'red', side: 'top' }, { x: 1.1, y: -0.5, color: 'green', side: 'right' }, { x: 0.9, y: 0.5, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'green', side: 'bottom' }, { x: 0.5, y: -0.9, color: 'red', side: 'bottom' }],
+  '4-0': [{ x: -1.1, y: 0.0, color: 'red', side: 'left' }, { x: 0.0, y: 0.9, color: 'red', side: 'top' }, { x: 1.1, y: -0.5, color: 'green', side: 'right' }, { x: 1.1, y: 0.5, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'red', side: 'bottom' }, { x: 0.5, y: -0.9, color: 'green', side: 'bottom' }],
+  '4-1': [{ x: -1.1, y: 0.0, color: 'red', side: 'left' }, { x: 0.0, y: 0.9, color: 'red', side: 'top' }, { x: 1.1, y: -0.5, color: 'green', side: 'right' }, { x: 1.1, y: 0.5, color: 'red', side: 'right' }, { x: -0.5, y: -0.9, color: 'red', side: 'bottom' }, { x: 0.5, y: -0.9, color: 'green', side: 'bottom' }],
+};
+/** Layout n, with or without the lot. */
+export const layout = (n: number, lot: boolean): FieldSign[] => LAYOUTS[`${n}-${lot ? 1 : 0}`];

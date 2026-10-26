@@ -27,7 +27,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 El coche sigue sin conducirse solo. Conduces con `keyboard_drive` y miras `ros2 topic echo /obstacle/plan`: el desplazamiento planificado 0, 0,5, 1 y 1,5 unidades por delante del coche. Al acercarte a una roja interior lo verás bajar a −0,15; a una verde interior, subir a +0,35. Lo seguirás en el paso 6. Las pruebas comprueban el plan contra campos armados a mano.
 
-![La línea de una recta con una roja interior y una verde exterior](/learn/obstacle/linea.svg)
+<div data-widget="obstacle-line"></div>
 
 ## La idea
 

@@ -31,7 +31,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 Al terminar la tercera vuelta, el coche sigue por la recta de salida pegado a una línea paralela al aparcamiento, se para un poco después del tope del fondo, se queda quieto un momento (está planificando) y entra marcha atrás en varias maniobras cortas, parando entre una y otra para girar las ruedas. En el laboratorio, solo con el aparcamiento, aparca del todo en 7 a 9 de cada 10 intentos, en 35 a 70 s.
 
-![Las maniobras de un aparcamiento planificado](/learn/obstacle/aparcar.svg)
+<div data-widget="obstacle-park"></div>
 
 ## La idea
 
