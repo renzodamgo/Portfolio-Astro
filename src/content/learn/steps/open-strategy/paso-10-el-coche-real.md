@@ -10,7 +10,7 @@ compareFrom: "step-9"
 
 Hasta aquí todo fue simulación. En este capítulo llevas el mismo nodo `drive` al coche real: lo montas, instalas el repositorio en la Raspberry Pi, compruebas cada sensor y cada actuador por separado, y solo al final haces una primera ronda en el campo.
 
-¿Trabajas con el coche del equipo y su estrategia v5, no con tu propio nodo? Sigue [El coche del equipo: calibrar la IMU y correr el v5](/learn/open-strategy/coche-del-equipo-v5/).
+¿Vas a probar en el coche del equipo Robotek después de su reconstrucción? La receta corta, en orden y empezando siempre por el `git pull` de robotek-learn, está en [El coche del equipo: calibrar la IMU y correr la estrategia](/learn/open-strategy/coche-del-equipo-v5/).
 
 Aquí importa ir despacio: un error en el simulador cuesta una ronda, y uno aquí puede costar un cable arrancado o un coche contra la pared.
 

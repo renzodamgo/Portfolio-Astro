@@ -2,20 +2,22 @@
 guide: "open-strategy"
 order: 10.5
 slug: "coche-del-equipo-v5"
-title: "El coche del equipo: calibrar la IMU y correr el v5"
-summary: "Del coche reconstruido a la primera ronda con la estrategia v5 del equipo: actualizar la Raspberry Pi, medir los ejes de la IMU, el servo y el motor, llevar las medidas al repositorio y lanzar la ronda."
+title: "El coche del equipo: calibrar la IMU y correr la estrategia"
+summary: "Del coche reconstruido a la primera ronda con robotek-learn: bajar el código al Raspberry Pi antes de cada prueba, medir los ejes de la IMU, el servo y el motor, llevar las medidas al repositorio y lanzar la estrategia de referencia."
 tag: "step-9"
 compareFrom: "step-9"
 ---
 
-El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) lleva **tu** nodo al coche con el repositorio del curso. Esta página es la receta para el **coche del equipo Robotek** con su repositorio de trabajo (`WRO-Strategies`) y su estrategia Open, el **v5**: qué medir después de la reconstrucción del 21 de octubre de 2026, en qué orden, dónde se guarda cada medida y cómo se lanza la ronda.
+Esta página es la receta para el **coche del equipo Robotek**: qué medir después de la reconstrucción del 21 de octubre de 2026, en qué orden, dónde se guarda cada medida y cómo se lanza la ronda. Todo sale del repositorio del curso, **[robotek-learn](https://github.com/renzodamgo/robotek-learn)**: es el que está en el Raspberry Pi del coche y el que se baja con `git pull` antes de cada prueba. La estrategia es la **de referencia del paso 9** (`my_open`), que hace lo mismo que el v5 del equipo, o la tuya si ya la terminaste.
+
+El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) explica cada pieza con más calma (instalar el Pi desde cero, el LiDAR en RViz, la cámara). Aquí está el camino corto, en orden.
 
 > **Qué está probado y qué no** (1 de noviembre de 2026).
 >
-> - **Probado en simulación:** el v5 completa el set estándar de 12 rondas en Gazebo y en el laboratorio, con el modelo del coche real.
+> - **Probado en simulación:** la estrategia de referencia completa las rondas del laboratorio y de Gazebo con el modelo del coche real.
 > - **Medido en el coche, pero con el montaje anterior** (7 a 9 de octubre): el servo, la tabla de velocidad del motor, el LiDAR, la IMU y los colores de las líneas.
 > - **Sin medir en el coche reconstruido:** los ejes de la IMU (la placa va de canto) y el servo (cambió de sitio y giró 90 grados). En `robot.yaml` los dos siguen marcados `measured: false`. **No conduzcas el coche hasta medirlos.**
-> - **Sin probar en el coche:** el v5, y la forma de lanzar de la sección 6 (`robot.launch.py` arranca la placa, el LiDAR y la cámara solo desde el 1 de noviembre). Los comandos salen del código y de las notas del equipo, no de una ronda real con este montaje.
+> - **Sin probar en el coche:** la estrategia y los comandos de esta página con este montaje. Salen del código de robotek-learn, no de una ronda real.
 
 <!-- step-video:start -->
 <figure class="learn-step-video">
@@ -28,33 +30,47 @@ El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) lleva **tu** nodo
 
 | # | Qué | Bloquea la ronda | Dónde queda |
 |---|---|---|---|
-| 1 | **Antes de cada prueba:** `git pull`, compilar y limpiar el Pi | sí, siempre | — |
+| 1 | **Antes de cada prueba:** `git pull` de robotek-learn, compilar y limpiar el Pi | sí, siempre | — |
 | 2 | Ejes de la IMU | **sí** | `robot.yaml` → `imu_adapter` |
-| 3 | Servo: centro, signo y ángulo real | **sí** | `robot.yaml` → `base_adapter`, `vehicle.py`, `real_car_v1.yaml` |
-| 4 | Motor: velocidad real por % | no, pero sin ella el coche va a otra velocidad que la simulación | `robot.yaml`, `real_car_v1.yaml`, `v5/mission.py` |
-| 5 | LiDAR y cámara | no, pero la cámara decide el sentido | `robot.yaml` → `scan_adapter`; colores en `robot.launch.py` |
-| 6 | Primera ronda, despacio | — | `~/robotek-runs/` en el Pi |
-| 7 | Registrar la ronda | — | `docs/open-challenge-runs/` |
+| 3 | Servo: centro, signo y ángulo real | **sí** | `robot.yaml` → `base_adapter` |
+| 4 | Motor: velocidad real por % | no, pero sin ella el coche va a otra velocidad que la simulación | `robot.yaml`, `real_car_v1.yaml`, `minisim.py` |
+| 5 | LiDAR y cámara | no, pero la cámara decide el sentido | `robot.yaml` → `scan_adapter`; colores en `vision.py` |
+| 6 | Primera ronda, despacio | — | el registro de la consola |
+| 7 | Anotar la ronda | — | tu cuaderno de rondas |
+
+Todos los archivos están en robotek-learn: `src/robotek_hardware/config/robot.yaml`, `src/robotek_evaluation/config/real_car_v1.yaml`, `src/robotek_course/robotek_course/minisim.py` y `src/robotek_course/robotek_course/vision.py`.
 
 Haz las mediciones **en este orden** y con el coche **sobre soportes, con las ruedas en el aire**, salvo cuando se diga lo contrario.
 
 ## 1. Antes de cada prueba (siempre)
 
-Haz esto **al empezar cada prueba**, aunque ya lo hayas hecho antes ese día: así el Pi corre exactamente el código del Mac y no queda nada de la prueba anterior. Cada sección siguiente empieza recordándolo.
+Haz esto **al empezar cada prueba**, aunque ya lo hayas hecho antes ese día: así el Pi corre exactamente el código de robotek-learn y no queda nada de la prueba anterior. Cada sección siguiente empieza recordándolo.
 
-### En el Mac: sube lo que cambiaste
+### La primera vez: el repositorio en el Pi
 
-En el Pi, `~/Projects/WRO-Strategies` es un clon del repositorio. **Todo cambio se hace en el Mac**, se sube con `git push` y se baja en el Pi con `git pull`. Si editas en el Pi, el siguiente `git pull` choca o pierdes el cambio.
+Si el Pi todavía no tiene robotek-learn (o lo tiene en otra carpeta), clónalo en la carpeta de usuario e instala lo que falta, como en el [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/):
 
 ```bash
-git status            # nada pendiente: si hay cambios, commit
-git push
-git log -1 --oneline  # apunta este código: el Pi debe acabar en el mismo
+cd ~
+git clone https://github.com/renzodamgo/robotek-learn.git
+cd robotek-learn
+bash tools/setup-pi.sh --with-reference      # ROS, dependencias, udev, grupos, la estrategia de referencia y colcon build
 ```
+
+Cierra la sesión y vuelve a entrar (por los grupos nuevos) y comprueba con `bash tools/setup-pi.sh --check`.
+
+Si el `~/.bashrc` del Pi carga **otro** workspace (por ejemplo `source ~/Projects/WRO-Strategies/install/setup.bash` o `~/wro_controller_ws`), quita esa línea: tienen paquetes con el mismo nombre (`robotek_hardware`, `rrc_lite_driver`…) y se mezclan.
+
+### De dónde vienen los cambios
+
+- **El código y las medidas del coche** (`robot.yaml`, `minisim.py`, …) están en robotek-learn, en GitHub. Quien tiene permiso los cambia en su ordenador y hace `git push`. En el Pi **solo se hace `git pull`**: si editas en el Pi, el siguiente `git pull` choca o pierdes el cambio.
+- **Tu estrategia `my_open`** no está en git (el repositorio la ignora). Si usas la tuya y no la de referencia, cópiala al Pi cada vez que la cambies (con `rsync` o `scp`, como en el capítulo 10).
+
+Si mediste algo en el Pi (por ejemplo los ejes de la IMU), pásalo al ordenador, súbelo y vuelve a hacer `git pull` en el Pi.
 
 ### En el Pi: entra, para lo que corre, baja el código y compila
 
-Desde el Mac, en la misma red Wi‑Fi que el coche:
+Desde tu ordenador, en la misma red Wi‑Fi que el coche:
 
 ```bash
 ssh <usuario>@<ip-del-pi>
@@ -66,23 +82,23 @@ Ya dentro del Pi, siempre en este orden:
 
 ```bash
 ~/scripts/stop_ros.sh                       # 1. para el software del equipo, que arranca solo
-cd ~/Projects/WRO-Strategies
-git pull                                    # 2. baja el código del Mac
-git log -1 --oneline                        #    el mismo código que apuntaste en el Mac
-colcon build                                # 3. compila (unos 12 s; la primera vez, casi un minuto)
+cd ~/robotek-learn
+git pull                                    # 2. baja la última versión de robotek-learn
+git log -1 --oneline                        #    el mismo commit que ves en GitHub
+colcon build --symlink-install              # 3. compila
 source install/setup.bash                   # 4. carga lo que acabas de compilar
-echo $ROS_DOMAIN_ID                         # 5. debe decir 1
+echo $ROS_DOMAIN_ID                         # 5. el número del coche: el mismo en el ordenador que mira RViz
 ```
 
-- **`stop_ros.sh`**: el Pi arranca solo el software del equipo (`ros_autostart.service`), que usa los mismos puertos que las pruebas. Escríbelo tú en la sesión de ssh. No lo metas en una línea como `ssh pi '~/scripts/stop_ros.sh && ...'`: el script mata procesos por nombre y puede matar tu propia conexión.
-- **`colcon build`** cada vez: la instalación es una copia y no ve los cambios hasta recompilar.
-- **`git pull` falla** con "local changes": alguien editó en el Pi. Copia ese cambio al Mac antes de descartarlo (`git stash`), no lo borres.
-- No cargues `~/wro_controller_ws`: tiene copias viejas de los mismos paquetes y se mezclan.
+- **`stop_ros.sh`**: el Pi del equipo arranca solo su software (`ros_autostart.service`), que usa los mismos puertos que las pruebas. Escríbelo tú en la sesión de ssh. No lo metas en una línea como `ssh pi '~/scripts/stop_ros.sh && ...'`: el script mata procesos por nombre y puede matar tu propia conexión. Si tu Pi no tiene ese script, sáltalo.
+- **`colcon build --symlink-install`** cada vez: es lo que usa `setup-pi.sh`, y con él los cambios de Python y de `robot.yaml` llegan sin copiar nada a mano.
+- **`git pull` falla** con "local changes": alguien editó en el Pi. Pasa ese cambio al ordenador antes de descartarlo (`git stash`), no lo borres.
+- **El dominio:** el coche del equipo usa el **1**. En clase, cada coche tiene el suyo (capítulo 10, sección 3.3).
 
 ### Comprueba que no quedó nada de la prueba anterior
 
 ```bash
-ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[m]y_open"
 ```
 
 No debe salir nada. Si sale algo, mátalo (`kill <pid> <pid> ...`) y vuelve a mirar. Un nodo viejo vivo es la causa típica de un LiDAR que da *timeout* (dos lectores en el mismo puerto) o de un coche que se mueve solo.
@@ -98,12 +114,12 @@ ros2 topic echo /rrc/battery --once         # en mV: 8000 o más es una 2S carga
 Cada prueba usa dos o tres terminales en el Pi. Cada una es otro `ssh <usuario>@<ip-del-pi>`, y en cada una:
 
 ```bash
-cd ~/Projects/WRO-Strategies && source install/setup.bash && echo $ROS_DOMAIN_ID
+cd ~/robotek-learn && source install/setup.bash && echo $ROS_DOMAIN_ID
 ```
 
 ### Cómo parar los nodos al terminar
 
-`Ctrl+C` en cada terminal que lanzaste. Después repite la búsqueda de arriba: si queda algo, `kill`. Lo que genera el Pi (`build/`, `install/`, `log/`, `~/robotek-runs/`) no va a git.
+`Ctrl+C` en cada terminal que lanzaste. Después repite la búsqueda de arriba: si queda algo, `kill`.
 
 ## 2. Los ejes de la IMU (bloquea)
 
@@ -111,19 +127,19 @@ cd ~/Projects/WRO-Strategies && source install/setup.bash && echo $ROS_DOMAIN_ID
 
 ```bash
 ~/scripts/stop_ros.sh
-cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
-ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[m]y_open"   # no debe salir nada
 ```
 
 ### Por qué hay que medirlos
 
-La IMU está en la placa **RRC Lite**, y desde la reconstrucción la placa va **de canto y a un costado** del coche. El v5 calcula su rumbo integrando el giroscopio **z** del coche, y espera que **girar a la izquierda dé positivo**. Con la placa de canto, el eje z de la placa ya no es el z del coche: si no se corrige, el coche cree que gira cuando no gira, o al revés, y se estrella en la primera esquina.
+La IMU está en la placa **RRC Lite**, y desde la reconstrucción la placa va **de canto y a un costado** del coche. La estrategia calcula su rumbo integrando el giroscopio **z** del coche, y espera que **girar a la izquierda dé positivo**. Con la placa de canto, el eje z de la placa ya no es el z del coche: si no se corrige, el coche cree que gira cuando no gira, o al revés, y se estrella en la primera esquina.
 
 `imu_adapter` gira la IMU de los ejes de la placa a los del coche (x adelante, y izquierda, z arriba) antes de que la lea la estrategia. Solo necesita saber **qué eje de la placa apunta a cada lado**. Eso es lo que se mide.
 
 ### Que esté a un costado no importa
 
-- **El giroscopio** mide la velocidad de giro, y en un cuerpo rígido es la misma en cualquier punto: en el centro, en un costado o en la punta, el coche gira igual de rápido. El v5 solo usa el giroscopio.
+- **El giroscopio** mide la velocidad de giro, y en un cuerpo rígido es la misma en cualquier punto: en el centro, en un costado o en la punta, el coche gira igual de rápido. La estrategia solo usa el giroscopio.
 - **El acelerómetro** sí cambia fuera del centro (en una curva suma una aceleración hacia el centro del giro), pero **ninguna estrategia lo lee**.
 - **La medición** usa el acelerómetro solo con el coche quieto y con un empujón recto, sin giro, así que la posición tampoco la afecta.
 
@@ -243,7 +259,7 @@ Con el coche plano en la mesa, gíralo con la mano **hacia la izquierda** (antih
 - Si `up_axis` tiene **+** (por ejemplo `'+x'`), ese eje marca **positivo** al girar a la izquierda.
 - Si tiene **−** (por ejemplo `'-x'`), marca **negativo**.
 
-Si sale al revés, el eje de arriba está mal: repite el paso 1. Este signo es el que usa el v5 para saber hacia dónde gira.
+Si sale al revés, el eje de arriba está mal: repite el paso 1. Este signo es el que usa la estrategia para saber hacia dónde gira.
 
 **Un ejemplo.** Son números inventados, **no** los del coche: tu placa puede dar otros.
 
@@ -257,7 +273,7 @@ Si sale al revés, el eje de arriba está mal: repite el paso 1. Este signo es e
 
 ### Guardar
 
-En el **Mac**, abre `src/robotek_hardware/config/robot.yaml` y busca la sección `imu_adapter`. Hoy tiene los ejes del montaje anterior, con la placa plana:
+En tu ordenador, en robotek-learn, abre `src/robotek_hardware/config/robot.yaml` y busca la sección `imu_adapter`. Hoy tiene los ejes del montaje anterior, con la placa plana:
 
 ```yaml
 imu_adapter:
@@ -284,7 +300,7 @@ imu_adapter:
 No toques `frame_id`. Haz commit y push, y en el Pi:
 
 ```bash
-cd ~/Projects/WRO-Strategies && git pull && colcon build
+cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
 ```
 
 Si `imu_adapter` arranca con `is not a right-handed frame`, los tres ejes no encajan (paso 4). Si arranca avisando de que los ejes no están medidos, no recompilaste después del `git pull`.
@@ -324,7 +340,7 @@ Y con `--field linear_acceleration`. Ahora los ejes ya son **los del coche** (x 
 
 Si una casilla en negrita sale con el signo contrario, el eje correspondiente está mal en `robot.yaml`.
 
-**El giro a la izquierda positivo es la prueba que importa.** Si sale negativo, el v5 giraría al revés en cada esquina: no sigas, repite la medición.
+**El giro a la izquierda positivo es la prueba que importa.** Si sale negativo, la estrategia giraría al revés en cada esquina: no sigas, repite la medición.
 
 ### Sesgo y ruido del giroscopio (para la simulación)
 
@@ -335,7 +351,7 @@ timeout 10 ros2 topic echo --csv --field angular_velocity.z /robotek/imu > /tmp/
 python3 -c "import statistics as s; v=[float(x) for x in open('/tmp/gz.csv') if x.strip()]; print(len(v), 'muestras, sesgo', s.mean(v), 'ruido', s.stdev(v))"
 ```
 
-Con el montaje anterior salió un sesgo de 0,006 rad/s y un ruido de 0,0019. No hace falta que sea igual: el v5 mide el sesgo en los 0,3 s después del Start. Anótalo para que la simulación use los valores del coche.
+Con el montaje anterior salió un sesgo de 0,006 rad/s y un ruido de 0,0019. No hace falta que sea igual: la estrategia mide el sesgo en los 0,3 s después del Start. Anótalo para que la simulación use los valores del coche.
 
 ## 3. El servo (bloquea)
 
@@ -343,8 +359,8 @@ Con el montaje anterior salió un sesgo de 0,006 rad/s y un ruido de 0,0019. No 
 
 ```bash
 ~/scripts/stop_ros.sh
-cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
-ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[m]y_open"   # no debe salir nada
 ```
 
 El servo cambió de posición y giró 90 grados. El centro, el signo y la tabla de `robot.yaml` son del montaje anterior: con 1500 µs las ruedas pueden no quedar rectas, y el mismo ángulo de servo da otro ángulo de rueda.
@@ -378,56 +394,60 @@ El ángulo se publica en radianes y **positivo es a la izquierda**. Si dejas de 
 
 ### Guardar
 
-En el Mac:
+En tu ordenador, en robotek-learn:
 
 | Archivo | Qué |
 |---|---|
 | `src/robotek_hardware/config/robot.yaml` (`base_adapter`) | `servo_center_us`, `servo_sign`, `wheel_table_servo_deg`, `wheel_table_left_deg`, `wheel_table_right_deg`, `wheel_limit_deg` (el menor de los máximos de los dos lados) y `servo_measured: true` |
-| `src/robotek_common/robotek_common/vehicle.py` | `REAL_STEER_LIMIT` = `wheel_limit_deg` en radianes. El v5 lo usa como su tope de dirección y para calcular lo rápido que gira en las esquinas |
+| `src/robotek_course/robotek_course/minisim.py` | `STEER_LIMIT` = `wheel_limit_deg` en radianes. La estrategia lo usa como su tope de dirección y para calcular lo rápido que gira en las esquinas |
+| `src/robotek_common/robotek_common/vehicle.py` | `REAL_STEER_LIMIT`, el mismo valor (lo usa el control con teclado) |
 | `src/robotek_evaluation/config/real_car_v1.yaml` | `steer_limit`, el mismo valor, para que la simulación gire igual que el coche |
 
 El URDF **no** se toca: su límite de 25 grados es el del servo, no el de la rueda.
 
-Commit, push, y en el Pi `git pull && colcon build`.
+Commit y push, y en el Pi la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre) (`git pull`, `colcon build --symlink-install`).
 
-### Si tu coche gira distinto: qué cambia en el v5
+### Si tu coche gira distinto: qué cambia en la estrategia
 
-Otro servo, otra palanca u otra dirección cambian tres cosas: el **ángulo** que alcanzan las ruedas, el **radio** de giro y el **tiempo de respuesta** del servo. Adaptar el v5 es fácil, pero no todo se ajusta solo.
+Otro servo, otra palanca u otra dirección cambian tres cosas: el **ángulo** que alcanzan las ruedas, el **radio** de giro y el **tiempo de respuesta** del servo. Adaptar la estrategia es fácil, pero no todo se ajusta solo. Los nombres de abajo son los de la estrategia de referencia (`src/my_open/my_open/`); si escribiste la tuya, búscalos en tu código.
 
-**1. Ángulo máximo de la rueda: casi automático.** Basta con cambiar **una constante**, `REAL_STEER_LIMIT` en `vehicle.py`. Es el ángulo real de la rueda, no el del servo.
+**1. Ángulo máximo de la rueda: casi automático.** Basta con cambiar **una constante**, `STEER_LIMIT` en `minisim.py`. Es el ángulo real de la rueda, no el del servo.
 
-- El v5 la usa como `STEER`, su tope de dirección.
-- Con ella calcula la **velocidad de giro en la esquina**: `v · tan(STEER) / WHEELBASE`. Si el coche gira más cerrado, la rampa del arco se acelera sola; si gira menos, se hace más lenta.
+- La estrategia la usa como su tope de dirección.
+- Con ella calcula la **velocidad de giro en la esquina** (`arc.py`): `v · tan(STEER_LIMIT) / WHEELBASE`. Si el coche gira más cerrado, la rampa del arco se acelera sola; si gira menos, se hace más lenta.
 - En el coche va la misma medida en `robot.yaml` (`wheel_table_*`, `wheel_limit_deg`), y en el simulador en `real_car_v1.yaml` (`steer_limit`), como en la tabla de arriba.
 
-Lo que **no** se ajusta solo es el punto donde empieza el giro. Con un radio menor el coche puede girar más tarde, y con uno mayor tiene que girar antes. Eso lo deciden `turn_front_distance` (1,19 m: la pared de enfrente a la que se puede empezar a girar) y `corner_lookahead` (0,35 m: lo cerca que tiene que estar el final de la isla). Son parámetros del perfil `open_v5.yaml` y se prueban en el laboratorio sin tocar código.
+Lo que **no** se ajusta solo es el punto donde empieza el giro. Con un radio menor el coche puede girar más tarde, y con uno mayor tiene que girar antes. Eso lo deciden `TURN_FRONT` (1,19 m: la pared de enfrente a la que se puede empezar a girar) y `LOOKAHEAD` (0,35 m: lo cerca que tiene que estar el final de la isla), en `my_open/turn_gate.py`. Se prueban en el laboratorio sin tocar el archivo, con `--set`.
 
-**2. Tiempo de respuesta del servo: el v5 no lo tiene en cuenta.** No tiene ningún parámetro de retardo del servo; se quitó a propósito al simplificar la estrategia.
+**2. Tiempo de respuesta del servo: la estrategia no lo tiene en cuenta.** No tiene ningún parámetro de retardo del servo.
 
-- El retardo solo existe en el **modelo del simulador**: `steer_delay` (0,06 s), `steer_rate` (1,2 rad/s) y `steer_tau` en `real_car_v1.yaml`. El laboratorio usa los mismos valores.
-- Si el servo nuevo es **más lento**, la dirección llega tarde al tope en cada esquina y el coche abre la curva. El remedio es empezar a girar antes (subir `turn_front_distance`). Comprúebalo en el laboratorio y en Gazebo **después de poner el retardo nuevo en el modelo**: si no, la simulación sigue con el servo viejo y no te muestra el problema.
-- Si es mucho más lento, quizá haya que tocar las ganancias. `KP` (0,8), `DAMPING` (0,1) y `EXIT_ANGLE` (0,25 rad) son **constantes en `v5/mission.py`**, no parámetros: cambiarlas es editar el código.
-
-Para medir el retardo, con el coche quieto: `ros2 launch robotek_bringup actuator_test.launch.py test:=servo`. Pulsa el botón y la prueba termina sola; el resultado queda en `~/robotek-runs/<fecha>-actuator-servo/summary.json`.
+- El retardo solo existe en el **modelo del simulador**: `steer_delay` (0,06 s), `steer_rate` (1,2 rad/s) y `steer_tau` en `real_car_v1.yaml`. El laboratorio los cambia con `--act` y Gazebo con `actuator_params:=` ([capítulo 12](/learn/open-strategy/paso-12-afinar/)).
+- Si el servo nuevo es **más lento**, la dirección llega tarde al tope en cada esquina y el coche abre la curva. El remedio es empezar a girar antes (subir `TURN_FRONT`). Compruébalo en el laboratorio y en Gazebo **con el retardo nuevo en el modelo**: si no, la simulación sigue con el servo viejo y no te muestra el problema.
+- Si es mucho más lento, quizá haya que tocar las ganancias: `KP` (0,8) en `heading.py`, `DAMPING` (0,1) y `EXIT_ANGLE` (0,25 rad) en `arc.py`. Ojo: en el capítulo 12, con el retardo triplicado, subir `DAMPING` empeoró las rondas; lo que dio margen fue bajar la velocidad.
 
 **3. Ángulo del servo distinto, con el mismo giro de rueda.** Si solo cambia la palanca (por ejemplo, ahora hacen falta 30 grados de servo para el mismo ángulo de rueda), la estrategia no se entera: trabaja con el ángulo de la **rueda**. Solo cambia la tabla servo → rueda de `robot.yaml`. Recuerda que el equipo no pasa de **25 grados de servo**.
 
 | Cambio en el coche | Qué tocar | ¿Se ajusta solo? |
 |---|---|---|
-| Ángulo de rueda o radio de giro | `REAL_STEER_LIMIT`, `robot.yaml` y `real_car_v1.yaml` | El arco sí; el punto de giro hay que reajustarlo (`turn_front_distance`, `corner_lookahead`) |
-| Servo más lento o más rápido | El modelo del simulador (`steer_delay`, `steer_rate`, `steer_tau`) | No: reajustar `turn_front_distance`; si hace falta, `KP` y `DAMPING` en el código |
+| Ángulo de rueda o radio de giro | `STEER_LIMIT`, `robot.yaml` y `real_car_v1.yaml` | El arco sí; el punto de giro hay que reajustarlo (`TURN_FRONT`, `LOOKAHEAD`) |
+| Servo más lento o más rápido | El modelo del simulador (`steer_delay`, `steer_rate`, `steer_tau`) | No: reajustar `TURN_FRONT`; si hace falta, `KP` y `DAMPING` |
 | Otra palanca, mismo giro de rueda | Solo la tabla servo → rueda de `robot.yaml` | Sí |
-| Otra distancia entre ejes | `WHEELBASE` en `vehicle.py` (y el URDF) | El arco sí; el punto de giro hay que reajustarlo |
+| Otra distancia entre ejes | `WHEELBASE` en `minisim.py`, `vehicle.py` y `robot.yaml` (y el URDF) | El arco sí; el punto de giro hay que reajustarlo |
 
 **El orden:**
 
-1. Mide el coche: el ángulo de cada rueda (esta sección) y el retardo del servo.
-2. Pon las medidas en el repositorio: `vehicle.py`, `robot.yaml` y `real_car_v1.yaml`.
-3. Corre el set estándar del laboratorio y de Gazebo **con el v5 sin cambios**, para ver qué cambia solo por el coche.
-4. Reajusta `turn_front_distance` y `corner_lookahead` en el laboratorio, un parámetro cada vez. Por ejemplo, `--param turn_front_distance=1.25`.
-5. Confirma con el set estándar de Gazebo, y solo después prueba en el coche.
+1. Mide el coche: el ángulo de cada rueda (esta sección) y, si cambió el servo, su retardo.
+2. Pon las medidas en robotek-learn: `robot.yaml`, `minisim.py`, `vehicle.py` y `real_car_v1.yaml`.
+3. Corre el laboratorio **con la estrategia sin cambios**, para ver qué cambia solo por el coche:
 
-Medir el coche es lo que da más trabajo. Con las medidas, reajustar el v5 son unos minutos en el laboratorio.
+   ```bash
+   python -m robotek_evaluation.open_lab --strategy my_open.strategy:Strategy --jobs 8 --seeds 0,1,2
+   ```
+
+4. Reajusta un valor cada vez, por ejemplo `--set my_open.turn_gate.TURN_FRONT=1.25`. Para un servo más lento, añade el modelo nuevo: `--act steer_delay=0.16 --act steer_tau=0.06` (el laboratorio suma 0,04 s como Gazebo; ver el capítulo 12).
+5. Confirma en Gazebo (`round.launch.py` con `set:=` y `actuator_params:=`), y solo después prueba en el coche.
+
+Medir el coche es lo que da más trabajo. Con las medidas, reajustar la estrategia son unos minutos en el laboratorio.
 
 ## 4. El motor
 
@@ -435,62 +455,72 @@ Medir el coche es lo que da más trabajo. Con las medidas, reajustar el v5 son u
 
 ```bash
 ~/scripts/stop_ros.sh
-cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
-ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[m]y_open"   # no debe salir nada
 ```
 
-La tabla de velocidad se midió con la batería casi vacía (7,0 a 7,4 V). Con la batería cargada el coche va más rápido que en la simulación, y los giros se disparan tarde. Mídela otra vez con la batería **cargada**:
+La tabla de velocidad se midió con la batería casi vacía (7,0 a 7,4 V). Con la batería cargada el coche va más rápido que en la simulación, y los giros se disparan tarde. Mídela otra vez con la batería **cargada**.
+
+Solo el nodo del motor, sin la estrategia (terminal 1):
 
 ```bash
-ros2 topic echo /rrc/battery --once        # en mV: 8000 o más es una 2S cargada
-ros2 launch robotek_bringup actuator_test.launch.py test:=motor motor:=robotek
+ros2 topic echo /rrc/battery --once          # en mV: 8000 o más es una 2S cargada (con la placa en marcha)
+ros2 run robotek_hardware motor_driver       # debe decir: TB6612FNG ready
 ```
 
-Con el coche en el suelo y espacio por delante: pulsa el botón de la placa y la prueba da pulsos cortos (0,25 s) al 15, 20 y 30 %, y termina sola. Los resultados quedan en `~/robotek-runs/<fecha>-actuator-motor/summary.json`.
+1. **Con las ruedas en el aire**, el sentido. En la terminal 2, un 15 % durante 1 s (`timeout` corta solo; el motor se para 0,3 s después de la última orden):
 
-Reglas del equipo para el motor: pulsos de **0,25 s** como máximo (hasta 1 s solo con el 30 % o menos), empezar bajo y subir poco a poco, **nunca al 100 %** desde parado (el coche se encabrita y pierde la dirección).
+   ```bash
+   timeout 1 ros2 topic pub -r 20 /motor_vel std_msgs/msg/Float32 "{data: 15.0}"
+   ```
+
+   Las ruedas traseras deben girar **hacia delante**. Si giran hacia atrás, intercambia los cables del motor.
+
+2. **En el suelo**, la velocidad. Coche en una recta larga, con una cinta métrica al lado. Para el 15, 20, 25 y 30 %, lanza el mismo comando de 1 s y mide cuánto avanzó. La velocidad real es esa distancia en un segundo (un poco menos que la de crucero, porque tarda 0,15 s en arrancar). Repite cada punto tres veces y vuelve el coche a mano a la salida.
+
+Reglas del equipo para el motor: pulsos de **1 s como máximo y solo hasta el 30 %**; por encima, pulsos de **0,25 s**. Empieza bajo, sube poco a poco y **nunca al 100 %** desde parado (el coche se encabrita y pierde la dirección). Medir por encima del 30 % pide pulsos más largos: acuérdalo antes con el coach.
 
 ### Guardar
 
 | Archivo | Qué |
 |---|---|
-| `robot.yaml` (`base_adapter`) | `motor_pct_per_mps`, `motor_min_pct` y, cuando lo decidas, `motor_max_pct` |
+| `robot.yaml` (`base_adapter`) | `motor_pct_per_mps` y `motor_min_pct` (la regla `% = motor_min_pct + motor_pct_per_mps × v`) y, cuando lo decidas, `motor_max_pct` |
 | `real_car_v1.yaml` | `speed_table_cmd` y `speed_table_real` (velocidad pedida → velocidad real) |
-| `src/robotek_open/robotek_open/v5/mission.py` | `REAL_SPEED`, una copia de la misma tabla que el v5 usa en las esquinas. Tiene que coincidir con la de `real_car_v1.yaml` |
+| `src/robotek_course/robotek_course/minisim.py` | `SPEED_TABLE`, la misma tabla: la estrategia la usa (con `real_speed()`) para saber lo rápido que va de verdad en las esquinas |
 
-`motor_max_pct` está en **50** desde un choque al 90 %. Con la calibración actual equivale a unos 0,6 m/s pedidos, aunque el v5 pida 1,28.
+`motor_max_pct` está en **50** desde un choque al 90 %. Con la calibración actual equivale a unos 0,6 m/s pedidos, aunque la estrategia pida 1,28 (`CRUISE_SPEED`). Para una prueba no hace falta tocar el archivo: el launch acepta `motor_max_pct:=30`.
 
 ### Si quieres pasar del 50 %
 
 Subir `motor_max_pct` es cambiar un número, pero el coche no se comporta como el simulador si solo cambias eso. Esto es lo que hay que tener en cuenta.
 
-**Qué se sabe del motor.** `base_adapter` convierte la velocidad pedida en porcentaje con `% = 6,5 + 73 × v`. Con esa regla, el 50 % son unos 0,6 m/s pedidos, el 70 % unos 0,87 y el 100 % 1,28, que es lo que pide el v5 en las rectas. Pero la regla y la tabla de velocidad real se midieron **solo hasta el 30 %** y **con la batería baja**. Por encima de eso no hay medidas: el punto del 100 % (0,60 m/s reales) se **dedujo**, no se midió. Con la batería cargada el coche puede ir bastante más rápido.
+**Qué se sabe del motor.** `base_adapter` convierte la velocidad pedida en porcentaje con `% = 6,5 + 73 × v`. Con esa regla, el 50 % son unos 0,6 m/s pedidos, el 70 % unos 0,87 y el 100 % 1,28, lo que pide la estrategia en las rectas (`CRUISE_SPEED`). Pero la regla y la tabla de velocidad real se midieron **solo hasta el 30 %** y **con la batería baja**. Por encima de eso no hay medidas: el punto del 100 % (0,60 m/s reales) se **dedujo**, no se midió. Con la batería cargada el coche puede ir bastante más rápido.
 
-**El simulador ya supone el 100 %.** El modelo del coche y el v5 (`REAL_SPEED`) dan por hecho que pedir 1,28 da 0,60 m/s reales. En el coche, con el tope del 50 %, va más lento que eso. Si subes el tope sin medir, el coche puede ir más lento **o más rápido** que la simulación, y no lo sabrás hasta que choque.
+**El simulador ya supone el 100 %.** El modelo del coche y la estrategia (`SPEED_TABLE` de `minisim.py`) dan por hecho que pedir 1,28 da 0,60 m/s reales. En el coche, con el tope del 50 %, va más lento que eso. Si subes el tope sin medir, el coche puede ir más lento **o más rápido** que la simulación, y no lo sabrás hasta que choque.
 
 **Qué cambia en la estrategia al ir más rápido.**
 
-- **Las esquinas empiezan tarde.** Entre que el v5 decide girar y que las ruedas llegan al tope pasan unos 0,3 s (retardo del servo más el recorrido hasta 17,6 grados). A 0,6 m/s son 18 cm; a 1 m/s, 30 cm. Hay que empezar antes: subir `turn_front_distance`.
-- **Se ve menos antes de girar.** El LiDAR da 10 escaneos por segundo y el v5 pide ver el final de la isla en 2 seguidos. A 0,6 m/s el coche avanza 12 cm entre esos dos escaneos; a 1 m/s, 20 cm. Puede hacer falta subir `corner_lookahead`.
-- **La frenada es lenta.** `base_adapter` limita la deceleración a 0,6 m/s² para que las ruedas no patinen. Pasar de 1 m/s a 0,6 m/s cuesta unos 0,5 m. Afecta a la última esquina, la única antes de la cual frena el v5 (`last_corner_speed`, y `BRAKE_GAIN` y `BRAKE_MARGIN` en `mission.py`).
-- **El arco se abre.** La velocidad de giro del arco sale de la velocidad real (`REAL_SPEED`). Si la tabla no coincide con el coche, el v5 calcula mal la rampa y el coche se sale de la línea o se mete hacia la isla.
+- **Las esquinas empiezan tarde.** Entre que la estrategia decide girar y que las ruedas llegan al tope pasan unos 0,3 s (retardo del servo más el recorrido hasta 17,6 grados). A 0,6 m/s son 18 cm; a 1 m/s, 30 cm. Hay que empezar antes: subir `TURN_FRONT` (`turn_gate.py`).
+- **Se ve menos antes de girar.** El LiDAR da 10 escaneos por segundo y la estrategia pide ver el final de la isla en 2 seguidos (`CONFIRMATIONS`). A 0,6 m/s el coche avanza 12 cm entre esos dos escaneos; a 1 m/s, 20 cm. Puede hacer falta subir `LOOKAHEAD`.
+- **La frenada es lenta.** `base_adapter` limita la deceleración a 0,6 m/s² para que las ruedas no patinen. Pasar de 1 m/s a 0,6 m/s cuesta unos 0,5 m. Afecta a la última esquina, la única antes de la cual frena la estrategia (`LAST_CORNER_SPEED`, `BRAKE_GAIN` y `BRAKE_MARGIN` en `my_open/mission.py`).
+- **El arco se abre.** La velocidad de giro del arco sale de la velocidad real (`real_speed()` con `SPEED_TABLE`). Si la tabla no coincide con el coche, la estrategia calcula mal la rampa y el coche se sale de la línea o se mete hacia la isla.
 
 **Qué cambia en el coche.**
 
 - **Se encabrita.** A fondo desde parado, el coche levanta las ruedas delanteras y deja de girar. Por eso `accel_limit` limita la aceleración a 1 m/s²: no lo subas a la vez que el tope.
 - **Patina.** El simulador no modela el patinaje. En las esquinas, a más velocidad, las ruedas resbalan y el radio real es mayor que el calculado.
 - **La batería cae.** El motor tira más corriente y la tensión baja. En una prueba, con 6,5 V y el motor al 80 %, el Pi se reinició a mitad de ronda. Usa batería cargada y, mejor, la batería aparte para el motor.
-- **Los golpes son más fuertes.** El v5 no se recupera de un atasco: si choca a más velocidad, empuja contra el muro hasta que lo pares.
+- **Los golpes son más fuertes.** La estrategia no se recupera de un atasco: si choca a más velocidad, empuja contra el muro hasta que lo pares.
 
-**El `real_speed` del v5 tiene un tope.** La tabla `REAL_SPEED` llega hasta 1,28. Si quieres pedir más (por ejemplo, porque cambias la calibración y 1,28 ya no es el 100 %), **alarga antes la tabla**. Con una velocidad por encima de su último punto, `real_speed()` no encuentra el tramo, lanza una excepción y el nodo se cae en la primera esquina.
+**Por encima de la tabla, la estrategia supone 0,60 m/s.** `SPEED_TABLE` llega hasta 1,28 pedidos. Para cualquier orden mayor, `real_speed()` devuelve su último punto (0,60 m/s): si el coche va más rápido, el arco se calcula como si fuera a 0,60 y se abre. Alarga la tabla con lo que midas.
 
 **El orden para subir.**
 
-1. **Mide la velocidad real con la batería cargada**, del 30 % al 70 %, en pulsos cortos y con espacio (sección anterior). Repite cada punto.
-2. **Pon la tabla nueva en los tres sitios:** `motor_pct_per_mps` y `motor_min_pct` en `robot.yaml`; `speed_table_cmd`, `speed_table_real` y `drive_command_limit` en `real_car_v1.yaml`; `REAL_SPEED` en `v5/mission.py`. Si cambia la aceleración que aguanta el coche, también `accel_max` y `decel_max` del modelo.
-3. **Prueba en simulación con el v5 sin cambios**: el set estándar del laboratorio y de Gazebo. Así ves qué cambia solo por el coche.
-4. **Reajusta en el laboratorio**, un parámetro cada vez: primero `turn_front_distance`, luego `corner_lookahead` y `last_corner_speed`. Confirma con el set estándar de Gazebo.
-5. **Sube el tope de 10 en 10:** 50 → 60 → 70. En cada paso, primero una vuelta y luego la ronda completa. Registra cada intento, también los que fallan, con la batería y el tope que usaste.
+1. **Mide la velocidad real con la batería cargada**, del 30 % al 70 %, en pulsos cortos y con espacio (sección anterior; acuérdalo con el coach). Repite cada punto.
+2. **Pon la tabla nueva en los tres sitios:** `motor_pct_per_mps` y `motor_min_pct` en `robot.yaml`; `speed_table_cmd`, `speed_table_real` y `drive_command_limit` en `real_car_v1.yaml`; `SPEED_TABLE` en `minisim.py`. Si cambia la aceleración que aguanta el coche, también `accel_max` y `decel_max` del modelo.
+3. **Prueba en simulación con la estrategia sin cambios**: el laboratorio (`open_lab`) y Gazebo (`round.launch.py`), como en el [capítulo 12](/learn/open-strategy/paso-12-afinar/). Así ves qué cambia solo por el coche.
+4. **Reajusta en el laboratorio**, un parámetro cada vez: primero `TURN_FRONT`, luego `LOOKAHEAD` y `LAST_CORNER_SPEED` (con `--set`). Confirma en Gazebo.
+5. **Sube el tope de 10 en 10:** 50 → 60 → 70, con `motor_max_pct:=60` al lanzar. En cada paso, primero una vuelta y luego la ronda completa. Registra cada intento, también los que fallan, con la batería y el tope que usaste.
 6. **No pases de lo que mediste.** Si la tabla llega al 70 %, el tope no pasa del 70 %.
 
 En el campo puntúa la ronda completa, no la vuelta más rápida: un coche al 50 % que termina las tres vueltas vale más que uno al 80 % que choca.
@@ -501,28 +531,21 @@ En el campo puntúa la ronda completa, no la vuelta más rápida: un coche al 50
 
 ```bash
 ~/scripts/stop_ros.sh
-cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
-ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[m]y_open"   # no debe salir nada
 ```
 
-Lanza los sensores (terminal 1; incluye el driver de la placa, así que para antes el `controller.launch.py` si sigue corriendo):
+La forma más simple de tener los tres sensores es el launch del coche: arranca la placa, el LiDAR y la cámara, y la estrategia **espera el botón** sin moverse. Con las ruedas en el aire:
 
 ```bash
-ros2 launch peripherals sensors.launch.py detector:=false
+ros2 launch robotek_course car.launch.py
 ```
 
-Arranca la placa, el LiDAR a los 5 s (si arranca junto con la placa da *timeout*) y la cámara a los 7 s. En el **Mac**, RViz:
+Mira lo que ve desde tu ordenador con RViz, con el mismo `ROS_DOMAIN_ID`, como en el [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) (secciones 3.2 y 3.3). **Relanza RViz cada vez que relances el coche**: pierde la imagen de la cámara cuando su nodo se reinicia.
 
-```bash
-bash tools/macos_rviz_real.sh
-```
-
-El script pone el dominio 1 y la red del coche. **Relánzalo cada vez que lances algo en el coche**: RViz pierde la imagen de la cámara cuando su nodo se reinicia.
-
-- **LiDAR.** Con el coche a 0,5 m de una pared plana, el rango de frente y a ±90 grados debe coincidir con la regla (±1 cm). El LiDAR mira 110 grados a cada lado; más allá los rayos dan en el propio coche.
-- **Cámara.** El v5 decide el sentido de la vuelta comparando la línea **azul** y la **naranja** del suelo. Los colores se midieron el 8 de octubre con la luz de la sala del equipo (la naranja se ve casi roja) y con la cámara a otra altura. En la ronda, la imagen de depuración `/camera/direction_debug` muestra el largo de cada línea (`B=`, `O=`) y el sentido elegido (`dir=+1` antihorario, `-1` horario). Comprueba con el coche en la sección de salida, en los dos sentidos, que elige bien. Si no, hay que ajustar los colores en `REAL_OPEN_CAMERA` de `robot.launch.py`.
-
-Ojo con la pared de la sala: el 8 de octubre su color beige entró en el rango naranja y el coche eligió el sentido equivocado. Por eso la cámara solo mira el suelo por debajo del muro negro.
+- **LiDAR.** Con el coche a 0,5 m de una pared plana, el rango de frente y a ±90 grados debe coincidir con la regla (±1 cm). La pared delante tiene que verse **delante**, y tu mano a la izquierda, a la izquierda. El LiDAR mira 110 grados a cada lado; más allá los rayos dan en el propio coche.
+- **LiDAR que da *timeout* al arrancar.** En el coche del equipo, el LiDAR arrancado a la vez que la placa a veces da *timeout*. Si pasa, para todo (`Ctrl+C` y la búsqueda de nodos de la sección 1) y vuelve a lanzar.
+- **Cámara.** La estrategia decide el sentido de la vuelta comparando la línea **azul** y la **naranja** del suelo, con los colores de `BLUE_HSV` y `ORANGE_HSV` en `src/robotek_course/robotek_course/vision.py`. **Esos colores son los del simulador.** En la sala del equipo, el 8 de octubre, la línea naranja se veía **casi roja** (tono H de 163 a 178, fuera del rango naranja del simulador, de 5 a 28) y la pared beige de la sala caía dentro del naranja. Comprueba con el coche en la sección de salida, en los dos sentidos, que la estrategia elige bien, y mide los colores con la luz de la sala como en el capítulo 10 (sección 3.2) si no lo hace.
 
 ## 6. La primera ronda
 
@@ -530,34 +553,27 @@ Ojo con la pared de la sala: el 8 de octubre su color beige entró en el rango n
 
 ```bash
 ~/scripts/stop_ros.sh
-cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
-ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[m]y_open"   # no debe salir nada
 ```
 
 ### Antes
 
 1. `robot.yaml` tiene `imu_adapter.measured: true` y `servo_measured: true`, y la prueba del giro a la izquierda dio positivo.
-2. **Baja el tope del motor** para empezar: `motor_max_pct: 30` en `robot.yaml` (en el Mac, push, pull y build). Con 30 el coche va despacio, que es lo que quieres la primera vez.
+2. La estrategia está en `src/my_open` (la de referencia: `bash tools/get-reference.sh`, o la tuya copiada) y compilada.
 3. Batería cargada (`ros2 topic echo /rrc/battery --once`).
 4. Campo Open montado y el coche en la sección de salida.
 
 ### Lanzar
 
-Para antes `sensors.launch.py` y cualquier otro nodo de las pruebas: este launch abre la placa, el LiDAR y la cámara, y dos lectores en el mismo puerto dan *timeout*. Después, un solo comando:
+Para antes cualquier otro nodo de las pruebas: el launch abre la placa, el LiDAR y la cámara, y dos lectores en el mismo puerto dan *timeout*. Con el **tope del motor bajo** para empezar, y guardando la consola, que es tu registro:
 
 ```bash
-ros2 launch robotek_bringup robot.launch.py challenge:=open
+mkdir -p ~/rondas-coche
+ros2 launch robotek_course open_challenge.launch.py motor_max_pct:=30 2>&1 | tee ~/rondas-coche/ronda-01.log
 ```
 
-Arranca todo, con los mismos tiempos que `sensors.launch.py`: la placa al momento, el LiDAR a los 5 s (si arranca junto con la placa da *timeout*) y la cámara a los 7 s; además los adaptadores, el motor, el botón, las luces y el v5. Las luces se ponen verdes cuando llegan los tres sensores. Relanza RViz en el Mac.
-
-Si los sensores ya corren aparte (por ejemplo, con `sensors.launch.py` abierto desde la sección 5), di que no los abra otra vez:
-
-```bash
-ros2 launch robotek_bringup robot.launch.py challenge:=open controller:=false lidar_package:= camera:=false
-```
-
-Hasta el 1 de noviembre de 2026 `robot.launch.py` buscaba un launch de la placa que no existe y no arrancaba el LiDAR, y había que usar siempre esta segunda forma. La primera todavía no se ha probado en el coche.
+`open_challenge.launch.py` es `car.launch.py` con la estrategia `my_open`. Arranca la placa, el LiDAR, la cámara, los adaptadores, el motor, el botón, las luces y la estrategia. Con 30 el coche va despacio, que es lo que quieres la primera vez. Las luces se ponen verdes cuando llegan los tres sensores. Relanza RViz en tu ordenador.
 
 ### Primero en el aire
 
@@ -584,7 +600,7 @@ Son muy tenues a propósito (2 de 255, para no reflejarse en la cámara). Míral
 - **Segunda:** para el coche y lo mantiene parado hasta relanzar. Las pulsaciones a menos de 1,5 s de la anterior se ignoran: ten la mano cerca.
 - **No uses K2** ni ningún otro interruptor para elegir el sentido: las reglas solo permiten esperar el Start, y el sentido lo decide la estrategia.
 
-### Lo que el v5 no hace en el coche
+### Lo que la estrategia de referencia no hace en el coche
 
 - **No se recupera de un atasco.** Si choca, se queda empujando: páralo con el botón.
 - **No avanza mientras mira la cámara.** Si en 15 s no decide el sentido, se para con `DIRECTION_FAULT`.
@@ -592,29 +608,23 @@ Son muy tenues a propósito (2 de 255, para no reflejarse en la cámara). Míral
 
 ## 7. Después de la ronda
 
-Cada intento, también los fallidos, deja su carpeta en el Pi: `~/robotek-runs/<fecha UTC>-open/`, con `telemetry.csv`. Tráela al Mac:
+En el coche no hay juez ni posición real: el juez eres tú. Para cada intento, **también los fallidos**, guarda el archivo de la consola (`~/rondas-coche/ronda-NN.log`) y anota:
 
-```bash
-rsync -a <usuario>@<ip-del-pi>:robotek-runs/<fecha>-open/ docs/open-challenge-runs/<fecha>-realcar-v5-r1/
-```
-
-En el coche no hay juez ni posición real: el juez eres tú. Escribe su `round.json` y añade la línea a `docs/open-challenge-runs/rounds.jsonl`, como la ronda del 8 de octubre (`20261008T172740Z-realcar-hw-v4-r1`), y anota también lo que no se pudo medir:
-
-- la batería antes de la ronda, `motor_max_pct` y qué cambiaste desde el intento anterior;
+- la batería antes de la ronda, `motor_max_pct` y qué cambiaste desde el intento anterior (con el commit de robotek-learn: `git log -1 --oneline`);
 - desde dónde salió (x, y y orientación) y en qué sentido;
-- el tiempo desde el botón hasta `DONE`, con cronómetro;
+- el tiempo desde el botón hasta `DONE`, con cronómetro (el estado se ve con `ros2 topic echo /robotek/state`);
 - si tocó un muro o la isla, dónde se paró y qué viste.
 
-La telemetría cruda no va a git (está en `.gitignore`); los resúmenes sí.
+Pasa los registros a tu ordenador (`scp <usuario>@<ip-del-pi>:rondas-coche/*.log .`) antes de apagar el coche.
 
 ## Resumen
 
-1. **Siempre, antes de cada prueba:** en el Mac `git push`; en el Pi `~/scripts/stop_ros.sh`, `git pull`, `colcon build`, `source install/setup.bash`, y comprobar que no queda ningún nodo de la prueba anterior.
+1. **Siempre, antes de cada prueba,** en el Pi: `~/scripts/stop_ros.sh`; `cd ~/robotek-learn`; `git pull`; `colcon build --symlink-install`; `source install/setup.bash`; y comprobar que no queda ningún nodo de la prueba anterior.
 2. **IMU:** `imu_axes` (quieto 3 s, un empujón) o a mano, eje por eje; copiar los ejes a `robot.yaml`, `measured: true`, y comprobar que girar a la izquierda da `z` positivo.
-3. **Servo:** centro, signo y tabla de ángulos; `robot.yaml`, `REAL_STEER_LIMIT` y `real_car_v1.yaml`.
-4. **Motor:** tabla con la batería cargada en `robot.yaml`, `real_car_v1.yaml` y `REAL_SPEED`.
-5. **Sensores:** LiDAR contra una regla y la cámara eligiendo bien el sentido.
-6. **Ronda:** `motor_max_pct` bajo, `ros2 launch robotek_bringup robot.launch.py challenge:=open`, luces verdes, K1.
-7. **Registro:** traer la carpeta, `round.json` y `rounds.jsonl`.
+3. **Servo:** centro, signo y tabla de ángulos; `robot.yaml`, `STEER_LIMIT` (`minisim.py`) y `real_car_v1.yaml`.
+4. **Motor:** tabla con la batería cargada en `robot.yaml`, `real_car_v1.yaml` y `SPEED_TABLE` (`minisim.py`).
+5. **Sensores:** `car.launch.py`, el LiDAR contra una regla y la cámara eligiendo bien el sentido con la luz de la sala.
+6. **Ronda:** `ros2 launch robotek_course open_challenge.launch.py motor_max_pct:=30`, luces verdes, K1.
+7. **Registro:** el log de la consola y tus notas de cada intento.
 
 Si algo falla, busca el síntoma en [Solución de problemas](/learn/open-strategy/paso-11-solucion-de-problemas/).
