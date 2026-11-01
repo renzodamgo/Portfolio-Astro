@@ -15,7 +15,7 @@ El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) lleva **tu** nodo
 > - **Probado en simulación:** el v5 completa el set estándar de 12 rondas en Gazebo y en el laboratorio, con el modelo del coche real.
 > - **Medido en el coche, pero con el montaje anterior** (7 a 9 de octubre): el servo, la tabla de velocidad del motor, el LiDAR, la IMU y los colores de las líneas.
 > - **Sin medir en el coche reconstruido:** los ejes de la IMU (la placa va de canto) y el servo (cambió de sitio y giró 90 grados). En `robot.yaml` los dos siguen marcados `measured: false`. **No conduzcas el coche hasta medirlos.**
-> - **Sin probar en el coche:** el v5, y la forma de lanzar de la sección 5 tal como está escrita. Los comandos salen del código y de las notas del equipo, no de una ronda real con este montaje.
+> - **Sin probar en el coche:** el v5, y la forma de lanzar de la sección 6 (`robot.launch.py` arranca la placa, el LiDAR y la cámara solo desde el 1 de noviembre). Los comandos salen del código y de las notas del equipo, no de una ronda real con este montaje.
 
 ## 0. El orden
 
@@ -284,17 +284,21 @@ Ojo con la pared de la sala: el 8 de octubre su color beige entró en el rango n
 
 ### Lanzar
 
-Hacen falta **dos terminales**. `robot.launch.py` sabe arrancar la placa y el LiDAR, pero el nombre del launch de la placa que trae por defecto no existe, así que los sensores se lanzan aparte, como en las rondas del 8 de octubre:
+Para antes `sensors.launch.py` y cualquier otro nodo de las pruebas: este launch abre la placa, el LiDAR y la cámara, y dos lectores en el mismo puerto dan *timeout*. Después, un solo comando:
 
 ```bash
-# terminal 1: placa, LiDAR y cámara
-ros2 launch peripherals sensors.launch.py detector:=false
-
-# terminal 2, cuando el LiDAR ya publica (unos 10 s): adaptadores, motor, botón, luces y el v5
-ros2 launch robotek_bringup robot.launch.py challenge:=open controller:=false camera:=false
+ros2 launch robotek_bringup robot.launch.py challenge:=open
 ```
 
-`controller:=false` y `camera:=false` evitan abrir otra vez la placa y la cámara, que ya están abiertas en la terminal 1. Relanza RViz en el Mac.
+Arranca todo, con los mismos tiempos que `sensors.launch.py`: la placa al momento, el LiDAR a los 5 s (si arranca junto con la placa da *timeout*) y la cámara a los 7 s; además los adaptadores, el motor, el botón, las luces y el v5. Las luces se ponen verdes cuando llegan los tres sensores. Relanza RViz en el Mac.
+
+Si los sensores ya corren aparte (por ejemplo, con `sensors.launch.py` abierto desde la sección 5), di que no los abra otra vez:
+
+```bash
+ros2 launch robotek_bringup robot.launch.py challenge:=open controller:=false lidar_package:= camera:=false
+```
+
+Hasta el 1 de noviembre de 2026 `robot.launch.py` buscaba un launch de la placa que no existe y no arrancaba el LiDAR, y había que usar siempre esta segunda forma. La primera todavía no se ha probado en el coche.
 
 ### Primero en el aire
 
@@ -351,7 +355,7 @@ La telemetría cruda no va a git (está en `.gitignore`); los resúmenes sí.
 3. **Servo:** centro, signo y tabla de ángulos; `robot.yaml`, `REAL_STEER_LIMIT` y `real_car_v1.yaml`.
 4. **Motor:** tabla con la batería cargada en `robot.yaml`, `real_car_v1.yaml` y `REAL_SPEED`.
 5. **Sensores:** LiDAR contra una regla y la cámara eligiendo bien el sentido.
-6. **Ronda:** `motor_max_pct` bajo, `sensors.launch.py` y luego `robot.launch.py challenge:=open controller:=false camera:=false`, luces verdes, K1.
+6. **Ronda:** `motor_max_pct` bajo, `ros2 launch robotek_bringup robot.launch.py challenge:=open`, luces verdes, K1.
 7. **Registro:** traer la carpeta, `round.json` y `rounds.jsonl`.
 
 Si algo falla, busca el síntoma en [Solución de problemas](/learn/open-strategy/paso-11-solucion-de-problemas/).
