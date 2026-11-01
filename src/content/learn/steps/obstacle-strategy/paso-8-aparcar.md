@@ -60,6 +60,8 @@ Ninguna regla obliga a moverse todo el tiempo: solo cuentan los 3 minutos. Así 
 | Parar 1,2 cm antes (el motor sigue rodando unos 150 ms tras la orden) | se pasaba en cada maniobra de 3 cm | de 7 a 9 de 10 |
 | Guardia: el contorno 2 cm más adelante a menos de 8 mm de un tope termina la maniobra | tocar un tope anula el aparcamiento y para la ronda | — |
 
+> **Después del curso.** La referencia del equipo ya no busca durante la ronda: mantiene el plan calculado antes y termina cada maniobra en su rumbo, su profundidad o su punto planificados, mide la inercia, gira el servo antes de moverse y mide los arcos con el giroscopio. Pasó de 29 a 70 rondas aparcadas de 100 en el laboratorio. Está en el [paso 10](/learn/obstacle-strategy/paso-10-el-v3).
+
 ### Durante las vueltas
 
 El aparcamiento está en la recta de salida y los topes sobresalen 20 cm del muro exterior. Durante las vueltas, junto a ellos el plan no deja ir más allá de **−0,19 m** del carril, y las líneas de las esquinas de al lado respetan ese límite. Por reglamento, las señales de esa sección pasan a la fila interior. Y después de las tres vueltas las señales se pueden pasar por cualquier lado: el juez del curso ya no cuenta el lado mientras aparcas.

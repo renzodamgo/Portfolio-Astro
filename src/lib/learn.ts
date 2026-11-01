@@ -10,8 +10,10 @@ export interface GuideConfig {
     short: string;
     /** Course name for the structured data, e.g. "Construye la estrategia del Open". */
     course: string;
-    /** Last numbered step; later chapters are labelled as real-car chapters. */
+    /** Last numbered step; later chapters get `afterLabel`. */
     lastStep: number;
+    /** Label of the chapters after the last numbered step (default "Coche real"). */
+    afterLabel?: string;
     /** Terminal command that shows what the reference changes between two tags. */
     diffCommand: (from: string, to: string) => string;
     /** Terminal command that compares the reader's tree with the reference of a tag. */
@@ -35,6 +37,7 @@ export const GUIDES: Record<string, GuideConfig> = {
         short: "Estrategia del Obstacle",
         course: "Construye la estrategia del Obstacle",
         lastStep: 9,
+        afterLabel: "Después del curso",
         diffCommand: (from, to) =>
             `git fetch origin --tags && git diff ${from} ${to} -- src/my_obstacle`,
         mineCommand: (tag) => `git diff ${tag} -- src/my_obstacle`,
@@ -72,8 +75,8 @@ export function stepUrl(step: StepEntry): string {
 export const LAST_STEP = GUIDES[GUIDE_ID].lastStep;
 
 export function stepLabel(step: StepEntry): string {
-    const last = guideConfig(step.data.guide).lastStep;
+    const { lastStep: last, afterLabel = "Coche real" } = guideConfig(step.data.guide);
     if (step.data.order === 0) return "Preparación";
-    if (step.data.order > last) return "Coche real";
+    if (step.data.order > last) return afterLabel;
     return `Paso ${step.data.order}`;
 }

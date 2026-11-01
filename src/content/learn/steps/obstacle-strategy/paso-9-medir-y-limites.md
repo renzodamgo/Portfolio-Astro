@@ -90,6 +90,8 @@ Esto es lo que mejorará la referencia en las próximas semanas, y un buen sitio
 4. **La salida con la primera señal al final de la recta**, a 0,6 m: el coche no puede retroceder (el asiento de detrás puede estar ocupado) y no siempre llega al lado correcto.
 5. **Las vueltas con aparcamiento en CW.** Con las señales de la salida movidas a la fila interior y los topes junto a la recta, varios campos CW fallan por contacto en la vuelta 2 o 3. Hay que medirlo campo a campo.
 
+> **Lo que vino después.** El aparcamiento en Gazebo (punto 1) y parte de las vueltas con aparcamiento en CW (punto 5) mejoraron en la referencia del equipo: en Gazebo, con aparcamiento, de 5 a 8 rondas válidas de 10. Cómo se decidió cada cambio, en el [paso 10](/learn/obstacle-strategy/paso-10-el-v3).
+
 ## Hazlo
 
 ```bash
