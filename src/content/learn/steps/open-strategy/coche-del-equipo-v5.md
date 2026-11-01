@@ -148,9 +148,122 @@ ros2 run robotek_hardware imu_axes
 - **`no push seen`:** empuja un poco más fuerte.
 - **`no IMU data`:** el driver de la placa no está corriendo o el cable USB está suelto.
 
+### Medir a mano, eje por eje
+
+`imu_axes` lo hace todo en 10 s, pero conviene saber hacerlo a mano: para entender qué mide la IMU, para comprobar lo que dio la herramienta, o si la herramienta falla. Solo hace falta mirar los números de la placa mientras inclinas y giras el coche.
+
+**Qué mide cada cosa.** La placa publica en `/rrc/imu_raw`, con **sus** ejes x, y, z (no los del coche):
+
+- `linear_acceleration` en m/s². **Con el coche quieto, mide la gravedad apuntando hacia arriba:** el eje de la placa que mira al techo marca unos **+9,8**, el que mira al suelo unos **−9,8**, y los que quedan horizontales, cerca de **0**.
+- `angular_velocity` en rad/s: lo rápido que gira el coche alrededor de cada eje. Quieto, todo cerca de 0. Visto desde la punta del eje, el giro antihorario da positivo.
+
+Lo que buscamos son tres nombres: qué eje de la placa (con su signo) apunta **hacia arriba** (`up_axis`), **hacia delante** (`forward_axis`) y **hacia la izquierda** (`left_axis`). Se escriben como `'+x'`, `'-y'`, `'+z'`, etc.
+
+Terminal 1, el driver de la placa (si no sigue corriendo):
+
+```bash
+ros2 launch rrc_lite_driver controller.launch.py
+```
+
+Terminal 2, los números del acelerómetro (se actualizan solos; `Ctrl+C` para salir):
+
+```bash
+ros2 topic echo /rrc/imu_raw --field linear_acceleration
+```
+
+Ve anotando cada resultado en una tabla como la del ejemplo de abajo.
+
+**Paso 1. Arriba: coche quieto y plano.** Pon el coche en una mesa plana y no lo toques. Busca el eje que marca unos ±9,8:
+
+| Lo que ves | `up_axis` |
+|---|---|
+| `x` ≈ +9,8 | `'+x'` |
+| `x` ≈ −9,8 | `'-x'` |
+| `y` ≈ +9,8 | `'+y'` |
+| `y` ≈ −9,8 | `'-y'` |
+| `z` ≈ +9,8 | `'+z'` |
+| `z` ≈ −9,8 | `'-z'` |
+
+Los otros dos deben quedar cerca de 0 (menos de ±1,5). Si ninguno pasa de 8,5 y dos marcan valores medianos (por ejemplo 7 y 6), la placa está **inclinada** en el montaje: enderézala antes de seguir.
+
+**Paso 2. Adelante: levanta el morro.** Levanta la parte delantera del coche unos 30 grados (un libro bajo las ruedas delanteras) y quédate quieto. El eje de "arriba" baja un poco (de 9,8 a unos 8,5) y **uno de los otros dos cambia de 0 a unos ±4,9** (9,8 × sen 30°):
+
+- Si ese eje sube a **+4,9**, apunta hacia delante: `forward_axis` = `'+'` y ese eje.
+- Si baja a **−4,9**, apunta hacia atrás: `forward_axis` = `'-'` y ese eje.
+
+¿Por qué? Al levantar el morro, el eje que mira hacia delante empieza a mirar un poco hacia arriba, y la gravedad (que se mide hacia arriba) le da un valor positivo.
+
+**Paso 3. Izquierda: levanta el lado izquierdo.** Vuelve a dejar el coche plano. Ahora levanta el **lado izquierdo** del coche unos 30 grados (mirando el coche desde atrás, el lado de tu mano izquierda). El eje que queda cambia a unos ±4,9:
+
+- **+4,9** → `left_axis` = `'+'` y ese eje.
+- **−4,9** → `left_axis` = `'-'` y ese eje.
+
+**Paso 4. Comprueba que los tres encajan.** Tienen que ser tres ejes distintos (un x, un y y un z) y formar un sistema "de mano derecha": `izquierda = arriba × adelante`. Con esta tabla de productos:
+
+| | × x | × y | × z |
+|---|---|---|---|
+| **x** | — | z | −y |
+| **y** | −z | — | x |
+| **z** | y | −x | — |
+
+Fila = arriba, columna = adelante, y los signos se multiplican (− × − = +). El resultado tiene que ser tu `left_axis`. Si sale con el signo contrario, uno de los tres pasos está mal: repite el que tengas menos claro. No hace falta hacerlo de memoria: si no encajan, `imu_adapter` no arranca y dice `is not a right-handed frame`.
+
+**Paso 5. El giroscopio: gira a la izquierda.** Cambia la terminal 2 al giroscopio:
+
+```bash
+ros2 topic echo /rrc/imu_raw --field angular_velocity
+```
+
+Con el coche plano en la mesa, gíralo con la mano **hacia la izquierda** (antihorario visto desde arriba), un cuarto de vuelta en un segundo. El eje que es tu `up_axis` debe marcar unos **±1,5** mientras giras, y los otros dos quedarse cerca de 0:
+
+- Si `up_axis` tiene **+** (por ejemplo `'+x'`), ese eje marca **positivo** al girar a la izquierda.
+- Si tiene **−** (por ejemplo `'-x'`), marca **negativo**.
+
+Si sale al revés, el eje de arriba está mal: repite el paso 1. Este signo es el que usa el v5 para saber hacia dónde gira.
+
+**Un ejemplo.** Son números inventados, **no** los del coche: tu placa puede dar otros.
+
+| Prueba | x | y | z | Conclusión |
+|---|---|---|---|---|
+| 1. Quieto y plano | **−9,79** | 0,12 | 0,21 | arriba = `'-x'` |
+| 2. Morro levantado | −8,51 | 0,15 | **+4,86** | adelante = `'+z'` |
+| 3. Lado izquierdo levantado | −8,47 | **+4,93** | 0,18 | izquierda = `'+y'` |
+| 4. Comprobación | | | | arriba × adelante = (−x) × (z) = −(−y) = **+y** ✓ |
+| 5. Giro a la izquierda (giroscopio) | **−1,52** | 0,03 | −0,04 | arriba es `'-x'`, así que negativo ✓ |
+
 ### Guardar
 
-En el **Mac**, copia los tres ejes en la sección `imu_adapter` de `src/robotek_hardware/config/robot.yaml` y pon `measured: true`. Haz commit y push, y en el Pi `git pull && colcon build`.
+En el **Mac**, abre `src/robotek_hardware/config/robot.yaml` y busca la sección `imu_adapter`. Hoy tiene los ejes del montaje anterior, con la placa plana:
+
+```yaml
+imu_adapter:
+  ros__parameters:
+    forward_axis: '+y'   # old flat build (8 oct 2026): board +y forward, z up, x to the right
+    left_axis: '-x'
+    up_axis: '+z'
+    frame_id: imu_link
+    measured: false
+```
+
+Cambia los tres ejes por los tuyos, con comillas, y pon `measured: true`. Con el ejemplo de arriba quedaría:
+
+```yaml
+imu_adapter:
+  ros__parameters:
+    forward_axis: '+z'   # measured <fecha>: board on its edge
+    left_axis: '+y'
+    up_axis: '-x'
+    frame_id: imu_link
+    measured: true
+```
+
+No toques `frame_id`. Haz commit y push, y en el Pi:
+
+```bash
+cd ~/Projects/WRO-Strategies && git pull && colcon build
+```
+
+Si `imu_adapter` arranca con `is not a right-handed frame`, los tres ejes no encajan (paso 4). Si arranca avisando de que los ejes no están medidos, no recompilaste después del `git pull`.
 
 ### Comprobar
 
@@ -176,7 +289,16 @@ ros2 topic echo /robotek/imu --field angular_velocity.z
 | Girarlo a la derecha | negativo |
 | Quieto | cerca de 0 |
 
-Y con `--field linear_acceleration`: quieto, `z` cerca de **+9,8**; con un empujón hacia delante, `x` **positivo**.
+Y con `--field linear_acceleration`. Ahora los ejes ya son **los del coche** (x adelante, y izquierda, z arriba), así que da igual cómo esté montada la placa: tiene que salir siempre esto.
+
+| Prueba | x | y | z |
+|---|---|---|---|
+| Quieto y plano | ≈ 0 | ≈ 0 | ≈ **+9,8** |
+| Morro levantado 30° | ≈ **+4,9** | ≈ 0 | ≈ 8,5 |
+| Lado izquierdo levantado 30° | ≈ 0 | ≈ **+4,9** | ≈ 8,5 |
+| Empujón hacia delante | sube a **positivo** un momento | ≈ 0 | ≈ 9,8 |
+
+Si una casilla en negrita sale con el signo contrario, el eje correspondiente está mal en `robot.yaml`.
 
 **El giro a la izquierda positivo es la prueba que importa.** Si sale negativo, el v5 giraría al revés en cada esquina: no sigas, repite la medición.
 
