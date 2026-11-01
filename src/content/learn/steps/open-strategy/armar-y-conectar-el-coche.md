@@ -125,7 +125,7 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 
 <img class="lego-wiring" src="/learn/assembly/wiring-usb.svg" alt="Paso 11: cámara, LiDAR y placa RRC Lite por USB a la Raspberry Pi 5" loading="lazy">
 
-<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el conector de 40 pines del Pi 5 con los pines 1 (3,3 V), 29 (GPIO5), 30 (GND), 31 (GPIO6) y 32 (GPIO12) cableados al TB6612FNG (VCC, BIN1, GND, BIN2 y PWMB del canal B; STBY puenteado a VCC); el motor a BO1 y BO2; el servo a la RRC Lite" loading="lazy">
+<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el conector de 40 pines del Pi 5 con los pines 1 (3,3 V), 29 (GPIO5), 31 (GPIO6), 32 (GPIO12) y 6 (GND) cableados al TB6612FNG (VCC, BIN1, GND, BIN2 y PWMB del canal B; STBY puenteado a VCC); el motor a BO1 y BO2; el servo a la RRC Lite" loading="lazy">
 
 <img class="lego-wiring" src="/learn/assembly/wiring-power.svg" alt="Paso 13: la batería del motor a la bornera VM del TB6612; la batería del Pi a la RRC Lite, que da 5 V al Pi por USB-C; el anillo de LED al GPIO10" loading="lazy">
 
@@ -140,7 +140,7 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 | dupont | Pi GPIO5 (pin 29) y GPIO6 (pin 31) | TB6612 BIN1 y BIN2 | sentido |
 | puente | TB6612 STBY | TB6612 VCC | en esta placa STBY va puenteado a VCC: el puente está siempre activo y no hace falta cable al GPIO13 |
 | dupont | Pi 3,3 V (pin 1) | TB6612 VCC | VCC es la lógica: 3,3 V, nunca la batería (aguanta 5,5 V como máximo) |
-| dupont | Pi GND (pin 30, junto a los pines 29, 31 y 32) | TB6612 GND, el que está junto a VCC | un cable aparte del de 3,3 V; une las masas de las dos baterías |
+| dupont | Pi GND (pin 6: columna del borde, el tercero desde arriba) | TB6612 GND, el que está junto a VCC | un cable aparte del de 3,3 V; une las masas de las dos baterías |
 | batería | Batería del motor | TB6612, bornera VM–GND | VM es la potencia del motor (2,5 a 13,5 V) |
 | batería | Batería del Pi | RRC Lite, entrada de batería | la placa se apaga bajo 6 V |
 | USB-C | RRC Lite (5 V, 5 A) | Pi, entrada USB-C | es la alimentación del Pi |
