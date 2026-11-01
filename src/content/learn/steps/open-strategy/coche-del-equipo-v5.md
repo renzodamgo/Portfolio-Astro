@@ -298,6 +298,41 @@ Reglas del equipo para el motor: pulsos de **0,25 s** como máximo (hasta 1 s so
 
 `motor_max_pct` está en **50** desde un choque al 90 %. Con la calibración actual equivale a unos 0,6 m/s pedidos, aunque el v5 pida 1,28.
 
+### Si quieres pasar del 50 %
+
+Subir `motor_max_pct` es cambiar un número, pero el coche no se comporta como el simulador si solo cambias eso. Esto es lo que hay que tener en cuenta.
+
+**Qué se sabe del motor.** `base_adapter` convierte la velocidad pedida en porcentaje con `% = 6,5 + 73 × v`. Con esa regla, el 50 % son unos 0,6 m/s pedidos, el 70 % unos 0,87 y el 100 % 1,28, que es lo que pide el v5 en las rectas. Pero la regla y la tabla de velocidad real se midieron **solo hasta el 30 %** y **con la batería baja**. Por encima de eso no hay medidas: el punto del 100 % (0,60 m/s reales) se **dedujo**, no se midió. Con la batería cargada el coche puede ir bastante más rápido.
+
+**El simulador ya supone el 100 %.** El modelo del coche y el v5 (`REAL_SPEED`) dan por hecho que pedir 1,28 da 0,60 m/s reales. En el coche, con el tope del 50 %, va más lento que eso. Si subes el tope sin medir, el coche puede ir más lento **o más rápido** que la simulación, y no lo sabrás hasta que choque.
+
+**Qué cambia en la estrategia al ir más rápido.**
+
+- **Las esquinas empiezan tarde.** Entre que el v5 decide girar y que las ruedas llegan al tope pasan unos 0,3 s (retardo del servo más el recorrido hasta 17,6 grados). A 0,6 m/s son 18 cm; a 1 m/s, 30 cm. Hay que empezar antes: subir `turn_front_distance`.
+- **Se ve menos antes de girar.** El LiDAR da 10 escaneos por segundo y el v5 pide ver el final de la isla en 2 seguidos. A 0,6 m/s el coche avanza 12 cm entre esos dos escaneos; a 1 m/s, 20 cm. Puede hacer falta subir `corner_lookahead`.
+- **La frenada es lenta.** `base_adapter` limita la deceleración a 0,6 m/s² para que las ruedas no patinen. Pasar de 1 m/s a 0,6 m/s cuesta unos 0,5 m. Afecta a la última esquina, la única antes de la cual frena el v5 (`last_corner_speed`, y `BRAKE_GAIN` y `BRAKE_MARGIN` en `mission.py`).
+- **El arco se abre.** La velocidad de giro del arco sale de la velocidad real (`REAL_SPEED`). Si la tabla no coincide con el coche, el v5 calcula mal la rampa y el coche se sale de la línea o se mete hacia la isla.
+
+**Qué cambia en el coche.**
+
+- **Se encabrita.** A fondo desde parado, el coche levanta las ruedas delanteras y deja de girar. Por eso `accel_limit` limita la aceleración a 1 m/s²: no lo subas a la vez que el tope.
+- **Patina.** El simulador no modela el patinaje. En las esquinas, a más velocidad, las ruedas resbalan y el radio real es mayor que el calculado.
+- **La batería cae.** El motor tira más corriente y la tensión baja. En una prueba, con 6,5 V y el motor al 80 %, el Pi se reinició a mitad de ronda. Usa batería cargada y, mejor, la batería aparte para el motor.
+- **Los golpes son más fuertes.** El v5 no se recupera de un atasco: si choca a más velocidad, empuja contra el muro hasta que lo pares.
+
+**El `real_speed` del v5 tiene un tope.** La tabla `REAL_SPEED` llega hasta 1,28. Si quieres pedir más (por ejemplo, porque cambias la calibración y 1,28 ya no es el 100 %), **alarga antes la tabla**. Con una velocidad por encima de su último punto, `real_speed()` no encuentra el tramo, lanza una excepción y el nodo se cae en la primera esquina.
+
+**El orden para subir.**
+
+1. **Mide la velocidad real con la batería cargada**, del 30 % al 70 %, en pulsos cortos y con espacio (sección anterior). Repite cada punto.
+2. **Pon la tabla nueva en los tres sitios:** `motor_pct_per_mps` y `motor_min_pct` en `robot.yaml`; `speed_table_cmd`, `speed_table_real` y `drive_command_limit` en `real_car_v1.yaml`; `REAL_SPEED` en `v5/mission.py`. Si cambia la aceleración que aguanta el coche, también `accel_max` y `decel_max` del modelo.
+3. **Prueba en simulación con el v5 sin cambios**: el set estándar del laboratorio y de Gazebo. Así ves qué cambia solo por el coche.
+4. **Reajusta en el laboratorio**, un parámetro cada vez: primero `turn_front_distance`, luego `corner_lookahead` y `last_corner_speed`. Confirma con el set estándar de Gazebo.
+5. **Sube el tope de 10 en 10:** 50 → 60 → 70. En cada paso, primero una vuelta y luego la ronda completa. Registra cada intento, también los que fallan, con la batería y el tope que usaste.
+6. **No pases de lo que mediste.** Si la tabla llega al 70 %, el tope no pasa del 70 %.
+
+En el campo puntúa la ronda completa, no la vuelta más rápida: un coche al 50 % que termina las tres vueltas vale más que uno al 80 % que choca.
+
 ## 5. LiDAR y cámara
 
 Lanza los sensores (terminal 1; incluye el driver de la placa, así que para antes el `controller.launch.py` si sigue corriendo):
