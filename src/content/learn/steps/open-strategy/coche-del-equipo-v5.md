@@ -236,6 +236,45 @@ El URDF **no** se toca: su límite de 25 grados es el del servo, no el de la rue
 
 Commit, push, y en el Pi `git pull && colcon build`.
 
+### Si tu coche gira distinto: qué cambia en el v5
+
+Otro servo, otra palanca u otra dirección cambian tres cosas: el **ángulo** que alcanzan las ruedas, el **radio** de giro y el **tiempo de respuesta** del servo. Adaptar el v5 es fácil, pero no todo se ajusta solo.
+
+**1. Ángulo máximo de la rueda: casi automático.** Basta con cambiar **una constante**, `REAL_STEER_LIMIT` en `vehicle.py`. Es el ángulo real de la rueda, no el del servo.
+
+- El v5 la usa como `STEER`, su tope de dirección.
+- Con ella calcula la **velocidad de giro en la esquina**: `v · tan(STEER) / WHEELBASE`. Si el coche gira más cerrado, la rampa del arco se acelera sola; si gira menos, se hace más lenta.
+- En el coche va la misma medida en `robot.yaml` (`wheel_table_*`, `wheel_limit_deg`), y en el simulador en `real_car_v1.yaml` (`steer_limit`), como en la tabla de arriba.
+
+Lo que **no** se ajusta solo es el punto donde empieza el giro. Con un radio menor el coche puede girar más tarde, y con uno mayor tiene que girar antes. Eso lo deciden `turn_front_distance` (1,19 m: la pared de enfrente a la que se puede empezar a girar) y `corner_lookahead` (0,35 m: lo cerca que tiene que estar el final de la isla). Son parámetros del perfil `open_v5.yaml` y se prueban en el laboratorio sin tocar código.
+
+**2. Tiempo de respuesta del servo: el v5 no lo tiene en cuenta.** No tiene ningún parámetro de retardo del servo; se quitó a propósito al simplificar la estrategia.
+
+- El retardo solo existe en el **modelo del simulador**: `steer_delay` (0,06 s), `steer_rate` (1,2 rad/s) y `steer_tau` en `real_car_v1.yaml`. El laboratorio usa los mismos valores.
+- Si el servo nuevo es **más lento**, la dirección llega tarde al tope en cada esquina y el coche abre la curva. El remedio es empezar a girar antes (subir `turn_front_distance`). Comprúebalo en el laboratorio y en Gazebo **después de poner el retardo nuevo en el modelo**: si no, la simulación sigue con el servo viejo y no te muestra el problema.
+- Si es mucho más lento, quizá haya que tocar las ganancias. `KP` (0,8), `DAMPING` (0,1) y `EXIT_ANGLE` (0,25 rad) son **constantes en `v5/mission.py`**, no parámetros: cambiarlas es editar el código.
+
+Para medir el retardo, con el coche quieto: `ros2 launch robotek_bringup actuator_test.launch.py test:=servo`. Pulsa el botón y la prueba termina sola; el resultado queda en `~/robotek-runs/<fecha>-actuator-servo/summary.json`.
+
+**3. Ángulo del servo distinto, con el mismo giro de rueda.** Si solo cambia la palanca (por ejemplo, ahora hacen falta 30 grados de servo para el mismo ángulo de rueda), la estrategia no se entera: trabaja con el ángulo de la **rueda**. Solo cambia la tabla servo → rueda de `robot.yaml`. Recuerda que el equipo no pasa de **25 grados de servo**.
+
+| Cambio en el coche | Qué tocar | ¿Se ajusta solo? |
+|---|---|---|
+| Ángulo de rueda o radio de giro | `REAL_STEER_LIMIT`, `robot.yaml` y `real_car_v1.yaml` | El arco sí; el punto de giro hay que reajustarlo (`turn_front_distance`, `corner_lookahead`) |
+| Servo más lento o más rápido | El modelo del simulador (`steer_delay`, `steer_rate`, `steer_tau`) | No: reajustar `turn_front_distance`; si hace falta, `KP` y `DAMPING` en el código |
+| Otra palanca, mismo giro de rueda | Solo la tabla servo → rueda de `robot.yaml` | Sí |
+| Otra distancia entre ejes | `WHEELBASE` en `vehicle.py` (y el URDF) | El arco sí; el punto de giro hay que reajustarlo |
+
+**El orden:**
+
+1. Mide el coche: el ángulo de cada rueda (esta sección) y el retardo del servo.
+2. Pon las medidas en el repositorio: `vehicle.py`, `robot.yaml` y `real_car_v1.yaml`.
+3. Corre el set estándar del laboratorio y de Gazebo **con el v5 sin cambios**, para ver qué cambia solo por el coche.
+4. Reajusta `turn_front_distance` y `corner_lookahead` en el laboratorio, un parámetro cada vez. Por ejemplo, `--param turn_front_distance=1.25`.
+5. Confirma con el set estándar de Gazebo, y solo después prueba en el coche.
+
+Medir el coche es lo que da más trabajo. Con las medidas, reajustar el v5 son unos minutos en el laboratorio.
+
 ## 4. El motor
 
 La tabla de velocidad se midió con la batería casi vacía (7,0 a 7,4 V). Con la batería cargada el coche va más rápido que en la simulación, y los giros se disparan tarde. Mídela otra vez con la batería **cargada**:
