@@ -15,9 +15,9 @@
 <rect x="760" y="60" width="220" height="270" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
 <text x="870.0" y="86" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">TB6612FNG</text>
 <text x="870.0" y="107" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">puente del motor</text>
-<circle cx="760" cy="120" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="125" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">PWMA</text>
-<circle cx="760" cy="160" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="165" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">AIN1</text>
-<circle cx="760" cy="200" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="205" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">AIN2</text>
+<circle cx="760" cy="120" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="125" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">PWMB</text>
+<circle cx="760" cy="160" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="165" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">BIN1</text>
+<circle cx="760" cy="200" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="205" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">BIN2</text>
 <circle cx="760" cy="280" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="285" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">VCC (lógica) · GND</text>
 <path d="M 760 240 C 735 240, 735 280, 760 280" fill="none" stroke="#1d2430" stroke-width="3" stroke-dasharray="5 4"/>
 <circle cx="760" cy="240" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="245" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">STBY: puenteado a VCC</text>
@@ -27,7 +27,7 @@
 <path d="M 596 280 L 754 280" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 596 280 L 754 280" fill="none" stroke="#555555" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
 <rect x="770" y="380" width="200" height="90" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
 <text x="870.0" y="406" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Motor de 25 mm</text>
-<text x="870.0" y="427" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">a A01 y A02 del TB6612</text>
+<text x="870.0" y="427" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">a BO1 y BO2 del TB6612</text>
 <path d="M 870 330 L 870 380" fill="none" stroke="#1d2430" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><path d="M 870 330 L 870 380" fill="none" stroke="#c0392b" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
 <rect x="360" y="380" width="230" height="90" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
 <text x="475.0" y="406" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Servo de dirección</text>
@@ -39,5 +39,5 @@
 <text x="30" y="420" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">nunca a VCC (paso 13).</text>
 <text x="30" y="444" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">STBY va puenteado a VCC en la</text>
 <text x="30" y="464" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">placa: siempre activo, sin cable.</text>
-<text x="30" y="488" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">Si las ruedas giran hacia</text>
-<text x="30" y="508" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">atrás, cambia A01 por A02.</text></svg>
+<text x="30" y="488" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">Usa el canal B (motor 2). Si las</text>
+<text x="30" y="508" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">ruedas giran al revés, cambia BO1 por BO2.</text></svg>
