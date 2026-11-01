@@ -19,6 +19,13 @@ Tu estrategia ya completa las tres vueltas con 30 puntos. Este capítulo no es u
 >
 > **Ninguno de estos ajustes se probó en el coche real.** Son números del simulador: el coche real puede darte otros.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-12-afinar.jpg"><source src="/learn/videos/open/paso-12-afinar.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 42 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

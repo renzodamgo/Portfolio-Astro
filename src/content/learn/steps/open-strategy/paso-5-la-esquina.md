@@ -10,6 +10,13 @@ compareFrom: "step-4"
 
 Hasta ahora el coche sigue la pared de la isla y se detiene ante la pared de enfrente. En este paso le enseñas a **girar 90 grados a la izquierda** en esa pared y a seguir por el pasillo siguiente. Escribes `arc.py`, que decide el volante durante la esquina. `drive.py`, que la usa **una sola vez**, te lo damos hecho. Cuándo girar sigue siendo una regla fija (la pared de enfrente, `front_axis`, a 1,19 m o menos); decidirlo bien es el paso 6.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-5-la-esquina.jpg"><source src="/learn/videos/open/paso-5-la-esquina.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 38 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

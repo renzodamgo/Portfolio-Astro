@@ -10,6 +10,13 @@ compareFrom: "step-7"
 
 Hasta ahora el sentido de la vuelta iba fijo en `ccw`. En la prueba real el árbitro no avisa: el coche tiene que mirar el suelo y decidirlo solo. En este paso escribes `DirectionVote`, la votación que convierte lo que ve la cámara en una decisión, y la conectas a la misión y al nodo.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-8-la-direccion.jpg"><source src="/learn/videos/open/paso-8-la-direccion.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 38 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

@@ -10,6 +10,13 @@ compareFrom: "step-3"
 
 Con el rumbo y la percepción ya puedes mantener al coche a una distancia fija de la isla. A esa distancia (la que mide `scene.left`) la llamaremos **hueco**. En este paso escribes la ley de carril: `lateral_bias` y `lane_steer`. La idea cabe en una línea, pero tiene una decisión de diseño que importa: el coche no corrige el hueco con el volante, corrige el **rumbo** al que apunta.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-4-seguir-la-isla.jpg"><source src="/learn/videos/open/paso-4-seguir-la-isla.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 36 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

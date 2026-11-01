@@ -10,6 +10,13 @@ compareFrom: "step-5"
 
 En el paso 5 la esquina empezaba con una regla fija: la pared de enfrente a 1,19 m. Una sola condición se equivoca con facilidad. En este paso escribes `TurnGate` (la puerta), que decide **cada tick** (cada ejecución del control, 50 veces por segundo) si es el momento de girar. La conexión con `drive.py` y con la distancia recorrida, que sale del LiDAR, te la damos hecha. Al terminar, el coche gira esquina tras esquina alrededor de la isla.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-6-cuando-girar.jpg"><source src="/learn/videos/open/paso-6-cuando-girar.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 40 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

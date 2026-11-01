@@ -10,6 +10,13 @@ compareFrom: "step-6"
 
 Hasta ahora tienes piezas sueltas: el rumbo, la ley de carril, la esquina y la puerta que decide cuándo girar. En este paso las unes en una **máquina de estados**: un programa que en cada momento está en un solo estado y solo cambia de estado por transiciones que tú defines. La tuya espera Start, da las tres vueltas (12 esquinas) y se detiene en la sección de salida. Al terminar tienes un coche que puntúa en Gazebo.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-7-la-mision.jpg"><source src="/learn/videos/open/paso-7-la-mision.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 42 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

@@ -10,6 +10,13 @@ compareFrom: "step-1"
 
 El coche no tiene brújula. Para saber hacia dónde mira solo cuenta con el giroscopio, un sensor que dice a qué velocidad gira (en rad/s). En este paso escribes `GyroHeading`, que suma esas lecturas para obtener el **rumbo**, y `heading_steer`, que gira el volante para volver al rumbo que quieres. El giroscopio tiene un error constante, y verás por qué hay que medirlo antes de arrancar.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-2-el-rumbo.jpg"><source src="/learn/videos/open/paso-2-el-rumbo.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 32 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

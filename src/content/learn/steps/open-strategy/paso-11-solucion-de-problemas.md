@@ -24,6 +24,13 @@ Este capítulo es el que abres cuando el coche real **no hace lo que esperabas**
 >
 > Los comandos y los scripts de este capítulo están escritos a partir del código del coche y de las notas del equipo, pero **no se han ejecutado en el coche real**. Si algo no sale como lo cuento, dímelo.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-11-solucion-de-problemas.jpg"><source src="/learn/videos/open/paso-11-solucion-de-problemas.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 44 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

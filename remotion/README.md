@@ -49,8 +49,20 @@ npm run studio                              # editor en el navegador para ver y 
 npx remotion still src/index.ts paso-3-ver-el-campo out/still.png --frame=300   # un fotograma
 ```
 
-1920 × 1080, 30 fps, H.264 (CRF 20), de 32 a 46 s cada uno; los 15 tardan unos 4 minutos en un Mac M-series.
-`out/` está en `.gitignore`: los MP4 no van al repositorio.
+1920 × 1080, 30 fps, H.264 (CRF 20), de 32 a 46 s cada uno; los 15 tardan unos 10 minutos en un Mac M-series.
+`out/` está en `.gitignore`.
+
+## Publicar en la guía
+
+Cada página de la guía muestra su video justo después de la introducción:
+
+```bash
+node publish.mjs                                   # out/*.mp4 y un póster .jpg → public/learn/videos/open/
+python3 ../tools/learn/insert_step_videos.py ..    # el bloque <video> en cada página (lo reemplaza si ya está)
+```
+
+El bloque va entre `<!-- step-video:start -->` y `<!-- step-video:end -->`; el póster es el fotograma que dice
+`POSTER_SECONDS` en `publish.mjs`.
 
 ## Estructura
 

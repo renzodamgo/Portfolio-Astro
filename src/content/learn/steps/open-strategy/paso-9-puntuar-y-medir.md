@@ -10,6 +10,13 @@ compareFrom: "step-8"
 
 Tu estrategia ya da las tres vueltas y decide el sentido sola. Este paso no añade comportamiento: enseña a **medir**. Vas a aprender qué cuenta el juez, cómo leer lo que imprime, cómo repetir una ronda sin Gazebo, hasta dónde se puede confiar en cada medida y cómo anotar tus intentos para saber si un cambio mejora algo de verdad. Al final, qué probar para ir más rápido y qué hacer con el coche real.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-9-puntuar-y-medir.jpg"><source src="/learn/videos/open/paso-9-puntuar-y-medir.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 42 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

@@ -12,6 +12,13 @@ Antes de llevar tu nodo al coche real ([el capítulo siguiente](/learn/open-stra
 
 > **Qué es exacto y qué es aproximado.** La placa base, la caja, el soporte y la cámara, el servo, la Raspberry Pi, la placa del driver, el LiDAR LD19, la placa RRC Lite y todos los tornillos y tuercas son las piezas del modelo 3D del equipo (`Assembly3.stp`, abierto en SolidCraft), en su sitio; en ese modelo la RRC Lite tiene la forma de una Raspberry Pi. Las ruedas salen de las medidas del URDF (`vehicle.py`). El motor, el eje y las piezas de la dirección **no están en el modelo**: los dibujé con formas simples donde los describe el README del equipo, así que su forma y su posición son aproximadas. Ante cualquier duda, manda el coche real y las fotos del equipo ([`v-photos`](https://github.com/strvaeq/Robotek-WRO2026/tree/main/v-photos)).
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/armar-y-conectar-el-coche.jpg"><source src="/learn/videos/open/armar-y-conectar-el-coche.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 43 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 ## Lo que necesitas
 
 | Pieza | Cantidad | Para qué |

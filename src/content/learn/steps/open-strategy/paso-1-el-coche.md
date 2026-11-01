@@ -10,6 +10,13 @@ compareFrom: "step-0"
 
 Antes de que el coche mire nada, necesita saber qué hace su propio volante. En este paso escribes el **modelo de bicicleta**: tres funciones que convierten un ángulo de dirección en un giro. Con él predices el radio del círculo que dibuja el coche, y después lo comparas con el coche en Gazebo.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-1-el-coche.jpg"><source src="/learn/videos/open/paso-1-el-coche.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 32 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

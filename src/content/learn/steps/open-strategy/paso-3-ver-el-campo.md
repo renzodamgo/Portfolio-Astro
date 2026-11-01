@@ -10,6 +10,13 @@ compareFrom: "step-2"
 
 Hasta ahora el coche conduce a ciegas: sabe hacia dónde apunta (el giroscopio), pero no sabe dónde están las paredes. El **LiDAR** es un sensor láser que gira y mide la distancia al primer obstáculo en cada dirección; una vuelta de rayos es un **escaneo**. En este paso escribes `perceive`, que convierte un escaneo en cuatro números (la `Scene`) que usará el resto de la estrategia: a qué distancia están las paredes de los lados, la pared de enfrente y dónde termina la isla.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-3-ver-el-campo.jpg"><source src="/learn/videos/open/paso-3-ver-el-campo.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 34 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

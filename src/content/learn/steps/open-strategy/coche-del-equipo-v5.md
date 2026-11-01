@@ -17,6 +17,13 @@ El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) lleva **tu** nodo
 > - **Sin medir en el coche reconstruido:** los ejes de la IMU (la placa va de canto) y el servo (cambió de sitio y giró 90 grados). En `robot.yaml` los dos siguen marcados `measured: false`. **No conduzcas el coche hasta medirlos.**
 > - **Sin probar en el coche:** el v5, y la forma de lanzar de la sección 6 (`robot.launch.py` arranca la placa, el LiDAR y la cámara solo desde el 1 de noviembre). Los comandos salen del código y de las notas del equipo, no de una ronda real con este montaje.
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/coche-del-equipo-v5.jpg"><source src="/learn/videos/open/coche-del-equipo-v5.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 46 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 ## 0. El orden
 
 | # | Qué | Bloquea la ronda | Dónde queda |

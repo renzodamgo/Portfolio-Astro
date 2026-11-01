@@ -11,6 +11,13 @@ race: "open"
 
 Mientras se instala, juega con el coche: [Juega con el coche en el navegador](/learn/open-strategy/simulador/).
 
+<!-- step-video:start -->
+<figure class="learn-step-video">
+<video controls muted playsinline preload="none" poster="/learn/videos/open/paso-0-instalar-y-preparar.jpg"><source src="/learn/videos/open/paso-0-instalar-y-preparar.mp4" type="video/mp4"></video>
+<figcaption>Lo que este capítulo añade a la estrategia, en 34 s de animación sin sonido.</figcaption>
+</figure>
+<!-- step-video:end -->
+
 <!-- videos:start -->
 ## Para entrar en tema
 

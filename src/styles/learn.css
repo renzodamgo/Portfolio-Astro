@@ -726,3 +726,18 @@ html[data-theme="light"] .learn-panel {
     font-size: 0.85rem;
     opacity: 0.8;
 }
+
+/* The chapter's own animated video (remotion/, no sound) */
+.prose-learn .learn-step-video {
+    margin: 1.2em 0 1.6em;
+}
+.prose-learn .learn-step-video video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--color-black) 60%, transparent);
+}
+.prose-learn .learn-step-video figcaption {
+    text-align: left;
+}
