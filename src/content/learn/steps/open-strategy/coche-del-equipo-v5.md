@@ -28,7 +28,7 @@ El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) lleva **tu** nodo
 
 | # | Qué | Bloquea la ronda | Dónde queda |
 |---|---|---|---|
-| 1 | Actualizar el código en el Pi | sí | — |
+| 1 | **Antes de cada prueba:** `git pull`, compilar y limpiar el Pi | sí, siempre | — |
 | 2 | Ejes de la IMU | **sí** | `robot.yaml` → `imu_adapter` |
 | 3 | Servo: centro, signo y ángulo real | **sí** | `robot.yaml` → `base_adapter`, `vehicle.py`, `real_car_v1.yaml` |
 | 4 | Motor: velocidad real por % | no, pero sin ella el coche va a otra velocidad que la simulación | `robot.yaml`, `real_car_v1.yaml`, `v5/mission.py` |
@@ -38,9 +38,21 @@ El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) lleva **tu** nodo
 
 Haz las mediciones **en este orden** y con el coche **sobre soportes, con las ruedas en el aire**, salvo cuando se diga lo contrario.
 
-## 1. Preparar la Raspberry Pi
+## 1. Antes de cada prueba (siempre)
 
-### Entrar
+Haz esto **al empezar cada prueba**, aunque ya lo hayas hecho antes ese día: así el Pi corre exactamente el código del Mac y no queda nada de la prueba anterior. Cada sección siguiente empieza recordándolo.
+
+### En el Mac: sube lo que cambiaste
+
+En el Pi, `~/Projects/WRO-Strategies` es un clon del repositorio. **Todo cambio se hace en el Mac**, se sube con `git push` y se baja en el Pi con `git pull`. Si editas en el Pi, el siguiente `git pull` choca o pierdes el cambio.
+
+```bash
+git status            # nada pendiente: si hay cambios, commit
+git push
+git log -1 --oneline  # apunta este código: el Pi debe acabar en el mismo
+```
+
+### En el Pi: entra, para lo que corre, baja el código y compila
 
 Desde el Mac, en la misma red Wi‑Fi que el coche:
 
@@ -50,46 +62,58 @@ ssh <usuario>@<ip-del-pi>
 
 La IP la da el router por DHCP y puede cambiar después de un reinicio. Si no responde, espera un minuto (el Pi tarda en volver a la red) o búscala en el router.
 
-### Una regla: los cambios se hacen en el Mac
-
-En el Pi, `~/Projects/WRO-Strategies` es un clon del repositorio. **Todo cambio se hace en el Mac**, se sube con `git push` y se baja en el Pi con `git pull`. Si editas en el Pi, el siguiente `git pull` choca o pierdes el cambio. Lo que genera el Pi (`build/`, `install/`, `log/`, `~/robotek-runs/`) no va a git.
-
-### Parar el stack del equipo
-
-El Pi arranca solo el software del equipo (`ros_autostart.service`), que usa los mismos puertos. Páralo **en su propia conexión ssh** (el script mata procesos por nombre y, si va en la misma línea que otros comandos, puede matar tu propia sesión):
+Ya dentro del Pi, siempre en este orden:
 
 ```bash
-~/scripts/stop_ros.sh
+~/scripts/stop_ros.sh                       # 1. para el software del equipo, que arranca solo
+cd ~/Projects/WRO-Strategies
+git pull                                    # 2. baja el código del Mac
+git log -1 --oneline                        #    el mismo código que apuntaste en el Mac
+colcon build                                # 3. compila (unos 12 s; la primera vez, casi un minuto)
+source install/setup.bash                   # 4. carga lo que acabas de compilar
+echo $ROS_DOMAIN_ID                         # 5. debe decir 1
 ```
 
-### Bajar el código y compilar
+- **`stop_ros.sh`**: el Pi arranca solo el software del equipo (`ros_autostart.service`), que usa los mismos puertos que las pruebas. Escríbelo tú en la sesión de ssh. No lo metas en una línea como `ssh pi '~/scripts/stop_ros.sh && ...'`: el script mata procesos por nombre y puede matar tu propia conexión.
+- **`colcon build`** cada vez: la instalación es una copia y no ve los cambios hasta recompilar.
+- **`git pull` falla** con "local changes": alguien editó en el Pi. Copia ese cambio al Mac antes de descartarlo (`git stash`), no lo borres.
+- No cargues `~/wro_controller_ws`: tiene copias viejas de los mismos paquetes y se mezclan.
 
-```bash
-cd ~/Projects/WRO-Strategies && git pull && colcon build
-```
-
-Tarda unos 12 s (la primera vez, casi un minuto). **Repite esto cada vez que cambies algo en el Mac**: la instalación es una copia y no ve los cambios hasta recompilar.
-
-### Cada terminal nueva
-
-`~/.bashrc` ya carga ROS y el repositorio. Comprueba que el dominio es el del equipo:
-
-```bash
-echo $ROS_DOMAIN_ID     # debe decir 1
-```
-
-No cargues `~/wro_controller_ws`: tiene copias viejas de los mismos paquetes y se mezclan.
-
-### Cómo parar los nodos
-
-`Ctrl+C` en la terminal del `ros2 launch` suele bastar. Si al relanzar algo da *timeout* (el LiDAR, sobre todo), quedaron nodos vivos y hay dos lectores en el mismo puerto. Búscalos y mátalos:
+### Comprueba que no quedó nada de la prueba anterior
 
 ```bash
 ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"
-kill <pid> <pid> ...
 ```
 
+No debe salir nada. Si sale algo, mátalo (`kill <pid> <pid> ...`) y vuelve a mirar. Un nodo viejo vivo es la causa típica de un LiDAR que da *timeout* (dos lectores en el mismo puerto) o de un coche que se mueve solo.
+
+Y la batería, si la prueba mueve el motor:
+
+```bash
+ros2 topic echo /rrc/battery --once         # en mV: 8000 o más es una 2S cargada (necesita la placa en marcha)
+```
+
+### Cada terminal nueva
+
+Cada prueba usa dos o tres terminales en el Pi. Cada una es otro `ssh <usuario>@<ip-del-pi>`, y en cada una:
+
+```bash
+cd ~/Projects/WRO-Strategies && source install/setup.bash && echo $ROS_DOMAIN_ID
+```
+
+### Cómo parar los nodos al terminar
+
+`Ctrl+C` en cada terminal que lanzaste. Después repite la búsqueda de arriba: si queda algo, `kill`. Lo que genera el Pi (`build/`, `install/`, `log/`, `~/robotek-runs/`) no va a git.
+
 ## 2. Los ejes de la IMU (bloquea)
+
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
+
+```bash
+~/scripts/stop_ros.sh
+cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+```
 
 ### Por qué hay que medirlos
 
@@ -315,6 +339,14 @@ Con el montaje anterior salió un sesgo de 0,006 rad/s y un ruido de 0,0019. No 
 
 ## 3. El servo (bloquea)
 
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
+
+```bash
+~/scripts/stop_ros.sh
+cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+```
+
 El servo cambió de posición y giró 90 grados. El centro, el signo y la tabla de `robot.yaml` son del montaje anterior: con 1500 µs las ruedas pueden no quedar rectas, y el mismo ángulo de servo da otro ángulo de rueda.
 
 Ruedas en el aire. Solo la placa y el nodo del servo, **sin motor**:
@@ -399,6 +431,14 @@ Medir el coche es lo que da más trabajo. Con las medidas, reajustar el v5 son u
 
 ## 4. El motor
 
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
+
+```bash
+~/scripts/stop_ros.sh
+cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+```
+
 La tabla de velocidad se midió con la batería casi vacía (7,0 a 7,4 V). Con la batería cargada el coche va más rápido que en la simulación, y los giros se disparan tarde. Mídela otra vez con la batería **cargada**:
 
 ```bash
@@ -457,6 +497,14 @@ En el campo puntúa la ronda completa, no la vuelta más rápida: un coche al 50
 
 ## 5. LiDAR y cámara
 
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
+
+```bash
+~/scripts/stop_ros.sh
+cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+```
+
 Lanza los sensores (terminal 1; incluye el driver de la placa, así que para antes el `controller.launch.py` si sigue corriendo):
 
 ```bash
@@ -477,6 +525,14 @@ El script pone el dominio 1 y la red del coche. **Relánzalo cada vez que lances
 Ojo con la pared de la sala: el 8 de octubre su color beige entró en el rango naranja y el coche eligió el sentido equivocado. Por eso la cámara solo mira el suelo por debajo del muro negro.
 
 ## 6. La primera ronda
+
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
+
+```bash
+~/scripts/stop_ros.sh
+cd ~/Projects/WRO-Strategies && git pull && colcon build && source install/setup.bash
+ps -eo pid,args | grep -E "[r]rc_driver|[l]dlidar|[c]amera_publisher|[r]obotek_hardware|[o]pen_strategy"   # no debe salir nada
+```
 
 ### Antes
 
@@ -553,8 +609,8 @@ La telemetría cruda no va a git (está en `.gitignore`); los resúmenes sí.
 
 ## Resumen
 
-1. En el Pi: `~/scripts/stop_ros.sh`, y después `git pull && colcon build`.
-2. **IMU:** `imu_axes` (quieto 3 s, un empujón), copiar el bloque a `robot.yaml`, `measured: true`, y comprobar que girar a la izquierda da `z` positivo.
+1. **Siempre, antes de cada prueba:** en el Mac `git push`; en el Pi `~/scripts/stop_ros.sh`, `git pull`, `colcon build`, `source install/setup.bash`, y comprobar que no queda ningún nodo de la prueba anterior.
+2. **IMU:** `imu_axes` (quieto 3 s, un empujón) o a mano, eje por eje; copiar los ejes a `robot.yaml`, `measured: true`, y comprobar que girar a la izquierda da `z` positivo.
 3. **Servo:** centro, signo y tabla de ángulos; `robot.yaml`, `REAL_STEER_LIMIT` y `real_car_v1.yaml`.
 4. **Motor:** tabla con la batería cargada en `robot.yaml`, `real_car_v1.yaml` y `REAL_SPEED`.
 5. **Sensores:** LiDAR contra una regla y la cámara eligiendo bien el sentido.
