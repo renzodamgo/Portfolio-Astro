@@ -139,7 +139,8 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 | dupont | Pi GPIO12 (pin 32) | TB6612 PWMB | velocidad |
 | dupont | Pi GPIO5 (pin 29) y GPIO6 (pin 31) | TB6612 BIN1 y BIN2 | sentido |
 | puente | TB6612 STBY | TB6612 VCC | en esta placa STBY va puenteado a VCC: el puente está siempre activo y no hace falta cable al GPIO13 |
-| dupont | Pi 3,3 V (pin 1) y GND | TB6612 VCC y GND | VCC es la lógica: 3,3 V, nunca la batería (aguanta 5,5 V como máximo). Este GND une las masas de las dos baterías |
+| dupont | Pi 3,3 V (pin 1) | TB6612 VCC | VCC es la lógica: 3,3 V, nunca la batería (aguanta 5,5 V como máximo) |
+| dupont | Pi GND (pin 30, junto a los pines 29, 31 y 32) | TB6612 GND, el que está junto a VCC | un cable aparte del de 3,3 V; une las masas de las dos baterías |
 | batería | Batería del motor | TB6612, bornera VM–GND | VM es la potencia del motor (2,5 a 13,5 V) |
 | batería | Batería del Pi | RRC Lite, entrada de batería | la placa se apaga bajo 6 V |
 | USB-C | RRC Lite (5 V, 5 A) | Pi, entrada USB-C | es la alimentación del Pi |
