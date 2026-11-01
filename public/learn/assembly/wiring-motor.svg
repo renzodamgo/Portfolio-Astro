@@ -1,46 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" role="img" aria-label="Motor y dirección"><rect width="1000" height="600" fill="#d7ebf6"/><text x="20" y="576" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="bold" text-anchor="start" fill="#1d2430">12</text><text x="100" y="564" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">Motor y dirección</text><rect x="20" y="20" width="300" height="124" fill="#b6d2e4" stroke="#1d2430" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" role="img" aria-label="Motor y dirección"><rect width="1000" height="680" fill="#d7ebf6"/><text x="20" y="656" font-family="Helvetica, Arial, sans-serif" font-size="64" font-weight="bold" text-anchor="start" fill="#1d2430">12</text><text x="100" y="644" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="start" fill="#1d2430">Motor y dirección</text><rect x="20" y="20" width="300" height="124" fill="#b6d2e4" stroke="#1d2430" stroke-width="2"/>
 <text x="34" y="46" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">Necesitas</text>
 <text x="34" y="74" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">5x</text>
 <text x="72" y="74" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">cable dupont hembra-hembra</text>
 <text x="34" y="100" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">1x</text>
 <text x="72" y="100" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">motor con su cable de 2 hilos</text>
 <text x="34" y="126" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#1d2430">1x</text>
-<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">servo con su cable de 3 hilos</text><rect x="360" y="40" width="230" height="300" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
-<text x="475.0" y="66" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Raspberry Pi 5</text>
-<text x="475.0" y="87" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">pines GPIO</text>
-<circle cx="590" cy="120" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="580" y="125" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">GPIO12 · pin 32</text>
-<circle cx="590" cy="160" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="580" y="165" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">GPIO5 · pin 29</text>
-<circle cx="590" cy="200" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="580" y="205" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">GPIO6 · pin 31</text>
-<circle cx="590" cy="260" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="580" y="265" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">3,3 V · pin 1</text>
-<circle cx="590" cy="300" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="580" y="305" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">GND · pin 30</text>
-<rect x="760" y="60" width="220" height="270" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
-<text x="870.0" y="86" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">TB6612FNG</text>
-<text x="870.0" y="107" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">puente del motor</text>
-<circle cx="760" cy="120" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="125" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">PWMB</text>
-<circle cx="760" cy="160" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="165" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">BIN1</text>
-<circle cx="760" cy="200" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="205" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">BIN2</text>
-<circle cx="760" cy="260" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="265" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">VCC (lógica)</text>
-<circle cx="760" cy="300" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="305" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">GND (junto a VCC)</text>
-<path d="M 760 240 C 742 240, 742 260, 760 260" fill="none" stroke="#1d2430" stroke-width="3" stroke-dasharray="5 4"/>
-<circle cx="760" cy="240" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="770" y="245" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">STBY: puenteado a VCC</text>
-<path d="M 596 120 L 754 120" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 596 120 L 754 120" fill="none" stroke="#e67e22" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M 596 160 L 754 160" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 596 160 L 754 160" fill="none" stroke="#f1c40f" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M 596 200 L 754 200" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 596 200 L 754 200" fill="none" stroke="#3498db" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M 596 260 L 754 260" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 596 260 L 754 260" fill="none" stroke="#e74c3c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M 596 300 L 754 300" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 596 300 L 754 300" fill="none" stroke="#222222" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="770" y="380" width="200" height="90" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
-<text x="870.0" y="406" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Motor de 25 mm</text>
-<text x="870.0" y="427" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">a BO1 y BO2 del TB6612</text>
-<path d="M 870 330 L 870 380" fill="none" stroke="#1d2430" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><path d="M 870 330 L 870 380" fill="none" stroke="#c0392b" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="360" y="380" width="230" height="90" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
-<text x="475.0" y="406" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Servo de dirección</text>
-<text x="475.0" y="427" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">al puerto de servo PWM</text>
-<text x="475.0" y="445" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">de la RRC Lite</text>
-<text x="30" y="360" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">VCC es la lógica: 3,3 V del Pi</text>
-<text x="30" y="380" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">(aguanta 5,5 V como máximo).</text>
-<text x="30" y="400" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">La batería del motor va a VM,</text>
-<text x="30" y="420" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">nunca a VCC (paso 13).</text>
-<text x="30" y="444" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">STBY va puenteado a VCC en la</text>
-<text x="30" y="464" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">placa: siempre activo, sin cable.</text>
-<text x="30" y="488" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">Usa el canal B (motor 2). Si las</text>
-<text x="30" y="508" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">ruedas giran al revés, cambia BO1 por BO2.</text></svg>
+<text x="72" y="126" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" text-anchor="start" fill="#1d2430">servo con su cable de 3 hilos</text><rect x="360" y="30" width="265" height="550" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
+<text x="380" y="58" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="start" fill="#1d2430">Raspberry Pi 5</text>
+<text x="380" y="78" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">conector de 40 pines</text>
+<text x="380" y="95" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">visto desde arriba</text>
+<circle cx="388" cy="136" r="6" fill="#f39c12" stroke="#1d2430" stroke-width="1"/>
+<text x="402" y="141" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">3,3 V</text>
+<circle cx="388" cy="160" r="6" fill="#e74c3c" stroke="#1d2430" stroke-width="1"/>
+<text x="402" y="165" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">5 V</text>
+<circle cx="388" cy="184" r="6" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<text x="402" y="189" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">GND</text>
+<circle cx="388" cy="208" r="6" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<text x="402" y="213" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">GPIO</text>
+<rect x="382" y="230" width="12" height="12" fill="#f39c12" stroke="#1d2430" stroke-width="1"/>
+<text x="402" y="241" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="start" fill="#1d2430">pin 1 (cuadrado)</text>
+<rect x="523" y="116" width="70" height="446" rx="4" fill="#dfe5ea" stroke="#1d2430" stroke-width="2"/>
+<circle cx="575" cy="130" r="5" fill="#e74c3c" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="152" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="152" r="5" fill="#e74c3c" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="174" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="174" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="196" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="196" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="218" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="218" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="240" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="240" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="262" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="262" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="284" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="284" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="306" r="5" fill="#f39c12" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="306" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="328" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="328" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="350" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="350" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="372" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="372" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="394" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="394" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="416" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="416" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="482" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="482" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="504" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="504" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="526" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="526" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<circle cx="540" cy="548" r="5" fill="#1d2430" stroke="#1d2430" stroke-width="1"/>
+<circle cx="575" cy="548" r="5" fill="#27ae60" stroke="#1d2430" stroke-width="1"/>
+<text x="518" y="135" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">1</text>
+<text x="600" y="135" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">2</text>
+<text x="518" y="443" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">29</text>
+<text x="518" y="465" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">31</text>
+<text x="518" y="553" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">39</text>
+<text x="600" y="553" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">40</text>
+<rect x="740" y="200" width="240" height="320" rx="10" fill="#e8f5ec" stroke="#1d2430" stroke-width="2.5"/>
+<text x="860.0" y="226" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">TB6612FNG</text>
+<text x="860.0" y="247" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">puente del motor · canal B</text>
+<path d="M 540 130 L 540 104 L 705 104 L 705 285 L 734 285" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 540 130 L 540 104 L 705 104 L 705 285 L 734 285" fill="none" stroke="#f39c12" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 575 438 L 650 438 L 650 360 L 734 360" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 575 438 L 650 438 L 650 360 L 734 360" fill="none" stroke="#1d2430" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 540 438 L 540 449 L 665 449 L 665 400 L 734 400" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 540 438 L 540 449 L 665 449 L 665 400 L 734 400" fill="none" stroke="#f1c40f" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 575 460 L 680 460 L 680 440 L 734 440" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 575 460 L 680 460 L 680 440 L 734 440" fill="none" stroke="#8e44ad" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 540 460 L 540 471 L 695 471 L 695 480 L 734 480" fill="none" stroke="#1d2430" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><path d="M 540 460 L 540 471 L 695 471 L 695 480 L 734 480" fill="none" stroke="#3498db" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 740 320 C 722 320, 722 285, 740 285" fill="none" stroke="#1d2430" stroke-width="3" stroke-dasharray="5 4"/>
+<circle cx="740" cy="285" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="750" y="290" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">VCC · pin 1 (3,3 V)</text>
+<circle cx="740" cy="320" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="750" y="325" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">STBY: puenteado a VCC</text>
+<circle cx="740" cy="360" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="750" y="365" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">GND · pin 30</text>
+<circle cx="740" cy="400" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="750" y="405" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">BIN1 · pin 29 (GPIO5)</text>
+<circle cx="740" cy="440" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="750" y="445" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">PWMB · pin 32 (GPIO12)</text>
+<circle cx="740" cy="480" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="750" y="485" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#1d2430">BIN2 · pin 31 (GPIO6)</text>
+<circle cx="540" cy="130" r="11" fill="#ffffff" stroke="none"/><rect x="532" y="122" width="16" height="16" fill="#f39c12" stroke="#1d2430" stroke-width="2"/>
+<circle cx="575" cy="438" r="11" fill="#ffffff" stroke="none"/><circle cx="575" cy="438" r="8" fill="#1d2430" stroke="#1d2430" stroke-width="2"/>
+<circle cx="540" cy="438" r="11" fill="#ffffff" stroke="none"/><circle cx="540" cy="438" r="8" fill="#f1c40f" stroke="#1d2430" stroke-width="2"/>
+<circle cx="575" cy="460" r="11" fill="#ffffff" stroke="none"/><circle cx="575" cy="460" r="8" fill="#8e44ad" stroke="#1d2430" stroke-width="2"/>
+<circle cx="540" cy="460" r="11" fill="#ffffff" stroke="none"/><circle cx="540" cy="460" r="8" fill="#3498db" stroke="#1d2430" stroke-width="2"/>
+<path d="M 860 520 L 860 560" fill="none" stroke="#1d2430" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><path d="M 860 520 L 860 560" fill="none" stroke="#c0392b" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="760" y="560" width="200" height="80" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="860.0" y="586" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Motor de 25 mm</text>
+<text x="860.0" y="607" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">a BO1 y BO2 del TB6612</text>
+<rect x="30" y="470" width="290" height="90" rx="10" fill="#ffffff" stroke="#1d2430" stroke-width="2.5"/>
+<text x="175.0" y="496" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Servo de dirección</text>
+<text x="175.0" y="517" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">al puerto de servo PWM</text>
+<text x="175.0" y="535" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">de la RRC Lite</text>
+<text x="30" y="162" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">Pin 1 es el cuadrado: impares</text>
+<text x="30" y="182" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">por dentro, pares por el borde.</text>
+<text x="30" y="214" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">VCC es la lógica: 3,3 V del Pi</text>
+<text x="30" y="234" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">(aguanta 5,5 V como máximo).</text>
+<text x="30" y="262" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">La batería del motor va a VM,</text>
+<text x="30" y="282" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">nunca a VCC (paso 13).</text>
+<text x="30" y="310" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">STBY va puenteado a VCC en la</text>
+<text x="30" y="330" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">placa: siempre activo, sin cable.</text>
+<text x="30" y="358" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">3,3 V y GND son dos cables.</text>
+<text x="30" y="386" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">Usa el canal B (motor 2). Si las</text>
+<text x="30" y="406" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">ruedas giran al revés,</text>
+<text x="30" y="426" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">cambia BO1 por BO2.</text></svg>

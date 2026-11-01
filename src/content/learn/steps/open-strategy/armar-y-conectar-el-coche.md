@@ -125,7 +125,7 @@ Con todo montado, conecta los cables **con las dos baterías desenchufadas**. El
 
 <img class="lego-wiring" src="/learn/assembly/wiring-usb.svg" alt="Paso 11: cámara, LiDAR y placa RRC Lite por USB a la Raspberry Pi 5" loading="lazy">
 
-<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el TB6612FNG a los pines GPIO 12, 5 y 6 y al 3,3 V del Pi, con STBY puenteado a VCC; el motor al TB6612; el servo a la RRC Lite" loading="lazy">
+<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el conector de 40 pines del Pi 5 con los pines 1 (3,3 V), 29 (GPIO5), 30 (GND), 31 (GPIO6) y 32 (GPIO12) cableados al TB6612FNG (VCC, BIN1, GND, BIN2 y PWMB del canal B; STBY puenteado a VCC); el motor a BO1 y BO2; el servo a la RRC Lite" loading="lazy">
 
 <img class="lego-wiring" src="/learn/assembly/wiring-power.svg" alt="Paso 13: la batería del motor a la bornera VM del TB6612; la batería del Pi a la RRC Lite, que da 5 V al Pi por USB-C; el anillo de LED al GPIO10" loading="lazy">
 
