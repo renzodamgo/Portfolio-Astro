@@ -77,6 +77,12 @@ export async function referenceModule(name: string) {
 export const writeFiles = (pkg: string, files: Record<string, string>) => call<boolean>('write', { pkg, files });
 /** Byte-compiles the package: the syntax errors `colcon build` would show ('' when it compiles). */
 export const compileAll = (pkg: string) => call<string>('compile', { pkg });
+/** Exit code of pytest and runPython when the code raised something other than an assert (NameError, TypeError,
+ * SyntaxError...). Only 1 (an assert failed: the code ran and did something else) counts as an attempt; 10, pytest's 2
+ * (a module that does not import), 4 and 5 (a wrong -k: nothing ran) show the error without counting. */
+export const BROKEN = 10;
+export const isAttempt = (code: number) => code === 1;
+
 /** Runs pytest like the terminal would; returns the exit code (0: all passed). */
 export const pytest = (args: string[]) => call<number>('pytest', { args });
 /** Runs a file or a snippet as `python3` would; returns the exit code. */

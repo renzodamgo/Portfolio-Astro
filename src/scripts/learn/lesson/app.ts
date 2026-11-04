@@ -13,6 +13,8 @@ interface Saved {
   files: Record<string, string>;
   done: string[];
   fails: Record<string, number>;
+  /** Tasks whose solution the student chose to see. */
+  revealed?: string[];
   seeded: string[];
   current: number;
   shell?: ShellState;
@@ -274,13 +276,62 @@ export async function startLesson(root: HTMLElement) {
     syncEditorPanel();
   }
 
+  // Help by steps, only after real attempts (an error that stops the code is not one): attempt 1, a hint in words (or
+  // the pieces the solution uses); attempt 2, also the pieces (or the shape of the solution); from attempt 3, a
+  // «Ver solución» button. The solution never shows by itself.
+  const SOLUTION_AFTER = 3;
   function renderHelp(task: Task) {
     const fails = saved.fails[task.id] ?? 0;
-    const parts: string[] = [];
-    if (task.hint && fails >= 1) parts.push(`<p class="lsn-hint-title">Pista</p><pre>${escapeHtml(task.hint)}</pre>`);
-    if (task.solution && fails >= 3) parts.push(`<p class="lsn-hint-title">Solución</p><pre>${escapeHtml(task.solution)}</pre>`);
+    const { words, solution } = helpOf(task);
+    const steps = (words ? [words, solution && pieces(solution)] : solution ? [pieces(solution), shape(solution)] : [])
+      .filter((x): x is string => !!x);
+    const parts = steps.slice(0, Math.min(fails, 2)).map((text, i) =>
+      `<p class="lsn-hint-title">${i ? 'Otra pista' : 'Pista'}</p><pre>${escapeHtml(text)}</pre>`);
     els.hint.innerHTML = parts.join('');
-    els.hint.hidden = !parts.length;
+    if (solution && fails >= SOLUTION_AFTER) {
+      if (saved.revealed?.includes(task.id)) {
+        els.hint.insertAdjacentHTML('beforeend', `<p class="lsn-hint-title">Solución</p><pre>${escapeHtml(solution)}</pre>`);
+      } else {
+        els.hint.append(button('Ver solución', 'lsn-mini', () => {
+          saved.revealed = [...(saved.revealed ?? []), task.id];
+          save();
+          renderHelp(task);
+        }));
+      }
+    }
+    els.hint.hidden = !els.hint.childElementCount;
+  }
+  /** A hint written as code is really the solution: it is kept for the button. */
+  function helpOf(task: Task): { words?: string; solution?: string } {
+    const code = task.hint !== undefined && looksLikeCode(task.hint);
+    return { words: code ? undefined : task.hint, solution: task.solution ?? (code ? task.hint : undefined) };
+  }
+  // ASCII only: a hint with δ, → or accents is an explanation in words, even if it starts like an assignment.
+  const looksLikeCode = (text: string) => /^[\x00-\x7F]*$/.test(text) &&
+    /^\s*(return\b|for\b|if\b|while\b|def\b|self\.|[A-Za-z_][\w.]*(\s*,\s*[A-Za-z_][\w.]*)*\s*[-+*/]?=[^=])/.test(text);
+  const KEYWORDS = new Set(['return', 'for', 'in', 'if', 'elif', 'else', 'while', 'def', 'and', 'or', 'not', 'is', 'None',
+    'True', 'False', 'self', 'lambda', 'abs', 'min', 'max', 'range', 'len', 'float', 'int', 'sum', 'zip', 'print']);
+  /** Hint from the solution: the functions and constants it uses (not how). */
+  function pieces(solution: string): string | undefined {
+    const names = new Set<string>();
+    // Calls, CONSTANTS and module attributes (math.pi); not the student's own fields (self.x).
+    for (const m of solution.matchAll(/[A-Za-z_][\w.]*(?=\s*\()|\b[A-Z][A-Z0-9_]{2,}\b|\b(?!self\.)[a-z_]\w*\.[A-Za-z_]\w*\b/g)) {
+      const name = m[0].replace(/^self\./, '');
+      if (!KEYWORDS.has(name) && !/^def$/.test(name)) names.add(name);
+    }
+    return names.size ? `La solución usa: ${[...names].join(', ')}.` : undefined;
+  }
+  /** Hint from the solution: its lines with what each one starts with, the rest hidden. */
+  function shape(solution: string): string | undefined {
+    const lines = solution.split('\n').filter((l) => l.trim());
+    const shown = lines.map((line) => {
+      const indent = line.match(/^\s*/)![0];
+      const t = line.trim();
+      const head = t.match(/^(return|for|if|elif|else|while|def)\b/)?.[1]
+        ?? t.match(/^([A-Za-z_][\w.]*(\s*,\s*[A-Za-z_][\w.]*)*\s*[-+*/]?=)[^=]/)?.[1];
+      return `${indent}${head ? `${head} …` : '…'}`;
+    });
+    return `${lines.length === 1 ? 'Es una línea' : `Son ${lines.length} líneas`}:\n${shown.join('\n')}`;
   }
   const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -304,13 +355,20 @@ export async function startLesson(root: HTMLElement) {
     }
     root.dataset.celebrate = String(Date.now());
   }
+  /** A real attempt: the code ran and did something else. */
   function fail(task: Task, message: string) {
     saved.fails[task.id] = (saved.fails[task.id] ?? 0) + 1;
     save();
     const n = saved.fails[task.id];
-    const extra = task.hint && n === 1 ? ' Abajo tienes una pista.' : task.solution && n === 3 ? ' Ya puedes ver la solución abajo.' : '';
+    const { words, solution } = helpOf(task);
+    const extra = n <= 2 && (words || solution) ? ' Abajo tienes una pista.'
+      : solution && n === SOLUTION_AFTER ? ' Si quieres, abajo puedes ver la solución.' : '';
     setFeedback('bad', `${message}${extra}`);
     renderHelp(task);
+  }
+  /** The code stopped with an error (syntax, a name, a type...): shown, not counted as an attempt. */
+  function broken(message = 'Tu código da un error: léelo en la terminal (y la línea marcada en el editor). Arréglalo y vuelve a probar; no cuenta como intento.') {
+    setFeedback('bad', message);
   }
 
   // ---------------------------------------------------------------- checking
@@ -329,7 +387,8 @@ export async function startLesson(root: HTMLElement) {
         await py();
         const code = await PY.runPython(c.code, '<comprobación>');
         if (code === 0) pass(task, 'Tu código hace lo que debe.');
-        else fail(task, 'La comprobación falló: mira el mensaje en la terminal.');
+        else if (PY.isAttempt(code)) fail(task, 'La comprobación falló: mira el mensaje en la terminal.');
+        else broken();
       } finally { running = false; }
     } else if (c.kind === 'sim') {
       await term.type(`ros2 run ${pkg} drive`);
@@ -356,8 +415,11 @@ export async function startLesson(root: HTMLElement) {
         if (!filtered || (c.k && k === c.k)) pass(task, 'Las pruebas pasan.');
         else setFeedback('info', c.k ? `Pasan las pruebas que elegiste. Para esta tarea corre: -k "${c.k}" (o el archivo entero).`
           : 'Pasan las pruebas que elegiste. Para esta tarea corre el archivo entero, sin -k.');
-      } else {
+      } else if (PY.isAttempt(e.code)) {
         fail(task, 'Alguna prueba falla: lee el error en la terminal (la línea con «assert» dice qué esperaba).');
+      } else {
+        broken(e.code === 4 || e.code === 5 ? 'No corrió ninguna prueba: revisa el nombre del archivo y el -k.'
+          : 'Las pruebas no llegan a comprobar nada: tu código da un error antes (léelo en la terminal). No cuenta como intento.');
       }
     }
     if (lesson.fresh) syncEditorPanel();
@@ -388,7 +450,11 @@ export async function startLesson(root: HTMLElement) {
       if (c.tests) {
         term.write(`Antes del coche, las pruebas: pytest ${testsDir}/${c.tests.file}${c.tests.k ? ` -k "${c.tests.k}"` : ''}\n`, 'dim');
         const code = await PY.pytest([`${testsDir}/${c.tests.file}`, ...(c.tests.k ? ['-k', c.tests.k] : []), '-q']);
-        if (code !== 0) { fail(task, 'Primero tienen que pasar las pruebas de tu módulo (mira la terminal).'); return; }
+        if (code !== 0) {
+          if (PY.isAttempt(code)) fail(task, 'Primero tienen que pasar las pruebas de tu módulo (mira la terminal).');
+          else broken();
+          return;
+        }
       }
       setFeedback('info', 'El coche está corriendo tu código…');
       term.write(`[${pkg}] ${obstacle ? 'tu estrategia' : 'drive.py'} arrancó (Ctrl+C para parar)\n`, 'dim');
@@ -411,6 +477,11 @@ export async function startLesson(root: HTMLElement) {
       + (m.status ? ` · ${m.status}` : '') + (r ? ` · ${r.sections}/24 secciones` : ''));
   }
 
+  /** The traceback ends in the student's package: their code broke (not an attempt). */
+  const brokeInPackage = (error: string) => {
+    const frames = [...error.matchAll(/File "([^"]+)", line \d+/g)];
+    return /SyntaxError|IndentationError/.test(error) || (frames.length > 0 && frames[frames.length - 1][1].includes(`/src/${pkg}/`));
+  };
   function report(outcome: Outcome, task: Task | null) {
     if (outcome.error) {
       term.write(outcome.error.replaceAll(`${PY.REPO}/src/`, '') + '\n', 'err');
@@ -423,6 +494,7 @@ export async function startLesson(root: HTMLElement) {
     els.banner.textContent = outcome.passed ? `✓ ${outcome.message}` : `✗ ${outcome.message}`;
     if (!task) return;
     if (outcome.passed) pass(task, outcome.message);
+    else if (outcome.error && brokeInPackage(outcome.error)) broken();
     else if (outcome.message !== 'Detenido.') fail(task, outcome.message);
     else setFeedback('', '');
   }

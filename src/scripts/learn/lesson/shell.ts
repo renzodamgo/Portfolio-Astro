@@ -344,12 +344,14 @@ export function createShell(host: ShellHost) {
     }
   }
 
+  let lastCode = -1;   // exit code of the last pytest run by exec (-1: none)
   async function run_pytest(args: string[]): Promise<boolean> {
     if (!inRepo()) { term.write('Corre las pruebas desde el repositorio:  cd ~/robotek-learn\n', 'err'); return false; }
     host.save();
     const rel = state.cwd.replace(/^robotek-learn\/?/, '');
     const mapped = args.map((a) => (a.endsWith('.py') && rel ? `${rel}/${a}` : a));
-    return (await host.pytest(mapped)) === 0;
+    lastCode = await host.pytest(mapped);
+    return lastCode === 0;
   }
 
   async function run(line: string) {
@@ -362,8 +364,9 @@ export function createShell(host: ShellHost) {
     const parts = commandLine.split(/\s*&&\s*/);
     for (const part of parts) {
       const argv = splitArgs(part);
+      lastCode = -1;
       const ok = await exec(argv, parts.length === 1 ? pipeGrep : null);
-      host.command({ line: part, argv, ok, grep: pipeGrep ?? '' });
+      host.command({ line: part, argv, ok, grep: pipeGrep ?? '', code: lastCode >= 0 ? lastCode : ok ? 0 : 1 });
       if (!ok) break;
     }
   }

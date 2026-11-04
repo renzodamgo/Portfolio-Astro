@@ -30,6 +30,8 @@ const FILES: [string, string][] = [
   ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => [`obstacle/tests/test_obstacle_step_${n}.py`, `${REPO}/course/tests/obstacle/test_obstacle_step_${n}.py`] as [string, string]),
 ];
 const PACKAGES = ['my_open', 'my_obstacle'];
+/** Exit code of pytest / python when the student's code raised (not an assert): an error, not an attempt. */
+const BROKEN = 10;
 const PURGE = `
 import importlib, sys
 for _name in [m for m in sys.modules if m.split('.')[0] in ('my_open', 'my_obstacle') or m.startswith('test_step_') or m.startswith('test_obstacle_step_')]:
@@ -124,9 +126,28 @@ for _f in sorted(glob.glob(${JSON.stringify(REPO)} + '/src/${pkg}/${pkg}/*.py'))
   },
   async pytest({ args }) {
     py.globals.set('_pytest_args', py.toPy(args));
+    // Exit code BROKEN (10) when the student's code did not run as written: every failing test crashed inside the
+    // student's package (a NameError, a TypeError in their file...). A crash in the test itself (an assert, or using a
+    // wrong value such as None) is an attempt (1). Collection errors (SyntaxError, ImportError) are pytest's 2.
     return await py.runPythonAsync(`${PURGE}
 import pytest
-int(pytest.main(list(_pytest_args) + ['-p', 'no:cacheprovider', '--color=no']))
+
+class _Kinds:
+    def __init__(self):
+        self.asserts = self.errors = 0
+    def pytest_runtest_logreport(self, report):
+        if not report.failed:
+            return
+        crash = getattr(report.longrepr, 'reprcrash', None)
+        where = str(getattr(crash, 'path', '') or '')
+        if report.when == 'call' and not any(f'/src/{p}/' in where for p in ${JSON.stringify(PACKAGES)}):
+            self.asserts += 1
+        else:
+            self.errors += 1
+
+_kinds = _Kinds()
+_code = int(pytest.main(list(_pytest_args) + ['-p', 'no:cacheprovider', '--color=no'], plugins=[_kinds]))
+${BROKEN} if _code == 1 and _kinds.errors and not _kinds.asserts else _code
 `);
   },
   async python({ code, filename }) {
@@ -139,9 +160,11 @@ try:
     exec(compile(_src, _fname, 'exec'), {'__name__': '__main__'})
 except SystemExit as e:
     _status = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
-except Exception:
+except Exception as _e:
     traceback.print_exc()
-    _status = 1
+    # In the student's package: their code broke (not an attempt); in the check itself: a wrong result.
+    _last = traceback.extract_tb(_e.__traceback__)[-1].filename if _e.__traceback__ else ''
+    _status = ${BROKEN} if isinstance(_e, SyntaxError) or any(f'/src/{p}/' in _last for p in ${JSON.stringify(PACKAGES)}) else 1
 _status
 `);
   },

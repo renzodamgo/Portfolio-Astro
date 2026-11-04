@@ -67,7 +67,8 @@ export interface SimGoal {
 }
 
 /** One command the student ran (`grep`: the pattern of a trailing `| grep`, or ''). */
-export interface CommandEvent { line: string; argv: string[]; ok: boolean; grep: string }
+/** `code`: the exit code of pytest / python3 (else 0 or 1 from ok). */
+export interface CommandEvent { line: string; argv: string[]; ok: boolean; grep: string; code: number }
 
 export type Check =
   | { kind: 'command'; match(e: CommandEvent, state: ShellState, files: Record<string, string>): boolean }
@@ -83,8 +84,9 @@ export interface Task {
   title: string;
   /** HTML (Spanish). */
   body: string;
+  /** In words, shown after the first failed attempt. A hint written as code is the solution: it is treated as one. */
   hint?: string;
-  /** Shown after 3 failed attempts (code or command). */
+  /** Behind a «Ver solución» button from the third failed attempt (errors that stop the code do not count). */
   solution?: string;
   /** The editor opens this file for the task. */
   file?: string;

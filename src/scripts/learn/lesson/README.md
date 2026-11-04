@@ -110,6 +110,25 @@ laboratorio del curso, y comprobados con el runtime de la web y el juez de vuelt
 | 4 antihorario y 3 horario | tres vueltas (pasos 7 y 9) | 3 vueltas, 116 s y 120 s (40 puntos en el laboratorio) |
 | 1, antihorario | — | la referencia toca una señal verde: un límite conocido (paso 9 de la guía) |
 
+## Pistas y solución (4 nov 2026)
+
+La lección no da la solución de frente: primero corre lo que escribió el alumno.
+
+- **Un error no es un intento.** Si el código del alumno se rompe dentro de su paquete (sintaxis, un nombre, un
+  tipo... la última línea del traceback está en `src/my_*/`), pytest y `python3` devuelven `BROKEN` (10), o 2 si un
+  módulo no importa, y el 3D trae un `outcome.error` con esa línea: la lección enseña el error (terminal y línea
+  marcada) y no lo cuenta. Cuenta lo que falla en la prueba o la comprobación (un `assert`, o usar un valor equivocado
+  como el `None` de una función sin terminar) y un reto 3D que termina mal: el código corrió e hizo otra cosa. Un `-k`
+  que no elige nada (4, 5) tampoco cuenta.
+- **Ayuda por escalones**, según los intentos de la tarea (`saved.fails`):
+  1. la pista en palabras (`hint`), o, si la tarea no tiene, las piezas que usa la solución (funciones y constantes);
+  2. además las piezas, o la forma de la solución (sus líneas con el comienzo de cada una, el resto `…`);
+  3. desde el tercero, un botón **Ver solución**. Solo se ve si el alumno lo pulsa (`saved.revealed`).
+- Una `hint` escrita como código (solo ASCII y que empieza como `return`, `for`, `if`, `self.` o una asignación) es en
+  realidad la solución: se trata como `solution` si la tarea no trae otra. Escribe las pistas nuevas en palabras.
+- En la página del paso, «Los cambios de este paso» (el diff con la solución) está plegado tras «Ver la solución de
+  este paso».
+
 ## Cómo se ve y cómo se juzga un intento
 
 `sim.ts` crea el motor 3D del guía (`startEngine`) con un `createSim()` bloqueado: la física de JavaScript no

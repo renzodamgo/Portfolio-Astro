@@ -170,39 +170,48 @@ const jsonld = {
                     Los cambios de este paso
                 </h2>
                 <p class="mt-2 text-sm text-white/80">
-                    Compara tu código con la solución: de{" "}
-                    <code class="text-amber-300">{compareFrom}</code> a{" "}
-                    <code class="text-amber-300">{tag}</code>.
+                    Intenta el paso con tu código primero: corre las pruebas y lee sus errores. La solución está aquí
+                    para cuando ya lo hayas intentado.
                 </p>
-                <p class="mt-3">
-                    <a
-                        class="text-amber-300 underline underline-offset-4 hover:text-amber-400"
-                        href={compareUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                <details class="mt-3">
+                    <summary class="cursor-pointer text-amber-300 underline underline-offset-4 hover:text-amber-400">
+                        Ver la solución de este paso
+                    </summary>
+                    <p class="mt-2 text-sm text-white/80">
+                        Compara tu código con la solución: de{" "}
+                        <code class="text-amber-300">{compareFrom}</code> a{" "}
+                        <code class="text-amber-300">{tag}</code>.
+                    </p>
+                    <p class="mt-3">
+                        <a
+                            class="text-amber-300 underline underline-offset-4 hover:text-amber-400"
+                            href={compareUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Ver los cambios de este paso
+                        </a>
+                    </p>
+                    <p class="mt-3 text-sm text-white/80">
+                        O en tu terminal, dentro del repositorio. Lo que cambia la
+                        referencia en este paso:
+                    </p>
+                    <pre
+                        class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
+                        tabindex="0"
                     >
-                        Ver los cambios de este paso
-                    </a>
-                </p>
-                <p class="mt-3 text-sm text-white/80">
-                    O en tu terminal, dentro del repositorio. Lo que cambia la
-                    referencia en este paso:
-                </p>
-                <pre
-                    class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
-                    tabindex="0"
-                >
-                    <code>{diffCommand}</code>
-                </pre>
-                <p class="mt-3 text-sm text-white/80">
-                    Tu árbol contra la referencia de este paso:
-                </p>
-                <pre
-                    class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
-                    tabindex="0"
-                >
-                    <code>{mineCommand}</code>
-                </pre>
+                        <code>{diffCommand}</code>
+                    </pre>
+                    <p class="mt-3 text-sm text-white/80">
+                        Tu árbol contra la referencia de este paso:
+                    </p>
+                    <pre
+                        class="mt-2 overflow-x-auto border border-white/15 bg-black/50 p-3 font-mono text-sm text-white"
+                        tabindex="0"
+                    >
+                        <code>{mineCommand}</code>
+                    </pre>
+                </details>
             </section>
         )
     }
