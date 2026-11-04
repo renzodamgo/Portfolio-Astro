@@ -130,9 +130,9 @@ La lección: **un ajuste afinado para una batería no sirve para otra.** Si lo u
 
 ### 8. Un ángulo de volante mayor
 
-- **Qué cambiar:** `STEER_LIMIT` (en `minisim.py` y en tu código; el coche real tiene 17,6° de tope, 0,307 rad).
+- **Qué cambiar:** `STEER_LIMIT` (en `minisim.py` y en tu código; hoy 17,6°, 0,307 rad). El coche del equipo gira ahora ±19° (medido el 1 nov 2026; `wheel_limit_deg` en `robot.yaml`).
 - **Cuánto gana:** si coche y estrategia usan 25°, solo -0,8 s (39,93 s) y el margen baja a 6,8 cm. Si el coche gira más de lo que cree la estrategia, casi nada cambia `[lab]`.
-- **Riesgo:** pedir más ángulo del que tiene el coche. El del equipo llega como mucho a 17,6° `[coche]`: no merece la pena.
+- **Riesgo:** pedir más ángulo del que tiene el coche. El del equipo llega como mucho a 19° `[coche]`: pasar de 17,6° a 19° gana poco, y hay que repetir el laboratorio y Gazebo.
 - **Cómo comprobarlo:** mide el ángulo real (paso 11, caso 6) antes de cambiar la constante.
 
 ### 9. Lo que no merece la pena tocar

@@ -47,7 +47,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 ## Tres reglas antes de tocar nada
 
 1. **Primero con el coche en el aire.** Apóyalo sobre una caja para que las ruedas no toquen la mesa. Casi todo lo de aquí (sentido del servo, sentido del motor, ejes del giroscopio) se comprueba sin que el coche se mueva del sitio.
-2. **Primeras rondas con el motor limitado.** `motor_max_pct` en `robot.yaml` es el tope de potencia. Con 40 por ciento el coche del equipo completó una ronda; con 90 por ciento se estrelló `[coche]`. Empieza en 30 o 40 y sube de cinco en cinco.
+2. **Primeras rondas despacio.** `motor_max_rps` en `robot.yaml` es el tope de velocidad que se pide a la placa (hoy 7). Con el motor anterior, al 40 por ciento el coche del equipo completó una ronda y al 90 por ciento se estrelló `[coche]`. Empieza bajo (`motor_max_rps:=3` al lanzar) y sube poco a poco.
 3. **Un cambio cada vez, y anota la batería.** La velocidad del coche depende de la carga (caso 5). Si cambias dos cosas y la ronda mejora, no sabrás cuál fue.
 
 **Ten siempre la mano lista para parar.** Una segunda pulsación del botón de la placa publica `/robotek/stop`: el motor se corta al instante y no vuelve hasta relanzar `[coche]` (se añadió porque en la primera ronda el coche chocó y no había forma de detenerlo). Ojo con el antirrebote: una segunda pulsación en menos de 1,5 s se ignora. En una ronda oficial, qué cuenta como parar el coche lo decide el reglamento y el árbitro: pregúntalo antes.
@@ -292,7 +292,7 @@ Este es el síntoma que más causas distintas tiene, así que primero **mira qu�
 - **Atasco = parar.** El equipo detecta que el coche no avanza y se recupera o se detiene. Ojo: su odometría del LiDAR **suma distancia aunque el coche esté quieto** si hay ruido entre escaneos (3,6 m "recorridos" en 15,8 s con el frente cambiando solo 9 cm), y la detección de atasco tardó o no saltó `[coche]`. Si escribes la tuya, mide el cambio de la distancia al frente, no `travelled`.
 - **Parada del operador.** Segunda pulsación del botón (arriba).
 
-**Arréglalo.** Primero baja `motor_max_pct` a 30 o 40, y arranca siempre con la batería cargada y anotada. Después, según el síntoma, el caso que corresponda. Mientras tanto, revisa los tres frenos de seguridad (el del sensor viejo ya está en el `drive.py` del curso): son pocas líneas y convierten un choque en una parada.
+**Arréglalo.** Primero baja la velocidad (`motor_max_rps:=3` al lanzar), y arranca siempre con la batería cargada y anotada. Después, según el síntoma, el caso que corresponda. Mientras tanto, revisa los tres frenos de seguridad (el del sensor viejo ya está en el `drive.py` del curso): son pocas líneas y convierten un choque en una parada.
 
 **Comprueba que quedó.** Tres rondas seguidas a velocidad baja en cada sentido, sin tocar un muro, y la primera esquina con el coche girando a tiempo. Sube el tope del motor solo después.
 
@@ -314,9 +314,9 @@ Si las tres pasan y el coche aun así gira mal, el culpable es el sentido decidi
 
 **Causas del lado del servo, de más a menos probable.**
 
-1. **`servo_sign` invertido.** Con un montaje del servo nuevo o girado, la misma orden mueve las ruedas al otro lado. El equipo lo midió en el montaje anterior y estaba bien `[coche]`: +20 grados (1879 µs) iban a la izquierda y -20 grados (1155 µs) a la derecha, mirando desde atrás, con las ruedas rectas en 1500 µs. **Pero en el montaje nuevo (21 oct 2026) el servo cambió de sitio y giró 90 grados, y esos valores no están medidos**: por eso `robot.yaml` trae `servo_measured: false` y `base_adapter` lo avisa en cada arranque.
-2. **Centro (`servo_center_us`) desplazado.** Con las ruedas rectas no sale 1500 µs. El coche se va siempre al mismo lado. Un grado de error son unos 19 µs (la ganancia es 18,97 µs por grado en un lado y 17,24 en el otro).
-3. **Tabla de ruedas (`wheel_table_*`) del montaje viejo.** Con el montaje nuevo, el ángulo real de la rueda para cada ángulo de servo es otro. Con la tabla equivocada, un lado gira más que el otro (caso 6).
+1. **`servo_sign` invertido.** Con un montaje del servo nuevo o girado, la misma orden mueve las ruedas al otro lado. En el montaje nuevo (21 oct 2026) el servo cambió de sitio y giró 90 grados; el equipo lo midió de nuevo el 1 de noviembre, en el suelo, con `tools/steer_calibration.py`: `servo_sign: 1.0` (izquierda = menos µs) `[coche]`.
+2. **Centro (`servo_center_us`) desplazado.** Con 1500 µs el coche del equipo iba 4,5 grados a la derecha: su centro real es **1403 µs** `[coche]`. Con el centro mal, el coche se va siempre al mismo lado. Un grado de error son 20 µs (la ganancia medida es de 20 µs por grado a los dos lados).
+3. **Tabla de ruedas (`wheel_table_*`) de otro montaje.** Si cambias el servo, la palanca o la dirección, el ángulo real de la rueda para cada ángulo de servo es otro. Con la tabla equivocada, un lado gira más que el otro (caso 6).
 4. **Signo cruzado en tu código.** `angular.z` positivo es izquierda en todo el sistema. Si cambiaste un signo en `drive.py`, deshazlo.
 
 <details>
@@ -339,7 +339,7 @@ Para probar la cadena entera hasta el motor, con las ruedas **en el aire** porqu
 ros2 topic pub -r 10 /cmd_vel_raw geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.5}}"
 ```
 
-`base_adapter` calcula el ángulo de la dirección como `atan(angular.z * wheelbase / linear.x)`, que aquí son unos 16 grados a la izquierda, y el motor gira hacia delante a un 21 por ciento `[código]`.
+`base_adapter` calcula el ángulo de la dirección como `atan(angular.z * wheelbase / linear.x)`, que aquí son unos 16 grados a la izquierda, y pide al motor 0,2 × 4,8 ≈ 1 rps de la placa hacia delante `[código]`. Con el motor nuevo, 1 rps hace girar las ruedas en el aire pero no basta para mover el coche en el suelo.
 
 **Arréglalo (servo).** Los valores están en `src/robotek_hardware/config/robot.yaml`, bajo `base_adapter`. Los parámetros se leen una sola vez al arrancar el nodo: edita y relanza (si compilaste con `--symlink-install` no hace falta recompilar; si no, recompila).
 
@@ -347,8 +347,8 @@ ros2 topic pub -r 10 /cmd_vel_raw geometry_msgs/msg/Twist "{linear: {x: 0.2}, an
 |---|---|---|
 | Ruedas rectas en 0 | `servo_center_us`, de diez en diez µs, hasta que queden rectas | Quita la deriva permanente a un lado |
 | Que `+steer` vaya a la izquierda | `servo_sign: -1.0` a `1.0` (o al revés) | Invierte el lado de todo el recorrido. Las dos ganancias cambian de lado, así que vuelve a medir la tabla |
-| Probar un centro sin editar | `ros2 run robotek_hardware servo_steer --ros-args -p servo_center_us:=1510.0` | Solo en banco |
-| Ángulo real de rueda correcto | `wheel_table_servo_deg`, `wheel_table_left_deg`, `wheel_table_right_deg`, `wheel_limit_deg` | Mide el ángulo de **cada** rueda delantera con un transportador o con una foto desde arriba para 10, 15, 20 y 25 grados de servo y rellena la tabla. `wheel_limit_deg` es el menor de los máximos de los dos lados |
+| Probar un centro sin editar | `ros2 run robotek_hardware servo_steer --ros-args -p servo_center_us:=1413.0` (`servo_steer` no lee `robot.yaml`: pásale también `servo_sign`, `servo_gain_pos` y `servo_gain_neg`) | Solo en banco |
+| Ángulo real de rueda correcto | `wheel_table_servo_deg`, `wheel_table_left_deg`, `wheel_table_right_deg`, `wheel_limit_deg` | Mídelo en el suelo con `python3 tools/steer_calibration.py <pulsos en µs>` (giroscopio y LiDAR, modelo de bicicleta) y comprueba con `--check 0 10 -10 19 -19`. `wheel_limit_deg` es el menor de los máximos de los dos lados |
 | Quitar el aviso | `servo_measured: true` | Solo cuando hayas hecho lo de arriba |
 
 Recuerda que **la distancia entre ejes cambió de 0,13 a 0,1174 m**. Los ángulos de rueda que salen de dar círculos dependen de ella: `ángulo = atan(L / radio)`. Si mediste con 0,13, recalcula con `tan(nuevo) = tan(viejo) * 0,1174 / 0,13`. Con eso, los 25 grados de servo pasan de 19,7 a unos 17,9 a la izquierda, y de 17,6 a unos 16,0 a la derecha `[código]`.
@@ -426,8 +426,8 @@ Si `z` da -90, el signo está invertido: `up_axis` tiene el signo contrario (nor
 **Causas, de más a menos probable.**
 
 1. **Arranque a fondo.** Desde parado a 100 por ciento el coche se encabrita: las ruedas delanteras quedan en el aire y **la dirección no actúa hasta que vuelven a tocar el suelo**. Con 50 por ciento desde parado el morro empieza a levantarse (la aceleración vertical cae a 4,4 m/s2 en vez de 8) `[coche]`.
-2. **Más rápido que el modelo.** La tabla de velocidades se midió con la batería **baja** (7,0 a 7,4 V). Con la batería cargada, el mismo porcentaje da más velocidad `[coche]`. Con 90 por ciento y 7,6 V, el coche iba "mucho más rápido que antes" y chocó (intento 7). Y por encima del 30 por ciento la recta de calibración no vale: el coche iba un 25 a 30 por ciento más lento de lo pedido con la batería casi descargada `[coche]`. La velocidad depende de la carga, del porcentaje y del suelo.
-3. **Frenar de golpe.** El primer freno del driver era invertir el motor 0,12 s: las ruedas **derrapaban** y la deceleración era brutal `[coche]`. Hoy el driver frena con una rampa (`stop_ramp_s`).
+2. **Más rápido que el modelo.** La tabla de velocidades del modelo es la del **motor anterior** (el de antes del 1 de noviembre), medida con la batería **baja** (7,0 a 7,4 V); la del motor 310 está por medir. Con la batería cargada, el mismo porcentaje da más velocidad `[coche]`. Con 90 por ciento y 7,6 V, el coche iba "mucho más rápido que antes" y chocó (intento 7). Y por encima del 30 por ciento la recta de calibración no vale: el coche iba un 25 a 30 por ciento más lento de lo pedido con la batería casi descargada `[coche]`. La velocidad depende de la carga, del porcentaje y del suelo.
+3. **Frenar de golpe.** El primer freno del driver era invertir el motor 0,12 s: las ruedas **derrapaban** y la deceleración era brutal `[coche]`. Hoy `base_adapter` frena con una rampa (`decel_limit`).
 4. **Velocidad alta con dirección a tope.** La aceleración lateral en una curva es `v^2 * tan(ángulo) / distancia_entre_ejes`. Con la dirección a 17,6 grados y la distancia de 0,1174 m: a 0,6 m/s son unos 1,0 m/s2 (0,1 g); a 1,2 m/s son 3,9 (0,4 g); a 1,5 m/s, 6,1 (0,6 g) `[código]`.
 5. **Enganchar algo.** El borde del tapete, una pared, una rueda atascada.
 
@@ -439,34 +439,34 @@ Si `z` da -90, el signo está invertido: `up_axis` tiene el signo contrario (nor
 **Diagnostica.**
 
 ```bash
-ros2 topic echo /motor_vel            # el porcentaje que llega al motor (nunca más que motor_max_pct)
+ros2 topic echo /rrc/set_motor        # las rps que llegan a la placa (nunca más que motor_max_rps)
 ros2 topic echo /cmd_vel_raw          # la velocidad que pide tu estrategia
 ros2 topic echo --field linear_acceleration.z /robotek/imu   # en el arranque, bajar de unos 5 m/s2 = morro arriba
 ```
 
 La aceleración vertical sobre el arranque es un buen indicador: en reposo marca unos 9,6 a 9,8; una caída por debajo de unos 5 m/s2 es el morro levantándose `[coche]`. Para esto, el eje `z` debe estar ya en el marco del coche (caso 4).
 
-Mide además la velocidad real a un porcentaje fijo, con el coche en el suelo y una cinta en el suelo con una marca cada 25 cm. Publica 3 s a 20 por segundo y graba con el móvil:
+Mide además la velocidad real a unas rps fijas, con el coche en el suelo y una cinta en el suelo con una marca cada 25 cm. Con solo el driver de la placa en marcha, publica 3 s y graba con el móvil (con el motor del equipo, −rps es hacia delante):
 
 ```bash
-ros2 topic pub -r 20 -t 60 /motor_vel std_msgs/msg/Float32 "{data: 30.0}"
+ros2 topic pub -r 10 -t 30 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: -3.0}]}"
 ```
 
-El driver tiene un perro guardián de 0,3 s: hay que seguir publicando, por eso `-r 20`. Mide el tiempo entre marcas en la parte estable del vídeo (no al arrancar ni al frenar): `v = 0,25 m / tiempo`.
+El driver para el motor si pasan 0,5 s sin órdenes: hay que seguir publicando, por eso `-r 10`. Mide el tiempo entre marcas en la parte estable del vídeo (no al arrancar ni al frenar): `v = 0,25 m / tiempo`.
 
 **Arréglalo.**
 
 | Quieres... | Cambia | Efecto |
 |---|---|---|
 | Quitar el encabritamiento | Deja `accel_limit: 1.0` (m/s2) en `robot.yaml`. Con 0 no hay límite y vuelves a levantar el morro | La velocidad sube en rampa: 0,6 s para llegar a 0,6 m/s |
-| Frenar sin derrapar | `decel_limit: 0.6` y `stop_ramp_s: 0.6`. Si aun así derrapa, `decel_limit: 0.4` | Frena más largo. Cuenta con 0,3 a 0,5 m de parada desde 0,6 m/s |
-| Coche más lento en general | `motor_max_pct` (tope de potencia). Es la protección más directa | Con 40, ronda completa en 47 s (batería en 6,66 V); con 50, en 40 s (7,40 V) `[coche]`. No son iguales: las baterías eran distintas |
-| Que el modelo coincida con la batería | Vuelve a medir `motor_pct_per_mps` y `motor_min_pct` **con la batería cargada** (caso 8) | La velocidad real se parece a la pedida |
+| Frenar sin derrapar | `decel_limit: 0.6`. Si aun así derrapa, `decel_limit: 0.4` | Frena más largo. Cuenta con 0,3 a 0,5 m de parada desde 0,6 m/s |
+| Coche más lento en general | `motor_max_rps` (tope de velocidad pedida a la placa). Es la protección más directa | Con el motor anterior: al 40 %, ronda completa en 47 s (batería en 6,66 V); al 50 %, en 40 s (7,40 V) `[coche]`. No son iguales: las baterías eran distintas |
+| Que el modelo coincida con el coche | Mide `motor_rps_per_mps` **con la batería cargada** (caso 8) | La velocidad real se parece a la pedida |
 | Esquinas más lentas | `LAST_CORNER_SPEED`, `CRUISE_SPEED` en tu `mission.py` | Menos aceleración lateral. La última esquina ya va más lenta a propósito |
 
-Una regla útil: **las distancias de giro de tu estrategia están afinadas para una velocidad real máxima de unos 0,6 m/s** (en el simulador, el comando 1,28 m/s equivale a 0,60 m/s reales). Si subes `motor_max_pct` hasta que el coche supere eso, las esquinas llegan tarde.
+Una regla útil: **las distancias de giro de tu estrategia están afinadas para una velocidad real máxima de unos 0,6 m/s** (en el simulador, el comando 1,28 m/s equivale a 0,60 m/s reales). Si el coche supera eso (con el motor nuevo aún no se sabe), las esquinas llegan tarde.
 
-**Comprueba que quedó.** Tres arranques seguidos sin que las ruedas delanteras se separen del suelo, y una ronda completa con `motor_max_pct` fijo en distintos estados de la batería, anotando el voltaje: el tiempo tiene que variar poco.
+**Comprueba que quedó.** Tres arranques seguidos sin que las ruedas delanteras se separen del suelo, y una ronda completa con `motor_max_rps` fijo en distintos estados de la batería, anotando el voltaje: el tiempo tiene que variar poco.
 
 </details>
 
@@ -477,14 +477,14 @@ Una regla útil: **las distancias de giro de tu estrategia están afinadas para 
 El ángulo de rueda pasa por **cuatro límites en cadena**. El primero que corta es el que manda:
 
 1. Tu estrategia: `STEER_LIMIT` (0,30718 rad, 17,6 grados) en `minisim.py` y `REAL_STEER_LIMIT` en `robotek_common/vehicle.py`.
-2. `base_adapter`: `wheel_limit_deg` (17.6) recorta el ángulo de **rueda** que pide la estrategia, simétrico a los dos lados.
+2. `base_adapter`: `wheel_limit_deg` (19, medido el 1 nov 2026) recorta el ángulo de **rueda** que pide la estrategia, simétrico a los dos lados. Hoy manda el límite 1: la estrategia pide como mucho 17,6°.
 3. La tabla `wheel_table_*` convierte ese ángulo de rueda en ángulo de **servo**, y `steer_limit_deg` (25) recorta el del servo.
 4. El servo y la mecánica: `servo_min_us`/`servo_max_us` (1000 a 2050 µs) y el tope físico de la dirección.
 
 **Causas, de más a menos probable.**
 
 1. **La tabla de ruedas no es la del coche actual** (montaje o distancia entre ejes cambiados). Las ruedas giran menos de lo que cree el modelo.
-2. **Una rueda gira menos que la otra.** En el montaje anterior, con 25 grados de servo la rueda daba unos 19,7 a la izquierda y 17,6 a la derecha, o sea, ~2 grados de diferencia `[coche]`. `wheel_limit_deg` existe para igualar los dos lados.
+2. **Una rueda gira menos que la otra.** En el coche del equipo, la derecha llega a 19 grados y la izquierda a más `[coche]`. `wheel_limit_deg` (el menor de los dos máximos) existe para igualar los dos lados.
 3. **Subviraje a velocidad.** Con más velocidad, las ruedas delanteras patinan y el coche abre la curva.
 4. **El servo no llega a la posición** por ser lento (caso 7): el comando cambia más rápido que la rueda.
 5. **El servo choca con un tope** y el recorte `servo_min_us`/`servo_max_us` no es el del montaje.
@@ -494,7 +494,7 @@ El ángulo de rueda pasa por **cuatro límites en cadena**. El primero que corta
 
 **Diagnostica.**
 
-- **Ángulo de la rueda frente a la orden.** Con el coche en el aire y `servo_steer`, publica `data` = 0,17 / 0,26 / 0,35 / 0,44 rad y sus negativos, y mide el ángulo de cada rueda delantera con un transportador o con una foto desde arriba junto a una regla. Anota también los µs que se publican (`ros2 topic echo /rrc/acker_servo/set_state`). `[coche]` (así se hizo con círculos).
+- **Ángulo de la rueda frente a la orden.** En el suelo, con `base_adapter` en marcha: `python3 tools/steer_calibration.py --check 0 10 -10 19 -19` pide cada ángulo de rueda y da el que gira de verdad (giroscopio y modelo de bicicleta). Cada uno debe salir a uno o dos grados `[coche]`.
 - **Radio mínimo.** Con el coche en el suelo, ruedas giradas a tope y a velocidad baja, dibuja un círculo y mide el diámetro con cinta. El radio medido en el montaje anterior fue de 0,41 m `[coche]`. A partir de él: `ángulo = atan(distancia_entre_ejes / radio)` (con el radio del eje trasero).
 - **Qué hace tu estrategia en la esquina.** Mira `/cmd_vel_raw` durante `TURN`: `angular.z * 0,1174 / linear.x` debe llegar a 0,317 (la tangente de 17,6 grados). Si llega y el coche aún abre, el límite está en los puntos 3 a 5.
 
@@ -522,7 +522,7 @@ El ángulo de rueda pasa por **cuatro límites en cadena**. El primero que corta
 
 1. **Empuja contra un tope.** Si `servo_min_us`/`servo_max_us` (o `steer_limit_deg`) piden más recorrido del que tiene la mecánica, el servo se queda empujando y zumba y se calienta `[código]`. En las pruebas de banco del equipo, las órdenes de -25 grados (1069 µs) quedaban cerca del tope de 1000 µs `[coche]`.
 2. **Comandos que oscilan.** `base_adapter` manda una orden al servo **por cada mensaje de velocidad** (50 por segundo desde `drive.py`), redondeada a µs. Si la dirección que pide tu estrategia tiembla un poco por el ruido del LiDAR, el servo recibe 50 órdenes por segundo ligeramente distintas y zumba. `servo_steer` (la herramienta de banco) solo reenvía cuando el valor cambia; `base_adapter` no `[código]`.
-3. **Tensión equivocada.** El servo va conectado al puerto 2 de la placa (conector J4). Según la documentación de Hiwonder, la placa tiene un puente para alimentar los servos a 5 V o a la tensión de entrada: comprueba a qué está antes de cambiar de servo `[código]`.
+3. **Tensión equivocada.** El servo va conectado al conector J4 de la placa, que es el canal PWM 1 (`acker_channel: 1`). Según la documentación de Hiwonder, la placa tiene un puente para alimentar los servos a 5 V o a la tensión de entrada: comprueba a qué está antes de cambiar de servo `[código]`.
 4. **Holgura o roce mecánico** en la palanca o las varillas.
 5. **Es más lento de lo que supone el modelo.** El coche del equipo tiene un retardo de unos 60 ms entre la orden y el primer movimiento (52 a 79 ms) y tarda unos 0,15 a 0,2 s en recorrer 10 grados y 0,4 a 0,5 s en 25 grados `[coche]`. El simulador usa retardo 0,06 s, constante de tiempo 0,05 s y 1,2 rad/s (`SERVO_DELAY`, `SERVO_TAU`, `SERVO_RATE` en `minisim.py`).
 
@@ -610,45 +610,46 @@ La cuenta: con 240 fotogramas por segundo, 1 fotograma son 4,2 ms. Si el retardo
 
 Con la estrategia del equipo esto acabó en `STALLED`: la estrategia vio que no avanzaba y se detuvo sola. Pasó tres veces, siempre por un **cable del motor suelto** `[coche]`.
 
-1. **Cable suelto o motor sin alimentación.** Lo más probable de lejos `[coche]`. Tira de cada conector (motor, batería, puente TB6612).
-2. **STBY del TB6612 sin levantar.** El pin STBY (GPIO 13) tiene que estar en alto o el motor no gira. El nodo de motor original del equipo **nunca lo tocaba**, por eso el motor "funcionaba a ratos" `[coche]`. `motor_driver` lo pone en alto en cada orden. Hoy la placa del equipo lleva STBY **puenteado a VCC** (siempre activo, sin cable): si el motor no gira, mira primero que ese puente siga en su sitio.
-3. **El PWM al 100 por ciento.** Una versión anterior de `motor_driver` escribía el pin PWM como salida digital cuando pedía 100 por ciento, y con un PWM de `lgpio` activo esa escritura se ignoraba: el motor se quedaba con el último ciclo y no giraba. Hoy usa siempre `tx_pwm` `[coche]`. Si copias un driver propio, ten cuidado.
-4. **`lgpio` no está** (`lgpio missing: motor disabled` en el log), o el chip es otro. En la Raspberry Pi 5 los pines están en `gpiochip` 4 (`gpiochip: 4` en `robot.yaml`).
-5. **El porcentaje pedido es menor que el mínimo.** `motor_min_pct` (6,5) es el porcentaje en el que el coche empieza a moverse; por debajo, no se mueve. Con la batería baja, este mínimo sube `[código]`.
-6. Si la estrategia está parada (`STOP`, o Stop del botón), es lo esperado.
+Desde el 1 de noviembre de 2026 el motor es un **310 con encoder en el puerto M1 de la RRC Lite**: ya no hay puente TB6612 ni pines GPIO.
+
+1. **Cable suelto, o el motor en otro puerto.** Lo más probable de lejos `[coche]`. Tira del conector del motor. `rrc_motor_port` en `robot.yaml` debe ser el puerto donde está enchufado (M1 → 1): tras el choque de frente el equipo lo movió de M4 a M3 y a M1.
+2. **Muy pocas rps.** Con el motor 310, a 1–1,3 rps de la placa las ruedas giran en el aire pero el coche **no se mueve en el suelo**; a 2 rps o más, sí `[coche]`. Las rps que pide `base_adapter` son `velocidad × motor_rps_per_mps` (4,8), recortadas a `motor_max_rps`.
+3. **El motor está quemado.** Si se quedó empujando contra una pared, se calienta y deja de mover el coche: así acabó el motor anterior `[coche]`. Pruébalo en otro puerto antes de cambiarlo.
+4. **El driver de la placa no corre** o no tiene `rrc_lite_msgs` (`motor_backend 'rrc' needs rrc_lite_msgs` en el log).
+5. Si la estrategia está parada (`STOP`, o Stop del botón), o el coche tiene una pared a menos de 0,10 m delante (el freno de `base_adapter`), es lo esperado.
 
 **Diagnostica.**
 
 ```bash
-ros2 topic hz /cmd_vel_raw     # unos 50 Hz; si llega a menos de 3 por segundo, el perro guardián (0.3 s) lo para
-ros2 topic echo /motor_vel     # ¿llega algún porcentaje distinto de 0?
+ros2 topic hz /cmd_vel_raw      # unos 50 Hz; si llega a menos de 3 por segundo, el perro guardián (0.3 s) lo para
+ros2 topic echo /rrc/set_motor  # ¿llegan rps distintas de 0, en el puerto 1?
 ```
 
-Con las **ruedas en el aire**: `ros2 topic pub -r 20 /motor_vel std_msgs/msg/Float32 "{data: 15.0}"`. Debe girar hacia delante. Si el topic llega y el motor no gira, es hardware (alimentación, cable, STBY, `lgpio`).
+Con las **ruedas en el aire** y solo el driver de la placa: `ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: -2.0}]}"`. Debe girar hacia delante. Si el topic llega y el motor no gira, es hardware (cable, puerto, motor).
 
 ### Va a tirones
 
 Tres cosas hacen que un motor sano se mueva a golpes:
 
-1. **El perro guardián.** `base_adapter` y `motor_driver` paran el motor si pasan **0,3 s** sin recibir órdenes (`watchdog`, `watchdog_s`). Si tu estrategia publica a trompicones (CPU saturada, red), el motor arranca y para.
-2. **La rampa de parada.** Tras una orden de 0, el motor sigue 0,6 s en rampa, y una orden nueva en el mismo sentido espera a que termine `[coche]`.
+1. **El perro guardián.** `base_adapter` para el motor si pasan **0,3 s** sin recibir órdenes (`watchdog`), y el driver de la placa si pasan 0,5 s (`motor_watchdog`). Si tu estrategia publica a trompicones (CPU saturada, red), el motor arranca y para.
+2. **El freno junto a la pared.** `base_adapter` baja la velocidad hacia delante si el LiDAR ve algo a menos de 0,30 m delante, y la deja en 0 a 0,10 m.
 3. **La alimentación.** Un reinicio de la placa o del Pi se ve como un tirón (caso 12).
 
 Mira `ros2 topic hz /cmd_vel_raw` con el coche en marcha: debe estar fija en 50 Hz.
 
 ### Gira al revés
 
-Si con `/motor_vel` positivo el coche va hacia atrás, intercambia `ain1` y `ain2` en `tb6612fng_motor` de `robot.yaml` (o cambia los dos cables del motor). Con la marcha atrás, el driver pasa siempre por una parada (rampa) para cambiar de sentido `[coche]`.
+Si con la velocidad positiva el coche va hacia atrás, cambia el signo de `rrc_motor_sign` en `robot.yaml`. En el coche del equipo es `-1`: con +rps de la placa el coche va hacia atrás, porque los engranajes invierten el giro `[coche]`.
 
 ### Va a una velocidad que no es la pedida
 
-El mapa de velocidad es `v = (porcentaje - motor_min_pct) / motor_pct_per_mps`. En el coche del equipo salió `v = 0,0137 * (porcentaje - 6,5)` m/s entre 10 y 30 por ciento, con la batería baja (7,3 V) `[coche]`. De ahí vienen `motor_pct_per_mps: 73` y `motor_min_pct: 6.5` en `robot.yaml`.
+`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps`, y la placa mantiene esas rps con el encoder. Pero esas rps **no son vueltas reales** del motor: dependen del tipo de motor que la placa cree tener.
 
-- Está medido **solo hasta 30 por ciento** (0,32 m/s). Más arriba el coche iba 25 a 30 por ciento más lento de lo pedido `[coche]`.
-- Con la batería **cargada** el coche va más rápido para el mismo porcentaje `[coche]`.
-- La estrategia del curso pide `1.28` m/s (el máximo de `CRUISE_SPEED`). Con la calibración, eso son 100 por ciento, y `motor_max_pct` (50) lo recorta: el tope es lo que decide la velocidad de crucero `[código]`.
+- `motor_rps_per_mps: 4.8` salió del motor anterior: 1 rps = 0,209 m/s, medido con el LiDAR. Cerca de 1,9 rps iba a 0,65–0,69 m/s, así que **no es lineal** `[coche]`.
+- El motor 310 (desde el 1 nov 2026) está sin medir. Por la reductora (110 rpm sin carga) y el engranaje 1:2 hasta las ruedas de 61 mm, no puede pasar de unos 0,70 m/s.
+- La estrategia del curso pide `1.28` m/s (el máximo de `CRUISE_SPEED`): con 4,8 son unas 6,1 rps, por debajo del tope `motor_max_rps` (7).
 
-**Arréglalo.** Mide la tabla con la batería cargada: con el coche en el suelo y 2 m de cinta, publica 1 s a 10, 15, 20, 25 y 30 por ciento (el `timeout` de arriba) y mide el avance. Ajusta `motor_pct_per_mps` y `motor_min_pct` con una recta por mínimos cuadrados. Repite a mitad de la batería. Si pides más de 30 por ciento, no te fíes de la recta: mide también 40 y 50.
+**Arréglalo.** Mide con el coche en el suelo, hacia una pared y con 2 m libres: 1 s a 2, 3 y 4 rps (el comando de arriba con `timeout 1`), y el avance con cinta o con la distancia a la pared que da el LiDAR antes y después. Repite cada punto. Si no es lineal, usa una tabla y no una sola escala.
 
 **Comprueba que quedó.** `ros2 topic hz /cmd_vel_raw` en 50 Hz, el coche arranca sin tirones, y una recta de 2 m a una velocidad fija se cruza en el tiempo que predice la tabla (con un 10 a 20 por ciento de margen).
 
@@ -963,9 +964,9 @@ Esta tabla resume las diferencias que más fallos causaron. La última columna d
 |---|---|---|---|
 | El IMU sale en el marco del coche | La placa va de canto: ejes y signo hay que medirlos | Giroscopio invertido | 4 |
 | `/start` lo publica el árbitro, cuando tu nodo ya está suscrito | `/start` sale del botón, con la durabilidad por defecto | Solo si tu nodo se suscribe con `TRANSIENT_LOCAL`: el botón no arranca | 1 |
-| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Depende de la batería y de `motor_max_pct`; medido solo hasta 30 por ciento | Más rápido o más lento que el modelo | 5, 8 |
+| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior; el motor 310 está sin medir, y depende de la batería y de `motor_max_rps` | Más rápido o más lento que el modelo | 5, 8 |
 | Servo con retardo 0,06 s y 1,2 rad/s | Lo mismo de media, pero con holgura, topes y calor | Esquinas anchas o servo que zumba | 6, 7 |
-| Ángulo de rueda igual al pedido hasta 17,6 grados | La rueda real da menos, y distinto a cada lado, hasta que mides la tabla | Gira poco o desigual | 6 |
+| Ángulo de rueda igual al pedido hasta 17,6 grados | Igual al pedido gracias a la tabla medida (±19 grados); sin ella, la rueda da menos y distinto a cada lado | Gira poco o desigual | 6 |
 | Arranque y frenada suaves, sin deslizar | Encabrita y derrapa sin rampas | Vuelco, derrape | 5 |
 | LiDAR de 306 rayos, ±110 grados, 4,3 por ciento de huecos | Superficies oscuras, tapete, sol, cables | Muros falsos o ausentes | 9 |
 | Cámara a 30 fps, colores del simulador | 6 a 9 fps, luz de la sala y una pared beige al fondo | Sentido mal decidido o lento | 10 |
@@ -1022,7 +1023,7 @@ ros2 node list                                       # ¿hay nodos repetidos?
 
 **Cuidado con `drive.py`.** El `main` de la solución captura `RuntimeError` junto a `KeyboardInterrupt` y no dice nada, y en `finally` publica un `Twist()` vacío `[código]`. Si sospechas que tu nodo muere en silencio, quita el `RuntimeError` de ese `except` mientras depuras.
 
-**Qué hace el coche cuando muere el nodo de estrategia.** Los perros guardianes de `base_adapter` y de `motor_driver` (0,3 s) bajan el objetivo a 0, pero con la rampa de `decel_limit = 0,6` m/s2: desde 0,6 m/s son unos 0,3 s a velocidad más 1 s de frenada, es decir, **unos 0,5 m de más** `[código]`. La parada del botón es inmediata. Si el nodo no muere sino que se **congela**, el control sigue con el último escenario, y por eso hace falta el freno por sensor viejo (caso 2).
+**Qué hace el coche cuando muere el nodo de estrategia.** El perro guardián de `base_adapter` (0,3 s) baja el objetivo a 0, pero con la rampa de `decel_limit = 0,6` m/s2: desde 0,6 m/s son unos 0,3 s a velocidad más 1 s de frenada, es decir, **unos 0,5 m de más** `[código]`. La parada del botón es inmediata. Si el nodo no muere sino que se **congela**, el control sigue con el último escenario, y por eso hace falta el freno por sensor viejo (caso 2).
 
 **Si el Pi va justo de CPU.** Estrategia, cámara y driver compiten por 4 núcleos. La imagen es lo primero que sufre (cayó a 4,6 fps con la CPU al 100 por ciento `[coche]`). Y tu control: `drive.py` integra el giroscopio con `dt = 1/50` fijo, así que si el temporizador va a 40 Hz el rumbo sale un 20 por ciento corto `[código]`. Mira `top` y `ros2 topic hz /cmd_vel_raw` durante una ronda. En las rondas del equipo no se vieron huecos de control en marcha `[coche]`.
 
@@ -1035,7 +1036,7 @@ ros2 node list                                       # ¿hay nodos repetidos?
 `battery_guard` lee `/rrc/battery` (en milivoltios, una vez por segundo) y, tras **5 lecturas seguidas** por debajo de 6,8 V, publica `/robotek/battery_low` y `status_leds` parpadea en rojo. No para el coche (decisión del equipo, 9 oct) y el aviso queda hasta relanzar `[coche]`.
 
 - **6,8 V** son 3,4 V por celda de la LiPo 2S: queda poca carga. Por debajo de unos 3,0 V por celda (6,0 V) la batería se daña, y 6 V es también el mínimo de la placa.
-- **Mide la batería del motor aparte.** Lo que mide la placa es la de la electrónica. Si el motor tiene su propia batería, nadie la vigila: usa un medidor.
+- **El motor tira de la misma batería.** Desde el motor 310 en la RRC Lite, la placa alimenta el motor y el Pi: un arranque fuerte hunde la tensión de todo, y `battery_guard` la vigila.
 - **Una lectura suelta no cuenta.** Las lecturas de 0 mV (fallos de la placa) se ignoran.
 - La batería del equipo se midió entre 7,0 y 8,1 V; en reposo 7,26 V. Tras unas horas de pruebas llegó a 6,40 V.
 - **Contrasta una vez con un multímetro.** Según la documentación de Hiwonder, la placa v1.0 tiene dos patas del chip puenteadas a propósito para medir la batería; sin ese puente la lectura saldría mal. La lectura de 7,26 V es plausible, pero `battery_guard` depende de ella.
@@ -1052,7 +1053,7 @@ La batería importa para algo más que el aviso: la misma ronda, con un motor al
 
 Imprímela. Marca cada punto, uno por uno. Los marcados con (*) se pueden hacer en el pasillo en dos minutos.
 
-1. [ ] Batería de la electrónica cargada, `ros2 topic echo /rrc/battery --once` por encima de 7000 mV; batería del motor aparte, medida (caso 18). Anota los dos valores.
+1. [ ] Batería cargada, `ros2 topic echo /rrc/battery --once` por encima de 7000 mV (caso 18). Anota el valor: la misma batería mueve el motor y el Pi.
 2. [ ] Cables y conectores (motor, servo, LiDAR, cámara, placa): tira de cada uno. Ninguno a menos de 10 mm de una rueda o de la palanca del servo (casos 3, 12).
 3. [ ] (*) Un solo `ros2 launch` vivo: `ros2 node list` sin repetidos (caso 16).
 4. [ ] (*) LED en verde, mirados de cerca. Rojo con un color dice qué sensor falta: azul LiDAR, magenta IMU, amarillo cámara (casos 9, 4, 10).
@@ -1061,7 +1062,7 @@ Imprímela. Marca cada punto, uno por uno. Los marcados con (*) se pueden hacer 
 7. [ ] (*) Servo, con las ruedas en el aire: `+steer` va a la izquierda, 0 queda recto (caso 3).
 8. [ ] (*) LiDAR: mano delante, ángulo 0; mano a la izquierda, ángulo +90 (caso 9).
 9. [ ] Cámara: una imagen guardada con el coche en el Start; los colores se ven bien y la línea mide más de 40 px (caso 10).
-10. [ ] `motor_max_pct` fijo y anotado (casos 5, 8).
+10. [ ] `motor_max_rps` fijo y anotado (casos 5, 8).
 11. [ ] Coche en la sección de salida. Pulsa el botón con un dedo y aparta la mano de inmediato: no sostengas el coche ni lo muevas durante el primer segundo, que es cuando calibra (caso 2). Ten la otra mano lista para el Stop.
 12. [ ] No cambies calibraciones ni datos en la preparación de la ronda (§9.9). Los ejes de la IMU, el centro del servo y los colores se miden en la práctica.
 13. [ ] Tras la ronda: anota batería, tope del motor, resultado, dónde paró y qué roces hubo; guarda el log (`tee`).
@@ -1079,7 +1080,7 @@ Cuando algo falla y no sabes por dónde empezar, haz esto en orden y **para en e
 | 5 | `scan_probe.py`: mano delante y a la izquierda | Ángulos 0 y +90 | 9 |
 | 6 | `imu_probe.py`: giro a la izquierda de 90 grados | `z` cerca de +90 | 4, 11 |
 | 7 | Ruedas en el aire: `/steer` +0,30 | Ruedas a la izquierda | 3 |
-| 8 | Ruedas en el aire: `/motor_vel` 15 | Giran hacia delante | 8 |
+| 8 | Ruedas en el aire: `/rrc/set_motor` a −2 rps en el puerto 1 | Giran hacia delante | 8 |
 | 9 | Pulsa el botón y mira `/robotek/state` | `CALIBRATE`, `DETECT_DIRECTION`, `FOLLOW` en menos de 3 s | 1, 10 |
 | 10 | En el suelo, a baja velocidad, una recta de 2 m | Sin desviarse y sin tocar | 3, 4, 5 |
 
@@ -1087,7 +1088,7 @@ Cuando algo falla y no sabes por dónde empezar, haz esto en orden y **para en e
 
 Un fallo bien anotado vale más que diez rondas buenas. Para cada intento, también los fallidos, guarda:
 
-- Fecha, hora, batería (electrónica y motor), `motor_max_pct`, versión del código.
+- Fecha, hora, batería, `motor_max_rps`, versión del código.
 - Qué estado tenía `/robotek/state` al fallar, y qué pedía `/cmd_vel_raw`.
 - Lo que viste con tus ojos: si giró bien, dónde chocó, de qué lado.
 - El log del launch (`tee`) y, si puedes, un vídeo del móvil.

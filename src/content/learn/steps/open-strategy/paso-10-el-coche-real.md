@@ -47,11 +47,11 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 ### Piezas
 
-- Una **Raspberry Pi 5** con Ubuntu 24.04 (la del equipo). Una Pi 4 no la he probado: el motor usa el chip de GPIO 4 del Pi 5, y en otra placa ese número cambia (`gpiochip` en `robot.yaml`).
-- La placa **HiWonder RRC Lite**: IMU (MPU6050), botones K1 y K2, dos LED RGB y el servo de dirección.
+- Una **Raspberry Pi 5** con Ubuntu 24.04 (la del equipo). Una Pi 4 no la he probado.
+- La placa **HiWonder RRC Lite**: IMU (MPU6050), botones K1 y K2, dos LED RGB, el servo de dirección y el motor de tracción.
 - El **LiDAR LDROBOT LD19**, con su adaptador USB serie, y una **cámara USB** (la del equipo solo da YUYV 640x480).
-- El **motor de tracción** con un puente **TB6612FNG** conectado a pines GPIO del Pi.
-- Una **batería LiPo 2S** (7,4 V nominales) para la electrónica y, mejor, otra aparte para el motor.
+- El **motor de tracción**: desde el 1 de noviembre de 2026, un motor **310** con reductora 1:90 y encoder, en el puerto **M1** de la RRC Lite. La placa mantiene su velocidad con el encoder. (Antes era un motor de 25 mm movido por un puente TB6612FNG desde los GPIO del Pi; el código aún lo admite con `motor_backend: tb6612`.)
+- Una **batería LiPo 2S** (7,4 V nominales) en la RRC Lite: alimenta la placa, el servo, el motor y el Pi.
 - Soportes para levantar el coche del suelo (cajas, libros). Es lo más útil de la lista.
 
 ### Conexiones
@@ -59,21 +59,21 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 | Qué | Dónde se conecta | Cómo lo ves en Linux |
 |---|---|---|
 | Placa RRC Lite | USB del Pi | `/dev/ttyACM0` (USB `1a86:55d4`) |
-| Servo de dirección | Conector **J4** de la RRC Lite (canal PWM 2) | lo manda el driver de la placa |
+| Servo de dirección | Conector **J4** de la RRC Lite, que es el **canal PWM 1** (medido el 1 nov 2026; el código de Hiwonder usaba el 2) | `acker_channel: 1` en `rrc_lite_driver/config/controller_params.yaml` |
 | Botón de Start | **K1** de la RRC Lite (K2 también cuenta) | `/rrc/button` |
 | LED de estado | Los dos RGB de la RRC Lite (1 izquierdo, 2 derecho) | los maneja `status_leds` |
 | LiDAR LD19 | USB del Pi, con su adaptador CP2102 | `/dev/ttyUSB0`, 230400 baudios (USB `10c4:ea60`) |
 | Cámara | USB del Pi | `/dev/v4l/by-id/...-video-index0` |
-| Motor | Canal B del puente TB6612FNG (motor 2, salidas BO1 y BO2) a GPIO del Pi: PWMB 12, BIN1 5, BIN2 6; STBY puenteado a VCC en la placa (GPIO13 opcional) | chip `gpiochip4` |
+| Motor | Puerto **M1** de la RRC Lite (motor y encoder) | `rrc_motor_port: 1` en `robot.yaml`; con +rps el coche va hacia atrás, por eso `rrc_motor_sign: -1` |
 
-Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. El pin **STBY** del puente tiene que estar en alto o el motor no se mueve (al equipo le pasó: el servo respondía y el motor solo andaba a ratos). En la placa del equipo STBY va **puenteado a VCC**, así que siempre está activo y no necesita cable; si tu placa no lo tiene puenteado, llévalo al GPIO13 (pin 33): `motor_driver` lo pone en alto solo.
+Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. Si cambias el motor de puerto (al equipo le pasó tras un choque), cambia `rrc_motor_port` en `robot.yaml`.
 
 ### Alimentación
 
-- **Usa una batería buena y cargada.** La tabla de velocidad del motor se midió con la batería casi vacía (7,0 a 7,4 V), y con otra carga el coche va a otra velocidad. En una prueba, con 6,5 V y el motor al 80 %, el Pi se reinició a mitad de ronda.
+- **Usa una batería buena y cargada.** El motor anterior se midió con la batería casi vacía (7,0 a 7,4 V). En una prueba, con 6,5 V y el motor al 80 %, el Pi se reinició a mitad de ronda.
 - La RRC Lite acepta de 6 a 14 V y da 5 V y 5 A al Pi. `battery_guard` avisa a 6,8 V (3,4 V por celda). Por debajo de 6 V la placa se apaga y las celdas se dañan.
-- El equipo decidió dar al motor **su propia batería**, para que no hunda la tensión del Pi. Ten en cuenta que `battery_guard` solo vigila la de la placa: la del motor no la vigila nadie.
-- **Corriente del motor:** no la medí. La hoja de datos del TB6612FNG da 1,2 A continuos y 3,2 A de pico por canal, así que comprueba que tu motor no pide más. Un motor con la rueda bloqueada es lo que más corriente pide.
+- El motor sale ahora de la misma batería que el Pi, así que `battery_guard` vigila las dos cosas a la vez. Un arranque fuerte hunde la tensión de todo.
+- **Un motor frenado se quema.** Con la rueda bloqueada (un choque de frente, el coche contra una pared) la placa sigue empujando para mantener la velocidad, y el motor se calienta: así se quemó el motor anterior. Si el coche choca, para el motor enseguida (botón o `Ctrl+C`).
 - **Reinicios.** El Pi del equipo se reinició varias veces. Medido: con pulsos de motor, los 5 V del Pi no bajaron de 4,8 V y nunca hubo aviso de subtensión, así que la fuente estaba bien. Las causas que sí aparecieron fueron un **cable flojo** y una **tira de LED** de 30 píxeles en blanco al 100 %, que consume unos 1,8 A y apagó el Pi. De algunos reinicios no se llegó a saber la causa. Si el tuyo se reinicia: revisa primero cada conector y no cuelgues cosas grandes de los 5 V del Pi.
 
 ### La seguridad, primero
@@ -82,7 +82,8 @@ Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. El pin **ST
 2. **Una pulsación del botón es Start y la siguiente para el coche** (`/robotek/stop`). Pero el botón ignora pulsaciones separadas por menos de 1,5 s: en el primer segundo y medio no puedes parar con él. Ten la mano cerca de las ruedas y el cable de la batería a mano. `Ctrl+C` en la terminal también corta el motor.
 3. **Un Start falso es posible.** En una de las rondas del equipo `/start` se publicó sin que nadie tocara el botón. Por eso las ruedas en el aire valen también para las pruebas con la estrategia lanzada.
 4. **Pulsos cortos.** El equipo no encendió el motor más de 0,25 s seguidos en sus pruebas, y solo llegó a pulsos de 1 s con el 30 % o menos. Haz lo mismo: potencia baja, duración corta, y sube poco a poco.
-5. **Arranca siempre a baja potencia.** A fondo desde parado el coche del equipo levantó las ruedas delanteras y la dirección dejó de actuar. Por eso `base_adapter` limita la aceleración a 1 m/s² y la deceleración a 0,6 m/s², y `motor_max_pct` limita el motor.
+5. **Arranca siempre a baja potencia.** A fondo desde parado el coche del equipo levantó las ruedas delanteras y la dirección dejó de actuar. Por eso `base_adapter` limita la aceleración a 1 m/s² y la deceleración a 0,6 m/s², y `motor_max_rps` (en `robot.yaml`, hoy 7) limita la velocidad que se pide a la placa.
+6. **Freno junto a la pared.** `base_adapter` baja la velocidad hacia delante cuando el LiDAR ve algo a menos de 0,30 m delante y la deja en 0 a 0,10 m (`wall_slow_m`, `wall_stop_m`). Si el coche se para cerca de una pared aunque tu estrategia pida velocidad, es esto.
 
 ## 2. Clonar y preparar el Pi con un comando
 
@@ -93,10 +94,10 @@ Si solo quieres ver al coche hacer la ronda con la estrategia terminada de los p
 ```bash
 git clone https://github.com/renzodamgo/robotek-learn.git && cd robotek-learn
 bash tools/setup-pi.sh --with-reference
-source install/setup.bash && ros2 launch robotek_course open_challenge.launch.py motor_max_pct:=30
+source install/setup.bash && ros2 launch robotek_course open_challenge.launch.py
 ```
 
-El segundo comando instala todo y, además, saca la estrategia terminada de la etiqueta `step-9` y la deja en `src/my_open`. Con el tercero arrancan los nodos del coche. Cuando las luces estén **verdes**, pulsas el botón de la placa **una vez** para empezar y **otra vez** para parar. Antes de pulsarlo la primera vez, lee la sección 4: el coche en alto, el motor limitado y la batería cargada. Y ojo con la dirección: el archivo `robot.yaml` trae el centro y el signo del servo del coche del equipo (`servo_measured: false`). Si tu coche es otro, el servo saltará a ese centro en cuanto la estrategia publique y el coche saldrá torcido. Haz antes las comprobaciones 3.5 y 3.6.
+El segundo comando instala todo y, además, saca la estrategia terminada de la etiqueta `step-9` y la deja en `src/my_open`. Con el tercero arrancan los nodos del coche. Cuando las luces estén **verdes**, pulsas el botón de la placa **una vez** para empezar y **otra vez** para parar. Antes de pulsarlo la primera vez, lee la sección 4: el coche en alto y la batería cargada. Y ojo con la dirección: el archivo `robot.yaml` trae la dirección **medida en el coche del equipo** (centro 1403 µs, ±19°, `servo_measured: true`). Si tu coche es otro, el servo saltará a ese centro en cuanto la estrategia publique y el coche saldrá torcido. Haz antes las comprobaciones 3.5 y 3.6.
 
 Si ya tienes la estrategia de otra forma, `get-reference.sh` no la pisa: avisa y sale. Con `--force` guarda una copia (`src/my_open.bak-FECHA`) y la reemplaza. Si lanzas sin tener `my_open`, el lanzador no da un error técnico: te dice en español los dos caminos y sale.
 
@@ -151,10 +152,10 @@ source install/setup.bash
 ### 3.1 Los dispositivos USB (sin ROS)
 
 ```bash
-ls -l /dev/serial/by-id/ /dev/v4l/by-id/ /dev/rrc_lite /dev/ldlidar /dev/gpiochip4
+ls -l /dev/serial/by-id/ /dev/v4l/by-id/ /dev/rrc_lite /dev/ldlidar
 ```
 
-Debes ver la placa (`1a86` en el nombre), el LiDAR (`Silicon_Labs_CP2102`) y la cámara terminada en `video-index0`. Si falta uno, lo primero es el cable. Si solo faltan `/dev/rrc_lite` o `/dev/ldlidar`, las reglas de udev no están activas: desenchufa y enchufa, o reinicia. Si falta `/dev/gpiochip4`, tu Pi no es un Pi 5. Y si mueves un dispositivo de puerto con todo en marcha, relanza: los nodos que lo tenían abierto se quedan sin datos.
+Debes ver la placa (`1a86` en el nombre), el LiDAR (`Silicon_Labs_CP2102`) y la cámara terminada en `video-index0`. Si falta uno, lo primero es el cable. Si solo faltan `/dev/rrc_lite` o `/dev/ldlidar`, las reglas de udev no están activas: desenchufa y enchufa, o reinicia. Y si mueves un dispositivo de puerto con todo en marcha, relanza: los nodos que lo tenían abierto se quedan sin datos.
 
 ### 3.2 La cámara
 
@@ -284,57 +285,67 @@ Relanza y repite la prueba del giro a mano. Los valores de `robot.yaml` son los 
 
 ### 3.5 La dirección: centro y signo
 
-Para el servo y el motor, **para el lanzador** (`Ctrl+C`): `base_adapter` y la estrategia mandan órdenes constantemente y se pisarían con las tuyas. Lanza solo el driver de la placa y el nodo de prueba, que mueve **solo el servo**, nunca el motor:
+Para el servo y el motor, **para el lanzador** (`Ctrl+C`): `base_adapter` y la estrategia mandan órdenes constantemente y se pisarían con las tuyas. Lanza solo el driver de la placa y el nodo de prueba, que mueve **solo el servo**, nunca el motor. `servo_steer` no lee `robot.yaml`: pásale el centro, la ganancia y el signo del coche del equipo:
 
 ```bash
 ros2 launch rrc_lite_driver controller.launch.py        # terminal 1: el driver de la placa
-ros2 run robotek_hardware servo_steer                    # terminal 2
+ros2 run robotek_hardware servo_steer --ros-args -p servo_center_us:=1403.0 \
+  -p servo_gain_pos:=20.0 -p servo_gain_neg:=20.0 -p servo_sign:=1.0      # terminal 2
 ```
 
-En una tercera terminal, publica el ángulo. Es en radianes y **positivo es a la izquierda**:
+En una tercera terminal, publica el ángulo del **servo**. Es en radianes y **positivo es a la izquierda**:
 
 ```bash
 ros2 topic pub -r 5 /steer std_msgs/msg/Float32 "{data: 0.0}"
 ```
 
-Si dejas de publicar, el servo vuelve al centro a los 0,5 s. Mira las ruedas desde arriba con una regla: con 0.0 deben quedar **rectas**. Si no, ajusta el centro (`servo_center_us`, 1500 por defecto) de 10 en 10 µs:
+Si dejas de publicar, el servo vuelve al centro a los 0,5 s. Mira las ruedas desde arriba con una regla: con 0.0 deben quedar **rectas**. Si no, prueba otro centro (`servo_center_us`) de 10 en 10 µs. Ahora el signo, con `data: 0.35` (unos 20 grados, que se ven bien): mirando el coche **desde atrás**, las ruedas deben girar hacia **tu izquierda**; con `-0.35`, a la derecha. Si salen al revés, cambia `servo_sign`. Sube con cuidado: la palanca del servo puede topar con la placa o las varillas.
+
+**Medir la dirección en el suelo.** Con un transportador se mide mal. El equipo la midió el 1 de noviembre de 2026 con `tools/steer_calibration.py`: el coche avanza unos segundos con cada pulso del servo, el giroscopio da cuánto gira y, con la velocidad medida con el LiDAR, sale el ángulo real de las ruedas (`ángulo = atan(L · giro / v)`). Después de cada pulso vuelve marcha atrás por el mismo arco. Necesita `car.launch.py` en marcha **sin** `base_adapter`, que pisaría el servo y el motor (por ejemplo, `teleop:=true` y después `pkill -f base_adapter`), y ~1,5 m libres delante:
 
 ```bash
-ros2 run robotek_hardware servo_steer --ros-args -p servo_center_us:=1510.0
+python3 tools/steer_calibration.py 1100 1250 1400 1550 1700        # pulsos del servo, en µs
 ```
 
-Sube con cuidado: la palanca del servo puede topar con la placa o las varillas. Ahora el signo, con `data: 0.35` (unos 20 grados, que se ven bien; a 10 grados casi no se aprecia). Mirando el coche **desde atrás**, las ruedas deben girar hacia **tu izquierda**. Con `-0.35`, a la derecha. Si salen al revés, cambia `servo_sign` (de -1.0 a 1.0).
+El resultado del coche del equipo, ya en `robot.yaml`: el centro real es **1403 µs** (con 1500 iba 4,5° a la derecha), cada grado de servo son 20 µs a los dos lados, y las ruedas giran como mucho 19° a la derecha (a la izquierda, más). `wheel_limit_deg: 19` deja el mismo tope a los dos lados, y la tabla `wheel_table_*` hace que el ángulo pedido sea el que gira la rueda, de forma proporcional: la estrategia funciona igual en sentido horario y antihorario.
 
-Cuando el centro y el signo estén bien, mide el **ángulo real de cada rueda** para 10, 15, 20 y 25 grados de servo, a cada lado, con un transportador o una foto desde arriba, y rellena `servo_center_us`, `servo_sign`, `wheel_table_servo_deg`, `wheel_table_left_deg`, `wheel_table_right_deg` y `wheel_limit_deg` en `robot.yaml`. Después pon `servo_measured: true`. `base_adapter` avisa en cada arranque mientras sea `false`.
+**Comprobar la calibración.** Con `base_adapter` en marcha (el lanzador normal, sin estrategia: `teleop:=true`), pide ángulos de rueda como lo haría una estrategia y mira lo que gira de verdad:
 
-Un dato del coche del equipo, con el montaje anterior: 25 grados de servo daban unos 19,7 grados de rueda a la izquierda y 17,6 a la derecha, y `base_adapter` limitaba a 17,6 en los dos lados. No te sirve de valor, pero te dice que las ruedas **no giran lo que pides**.
+```bash
+python3 tools/steer_calibration.py --check 0 10 -10 19 -19
+```
+
+Cada ángulo pedido debe salir a uno o dos grados. En el coche del equipo, la derecha y el centro dieron −0,2°, −8,7° y −18,7°. **La izquierda está por comprobar en el suelo.**
 
 ### 3.6 El motor: velocidad baja
 
-Aún con las ruedas en el aire y el servo parado. Solo el nodo del motor:
+Aún con las ruedas en el aire y el servo parado. Solo el driver de la placa (el motor va por ella):
 
 ```bash
-ros2 run robotek_hardware motor_driver
+ros2 launch rrc_lite_driver controller.launch.py
 ```
 
-Debe decir `TB6612FNG ready`. Si dice `GPIO chip 4 not usable`, falta `python3-lgpio`, tu usuario no está en el grupo `gpio` o el chip se llama de otra forma (`ls /dev/gpiochip*` y `gpiochip` en `robot.yaml`).
-
-En otra terminal, un **15 %** de potencia, que es poco. El equipo vio mover el coche desde un 10 %:
+En otra terminal, una velocidad baja, en vueltas por segundo de la placa (rps) del puerto M1. Con este motor, **−rps es hacia delante**:
 
 ```bash
-ros2 topic pub -r 20 /motor_vel std_msgs/msg/Float32 "{data: 15.0}"
+ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: -2.0}]}"
 ```
 
-Las ruedas traseras deben girar **hacia delante**. Si giran hacia atrás, intercambia los cables del motor. Hay que repetir la orden a 20 Hz: `motor_driver` corta el motor si pasan 0,3 s sin orden (y lo para con una rampa de 0,6 s, a propósito: parar en seco hacía patinar al coche). Para, y prueba `-15.0` para la marcha atrás. Sube de 5 en 5 hasta un 30 % como máximo en esta prueba, sin dejar nunca el motor encendido más de unos segundos.
+Las ruedas traseras deben girar **hacia delante**. Hay que repetir la orden: el driver para el motor si pasan 0,5 s sin ninguna. Para (`Ctrl+C`), y prueba `rps: 2.0` para la marcha atrás. No dejes el motor encendido más de unos segundos.
 
-Para el motor, esto es lo que midió el equipo con la batería baja: el coche empieza a moverse hacia el 6,5 %, y a un 20 % va a unos 0,20 m/s, a un 30 % a unos 0,32 m/s. La regla que usa `base_adapter` es `% = 6,5 + 73 x velocidad`. Con la batería cargada irá más rápido.
+Lo que se sabe del motor:
+
+- La "rps" de la placa **no es una vuelta real** del motor: depende del tipo de motor que la placa cree tener. Con el motor anterior, 1 rps daba 0,209 m/s (medido con el LiDAR) y ~1,9 rps, unos 0,65–0,69 m/s.
+- Con el motor 310 nuevo, a 1–1,3 rps las ruedas giran en el aire pero **no mueven el coche en el suelo**; a 2–7 rps sí se mueve. Su escala está por medir.
+- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` (4,8, todavía la del motor anterior) y nunca pide más de `motor_max_rps` (7).
+- Por la reductora (1:90, 110 rpm sin carga) y el engranaje de 1:2 hasta las ruedas de 61 mm, el coche no puede pasar de unos 0,70 m/s.
 
 ## 4. La primera ronda, en el suelo
 
 ### Antes de poner el coche en el campo
 
 1. Las comprobaciones 3.1 a 3.6 pasan, y `servo_measured` e `imu_adapter.measured` son `true`.
-2. **Baja el tope del motor.** Lánzalo con `motor_max_pct:=30` (o cambia `motor_max_pct` en `robot.yaml` y recompila `robotek_hardware`). Con el valor del equipo (50) el coche irá a unos 0,4 m/s; con 30, a unos 0,3. Es lento y es lo que quieres para empezar.
+2. **Una recta corta antes de la ronda.** Hasta medir la escala del motor nuevo no se sabe a qué velocidad real va la estrategia. Para ir más despacio, baja el tope al lanzar (`motor_max_rps:=3`).
 3. La batería cargada: `ros2 topic echo /rrc/battery --once`.
 4. Un campo Open montado, la isla fija y el coche en la sección de salida, como en el simulador.
 
@@ -344,7 +355,7 @@ Guarda la salida de la consola, que es tu registro:
 
 ```bash
 mkdir -p ~/rondas-coche
-ros2 launch robotek_course open_challenge.launch.py motor_max_pct:=30 2>&1 | tee ~/rondas-coche/ronda-01.log
+ros2 launch robotek_course open_challenge.launch.py 2>&1 | tee ~/rondas-coche/ronda-01.log
 ```
 
 Espera a que las luces se pongan **verdes**. Con la batería cargada y el coche en su posición de salida, pulsa el botón **una vez**.
@@ -369,16 +380,16 @@ Los estados salen de lo que publica **tu** nodo en `/robotek/state` (lo hace `dr
 ### El botón
 
 - **Primera pulsación:** publica `/start` y pita una vez. El zumbador de la placa del equipo está quemado, así que allí no suena: no dependas del pitido.
-- **Segunda pulsación:** publica `/robotek/stop` y pita dos veces. `base_adapter` y `motor_driver` ponen el motor a 0 y lo mantienen. Tu nodo pasa a `OPERATOR_STOP` y no se mueve más hasta lanzar de nuevo.
+- **Segunda pulsación:** publica `/robotek/stop` y pita dos veces. `base_adapter` pone el motor a 0 y lo mantiene. Tu nodo pasa a `OPERATOR_STOP` y no se mueve más hasta lanzar de nuevo.
 - Las pulsaciones a menos de 1,5 s de la anterior se ignoran.
 
-**Qué imprime la consola.** Son líneas del código, no la captura de una ronda real. Al arrancar: `Press the button to start; press it again to stop.` (`start_button`), `TB6612FNG ready` (`motor_driver`) y `Status RGBs at level 2/255.` (`status_leds`). Con el primer pulso: `Start.` y el `Start` de tu `drive`, y después lo que escribiste en cada paso (`Giro a la izquierda (esquina N)`). Con el segundo: `Stop (button pressed again).` y `Operator stop: motor held at 0.`. Si la batería baja de 6,8 V: `Battery X V < 6.80 V: change it before the next round`.
+**Qué imprime la consola.** Son líneas del código, no la captura de una ronda real. Al arrancar: `Press the button to start; press it again to stop.` (`start_button`) y `Status RGBs at level 2/255.` (`status_leds`). Con el primer pulso: `Start.` y el `Start` de tu `drive`, y después lo que escribiste en cada paso (`Giro a la izquierda (esquina N)`). Con el segundo: `Stop (button pressed again).` y `Operator stop: motor held at 0.`. Si la batería baja de 6,8 V: `Battery X V < 6.80 V: change it before the next round`.
 
 ### El registro de una ronda
 
 En el coche no hay juez, ni posición real, ni registro de contactos, y `ros2 run robotek_course score` no puntúa rondas reales. El juez eres tú. Apunta, para cada intento, también los fallidos:
 
-- El archivo de registro, la batería antes (`ros2 topic echo /rrc/battery --once`), `motor_max_pct` y qué cambiaste desde el intento anterior.
+- El archivo de registro, la batería antes (`ros2 topic echo /rrc/battery --once`), `motor_max_rps` y qué cambiaste desde el intento anterior.
 - El sentido que detectó y desde dónde salió.
 - El tiempo desde el botón hasta `DONE` con cronómetro (el estado se ve con `ros2 topic echo /robotek/state`).
 - Si tocó un muro o movió la isla, dónde se paró y qué viste.
@@ -389,8 +400,8 @@ El simulador `real_car` modela lo que el equipo midió. Conviene saber qué es y
 
 | Parte | Lo que modela el simulador (medido en el coche) |
 |---|---|
-| Servo | Retardo de 0,06 s; velocidad de giro de 1,2 rad/s; el ángulo de las ruedas limitado a 17,6 grados |
-| Motor | Retardo de 0,06 s y respuesta de 0,15 s; aceleración 1,0 y deceleración 0,6 m/s²; una tabla de velocidad medida con la **batería baja** (pedir 0,30 da 0,27 m/s, pedir 0,60 da 0,42). El 100 % (0,60 m/s) se infirió, no se midió |
+| Servo | Retardo de 0,06 s; velocidad de giro de 1,2 rad/s; el ángulo de las ruedas limitado a 17,6 grados (la dirección medida del 8 de octubre; el coche llega ahora a 19°) |
+| Motor | Retardo de 0,06 s y respuesta de 0,15 s; aceleración 1,0 y deceleración 0,6 m/s²; una tabla de velocidad del **motor anterior**, medida con la batería baja (pedir 0,30 da 0,27 m/s, pedir 0,60 da 0,42; el tope de 0,60 m/s se infirió). El motor nuevo no está medido |
 | LiDAR | ±110 grados, 306 rayos, 10 Hz, ruido de unos 8 mm y un 4,3 % de rayos perdidos al azar |
 | IMU | 50 Hz, ruido del giroscopio de 0,0019 rad/s y un **sesgo** de 0,006 rad/s |
 | Cámara | Unos 6 fps y el campo de visión del coche, con la cámara girada 4,4 grados |
@@ -398,7 +409,7 @@ El simulador `real_car` modela lo que el equipo midió. Conviene saber qué es y
 Y esto es lo que **no** modela:
 
 - **Patinaje de las ruedas** y la **fricción del suelo**. En Gazebo las ruedas no resbalan como en el piso real.
-- **La caída de la batería** al acelerar, y cualquier velocidad por encima de lo medido (más del 30 % de motor, con baja carga). Con la batería cargada el coche va más rápido que el modelo, y los giros se disparan tarde.
+- **La caída de la batería** al acelerar, y la velocidad real del motor nuevo. Si el coche va más rápido que el modelo, los giros se disparan tarde.
 - **El encabritamiento:** a fondo desde parado el morro se levanta. No pasa en simulación.
 - **La luz.** El simulador tiene colores perfectos. Los rangos de `line_lengths` de la guía son los del simulador y con la luz de tu sala pueden fallar. Al equipo le pasó: la pared beige de la sala cayó dentro del naranja y el coche giró mal. El remedio fue mirar solo la parte del suelo de la imagen y medir los colores reales.
 - **La distorsión de la lente** de la cámara y el retardo propio de los sensores.
@@ -412,3 +423,5 @@ Una ronda perfecta en Gazebo no demuestra nada sobre el coche. Y una mala en el 
 - **Funciona pero quieres ir más rápido o con más margen:** [Afinar](/learn/open-strategy/paso-12-afinar/).
 
 Antes, repite la primera ronda un par de veces con la misma batería y el mismo tope de motor: una ronda buena no dice nada todavía.
+
+¿Quieres ver la estrategia del equipo, el Open v5? Está en el mismo repositorio (`src/robotek_open`) y se lanza igual: `ros2 launch robotek_course car.launch.py strategy:=robotek_open executable:=open_v5`. Ver el README de robotek-learn.
