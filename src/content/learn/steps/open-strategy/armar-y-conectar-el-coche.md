@@ -133,7 +133,7 @@ Con todo montado, conecta los cables **con la batería desenchufada**. Va a la R
 | USB | Adaptador del LiDAR | Pi, USB 0 negro | 230 400 baudios; `/dev/serial/by-id/usb-Silicon_Labs_CP2102_…` |
 | USB | RRC Lite | Pi, USB 1 negro | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_…` |
 | 3 hilos | Servo | RRC Lite, conector J4 | es el canal PWM 1 (`acker_channel: 1`, medido el 1 nov 2026) |
-| cable del motor | Motor 310 (motor y encoder) | RRC Lite, puerto M1 | `rrc_motor_port: 1`; con +rps el coche va hacia atrás (`rrc_motor_sign: -1`) |
+| cable del motor | Motor 310 (motor y encoder) | RRC Lite, puerto M1 | `rrc_motor_port: 1`; con el tipo de motor 2, +rps hacia delante (`rrc_motor_sign: 1.0`) |
 | batería | Batería | RRC Lite, entrada de batería | la placa se apaga bajo 6 V |
 | USB-C | RRC Lite (5 V, 5 A) | Pi, entrada USB-C | es la alimentación del Pi |
 | dupont | Pi 5 V, GND y GPIO10 (pin 19) | anillo de LED: 5 V, GND y DIN | brillo bajo: al 100 % reinició el Pi |

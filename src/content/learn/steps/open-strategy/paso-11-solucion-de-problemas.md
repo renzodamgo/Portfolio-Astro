@@ -66,6 +66,21 @@ Estos son los ocho intentos con la estrategia completa del equipo en el coche re
 | 7 | Mucho más rápido que antes y chocó con un muro | Motor al 90 por ciento con la batería cargada; el operador paró el coche cortando la alimentación y se perdieron los datos | 5, 12 |
 | 8 | Completó en 40,4 s, unos 27 puntos, con dos roces a la isla | Motor al 50 por ciento, batería en 7,4 V | 14 |
 
+Y estas, las del **4 de noviembre de 2026**, ya con el motor 310 en M1 y el Open v5, hasta las primeras rondas completas:
+
+| Qué pasó | Causa | Caso |
+|---|---|---|
+| Iba a tirones: rachas de más de 1 m/s y paradas de 1–2 s con la orden puesta | El tipo de motor guardado en la placa no era el bueno | 8 |
+| Fue hacia atrás con la orden de avanzar | El signo del motor era el del motor anterior | 8 |
+| Cada esquina giraba ~115° y chocaba con la isla tras la primera | El bucle de control iba a ~36 Hz y el rumbo se integraba con 1/50 s fijo | 6, 17 |
+| El rumbo se iba cerrando hacia la isla vuelta a vuelta | El giroscopio marca ~5 % menos: se corrige con las paredes | 3, 11 |
+| Eligió el sentido al revés y chocó | Un reflejo de luz escondió la línea azul | 10 |
+| Al terminar siguió de largo hasta la pared | El motor no se queda en 0: freno por reset de la placa | 8, 13 |
+| Fue recto contra la pared en la última esquina | El USB de la placa se cayó por ruido eléctrico | 12 |
+| No se movió en dos rondas | La placa se reinició (interruptor) y perdió el tipo de motor | 8 |
+| Frenaba sola y chocó; otra vez, dos estrategias a la vez | Nodos sobrantes de pruebas anteriores | 17 |
+| **Rondas completas de 3 vueltas en ~30 s**, parando en la sección de salida | Todo lo anterior corregido | — |
+
 ## Índice de síntomas
 
 | Lo que ves | Caso |
@@ -312,6 +327,13 @@ Hay **tres** signos que pueden estar invertidos y los tres dan el mismo síntoma
 
 Si las tres pasan y el coche aun así gira mal, el culpable es el sentido decidido (caso 10) o tu propia lógica.
 
+**Si el coche se va cerrando hacia la isla poco a poco**, vuelta a vuelta, y los signos están bien: el giroscopio no es
+exacto. En el coche del equipo marca un ~5 % menos de lo que gira, así que cada esquina sale 4–6° de más y a la tercera
+vuelta el coche va 35–40° torcido `[coche]`. Mira el ángulo de las paredes en RViz en cada recta: si el coche se va
+torciendo respecto a ellas, corrige el rumbo con el LiDAR en las rectas (el Open v5 lo hace con `wall_heading_gain`;
+ver [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 6). Y comprueba que integras el
+giroscopio con el tiempo real entre ciclos (caso 17).
+
 **Causas del lado del servo, de más a menos probable.**
 
 1. **`servo_sign` invertido.** Con un montaje del servo nuevo o girado, la misma orden mueve las ruedas al otro lado. En el montaje nuevo (21 oct 2026) el servo cambió de sitio y giró 90 grados; el equipo lo midió de nuevo el 1 de noviembre, en el suelo, con `tools/steer_calibration.py`: `servo_sign: 1.0` (izquierda = menos µs) `[coche]`.
@@ -446,10 +468,10 @@ ros2 topic echo --field linear_acceleration.z /robotek/imu   # en el arranque, b
 
 La aceleración vertical sobre el arranque es un buen indicador: en reposo marca unos 9,6 a 9,8; una caída por debajo de unos 5 m/s2 es el morro levantándose `[coche]`. Para esto, el eje `z` debe estar ya en el marco del coche (caso 4).
 
-Mide además la velocidad real a unas rps fijas, con el coche en el suelo y una cinta en el suelo con una marca cada 25 cm. Con solo el driver de la placa en marcha, publica 3 s y graba con el móvil (con el motor del equipo, −rps es hacia delante):
+Mide además la velocidad real a unas rps fijas, con el coche en el suelo y una cinta en el suelo con una marca cada 25 cm. Con solo el driver de la placa en marcha, publica 3 s y graba con el móvil (con el motor del equipo y el tipo 2, +rps es hacia delante; al terminar, `bash tools/car-clean.sh`, que este motor no siempre se para con 0):
 
 ```bash
-ros2 topic pub -r 10 -t 30 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: -3.0}]}"
+ros2 topic pub -r 10 -t 30 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: 3.0}]}"
 ```
 
 El driver para el motor si pasan 0,5 s sin órdenes: hay que seguir publicando, por eso `-r 10`. Mide el tiempo entre marcas en la parte estable del vídeo (no al arrancar ni al frenar): `v = 0,25 m / tiempo`.
@@ -601,63 +623,94 @@ La cuenta: con 240 fotogramas por segundo, 1 fotograma son 4,2 ms. Si el retardo
 
 ## Caso 8: el motor
 
-**Cómo se ve.** No se mueve, se mueve a tirones, gira al revés o va a una velocidad que no es la pedida.
+**Cómo se ve.** No se mueve, no se para, se mueve a tirones, gira al revés o va a una velocidad que no es la pedida.
 
 <details>
 <summary>Diagnóstico, arreglo y cómo comprobarlo</summary>
 
+Desde el 1 de noviembre de 2026 el motor es un **310 con encoder en el puerto M1 de la RRC Lite**: ya no hay puente
+TB6612 ni pines GPIO. La placa necesita saber qué motor tiene (`motor_type` en
+`src/rrc_lite_driver/config/controller_params.yaml`); el coche del equipo usa el **tipo 2**
+([El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
+
 ### No se mueve
 
-Con la estrategia del equipo esto acabó en `STALLED`: la estrategia vio que no avanzaba y se detuvo sola. Pasó tres veces, siempre por un **cable del motor suelto** `[coche]`.
-
-Desde el 1 de noviembre de 2026 el motor es un **310 con encoder en el puerto M1 de la RRC Lite**: ya no hay puente TB6612 ni pines GPIO.
-
-1. **Cable suelto, o el motor en otro puerto.** Lo más probable de lejos `[coche]`. Tira del conector del motor. `rrc_motor_port` en `robot.yaml` debe ser el puerto donde está enchufado (M1 → 1): tras el choque de frente el equipo lo movió de M4 a M3 y a M1.
-2. **Muy pocas rps.** Con el motor 310, a 1–1,3 rps de la placa las ruedas giran en el aire pero el coche **no se mueve en el suelo**; a 2 rps o más, sí `[coche]`. Las rps que pide `base_adapter` son `velocidad × motor_rps_per_mps` (4,8), recortadas a `motor_max_rps`.
-3. **El motor está quemado.** Si se quedó empujando contra una pared, se calienta y deja de mover el coche: así acabó el motor anterior `[coche]`. Pruébalo en otro puerto antes de cambiarlo.
-4. **El driver de la placa no corre** o no tiene `rrc_lite_msgs` (`motor_backend 'rrc' needs rrc_lite_msgs` en el log).
-5. Si la estrategia está parada (`STOP`, o Stop del botón), o el coche tiene una pared a menos de 0,10 m delante (el freno de `base_adapter`), es lo esperado.
+1. **La placa perdió el tipo de motor.** El interruptor del coche apaga la placa pero no el Pi: al encenderla vuelve a
+   su tipo por defecto, que **no tiene fuerza en el suelo** (el motor zumba o ni eso). Pasó dos veces el 4 de noviembre:
+   el Open pedía velocidad y la pared seguía a la misma distancia `[coche]`. El driver de robotek-learn reenvía el tipo
+   cada 3 s mientras el coche está parado; si usas otro driver, relánzalo después de encender la placa.
+2. **Cable suelto, o el motor en otro puerto.** Tira del conector del motor y del cable del encoder. `rrc_motor_port` en
+   `robot.yaml` debe ser el puerto donde está enchufado (M1 → 1).
+3. **Muy pocas rps.** Con el tipo 2, a 2,5 rps el coche va a ~0,45 m/s, pero con las ruedas giradas a tope puede quedarse
+   sin fuerza (le pasó el 4 de noviembre en una esquina) `[coche]`.
+4. **El motor está quemado.** Si se quedó empujando contra una pared, se calienta: así acabó el motor anterior `[coche]`.
+5. **El driver de la placa no corre** o no tiene `rrc_lite_msgs` (`motor_backend 'rrc' needs rrc_lite_msgs` en el log).
+6. Si la estrategia está parada (`STOP`, o Stop del botón), o el coche tiene una pared a menos de 0,10 m delante (el
+   freno de `base_adapter`), es lo esperado.
 
 **Diagnostica.**
 
 ```bash
-ros2 topic hz /cmd_vel_raw      # unos 50 Hz; si llega a menos de 3 por segundo, el perro guardián (0.3 s) lo para
+ros2 topic hz /cmd_vel_raw      # unos 40-50 Hz; si llega a menos de 3 por segundo, el perro guardián (0.3 s) lo para
 ros2 topic echo /rrc/set_motor  # ¿llegan rps distintas de 0, en el puerto 1?
 ```
 
-Con las **ruedas en el aire** y solo el driver de la placa: `ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: -2.0}]}"`. Debe girar hacia delante. Si el topic llega y el motor no gira, es hardware (cable, puerto, motor).
+Si `/rrc/set_motor` lleva rps y el coche no se mueve (la distancia a la pared en RViz no cambia), es la placa o el
+hardware: apaga y enciende el coche, relanza, y si sigue, revisa el conector de M1.
+
+### No se para
+
+Con el motor 310, **mandar 0 no basta**: a veces sigue de largo, acelera o se va hacia atrás `[coche]`. El 4 de
+noviembre chocó así al final de una ronda: el Open pidió parar en la sección de salida y el coche siguió a ~0,9 m/s
+hasta la pared. Se probaron ceros repetidos, uno solo, bajar despacio, pulsos marcha atrás y otros tipos de motor:
+nada se repitió dos veces igual. Lo más probable es que la placa no lea bien el encoder (cable, pines o sentido).
+
+**El arreglo que funciona:** reiniciar la placa. `base_adapter` con `brake_reset: true` publica `/rrc/reset` al pasar a 0
+después de moverse, y `rrc_driver` reinicia la placa (la línea RTS de su USB va a RESET) y la vuelve a preparar 2,5 s
+después. El coche se para ~17 cm después de la orden. Si con 0 se sigue moviendo y no tienes este freno: **apaga la
+placa** con el interruptor.
+
+**Lo que queda por hacer:** revisar el cable y los pines del encoder del 310, o intercambiar sus cables de potencia. Si
+la placa vuelve a leerlo bien, el 0 debería bastar y el motor iría a la velocidad pedida.
 
 ### Va a tirones
 
-Tres cosas hacen que un motor sano se mueva a golpes:
-
-1. **El perro guardián.** `base_adapter` para el motor si pasan **0,3 s** sin recibir órdenes (`watchdog`), y el driver de la placa si pasan 0,5 s (`motor_watchdog`). Si tu estrategia publica a trompicones (CPU saturada, red), el motor arranca y para.
-2. **El freno junto a la pared.** `base_adapter` baja la velocidad hacia delante si el LiDAR ve algo a menos de 0,30 m delante, y la deja en 0 a 0,10 m.
-3. **La alimentación.** Un reinicio de la placa o del Pi se ve como un tirón (caso 12).
-
-Mira `ros2 topic hz /cmd_vel_raw` con el coche en marcha: debe estar fija en 50 Hz.
+1. **El tipo de motor equivocado.** Con el tipo que la placa tenía guardado el 4 de noviembre, el coche iba a rachas: más
+   de 1 m/s un momento y luego parado 1–2 s con la orden puesta `[coche]`. Con el tipo 2 va seguido.
+2. **El perro guardián.** `base_adapter` para el motor si pasan **0,3 s** sin recibir órdenes (`watchdog`), y el driver
+   de la placa si pasan 0,5 s (`motor_watchdog`). Si tu estrategia publica a trompicones (CPU saturada, red), el motor
+   arranca y para.
+3. **El freno junto a la pared.** `base_adapter` baja la velocidad hacia delante si el LiDAR ve algo a menos de 0,30 m
+   delante, y la deja en 0 a 0,10 m.
+4. **La alimentación o el USB.** Un reinicio de la placa o un corte de su USB se ve como un tirón (caso 12).
 
 ### Gira al revés
 
-Si con la velocidad positiva el coche va hacia atrás, cambia el signo de `rrc_motor_sign` en `robot.yaml`. En el coche del equipo es `-1`: con +rps de la placa el coche va hacia atrás, porque los engranajes invierten el giro `[coche]`.
+Si con la velocidad positiva el coche va hacia atrás, cambia el signo de `rrc_motor_sign` en `robot.yaml`. En el coche
+del equipo, con el motor 310 y el **tipo 2**, es `1.0` (+rps hacia delante) `[coche]`; con el motor anterior era `-1`.
+Si cambias el tipo de motor, vuelve a comprobarlo: el sentido cambia con el tipo.
 
 ### Va a una velocidad que no es la pedida
 
-`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps`, y la placa mantiene esas rps con el encoder. Pero esas rps **no son vueltas reales** del motor: dependen del tipo de motor que la placa cree tener.
+`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps` (4,8), recortadas a `motor_max_rps`. Esas rps **no
+son vueltas reales** del motor: dependen del tipo de motor que la placa cree tener.
 
-- `motor_rps_per_mps: 4.8` salió del motor anterior: 1 rps = 0,209 m/s, medido con el LiDAR. Cerca de 1,9 rps iba a 0,65–0,69 m/s, así que **no es lineal** `[coche]`.
-- El motor 310 (desde el 1 nov 2026) está sin medir. Por la reductora (110 rpm sin carga) y el engranaje 1:2 hasta las ruedas de 61 mm, no puede pasar de unos 0,70 m/s.
-- La estrategia del curso pide `1.28` m/s (el máximo de `CRUISE_SPEED`): con 4,8 son unas 6,1 rps, por debajo del tope `motor_max_rps` (7).
+- Con el motor 310 y el tipo 2: ~0,45–0,5 m/s con 2,5 rps; ~0,75 m/s con 4 y con 6 rps (casi el tope del motor, 0,70 m/s
+  sin carga) `[coche]`. Más rps no dan más velocidad.
+- Pedir **menos** velocidad puede hacerlo ir **más** rápido: con el encoder mal leído, la placa empuja de más
+  `[coche]`. Por eso el Open del equipo corre con el tope a 2,5 rps.
 
-**Arréglalo.** Mide con el coche en el suelo, hacia una pared y con 2 m libres: 1 s a 2, 3 y 4 rps (el comando de arriba con `timeout 1`), y el avance con cinta o con la distancia a la pared que da el LiDAR antes y después. Repite cada punto. Si no es lineal, usa una tabla y no una sola escala.
+**Mide.** Con el coche en el suelo hacia una pared y 2 m libres, mira la distancia a la pared con el LiDAR (RViz o
+`ros2 topic echo /robotek/scan`) antes y después de 1 s a 2, 3 y 4 rps. Repite cada punto, y para el motor al final.
 
-**Comprueba que quedó.** `ros2 topic hz /cmd_vel_raw` en 50 Hz, el coche arranca sin tirones, y una recta de 2 m a una velocidad fija se cruza en el tiempo que predice la tabla (con un 10 a 20 por ciento de margen).
+**Comprueba que quedó.** `ros2 topic hz /cmd_vel_raw` estable, el coche arranca sin tirones, se para al final y una
+recta de 2 m se cruza en el tiempo esperado.
 
 </details>
 
 ## Caso 9: LiDAR
 
-**Cómo se ve.** Los LED se ponen en rojo con azul (falta el LiDAR). O hay datos pero el coche "ve" la pared por detrás. O el mapa sale espejado. O hay muchos huecos y la estrategia duda.
+**Cómo se ve.** `ros2 topic hz /robotek/scan` no da 10 Hz, o la estrategia avisa `Stale LiDAR/IMU`. O hay datos pero el coche "ve" la pared por detrás. O el mapa sale espejado. O hay muchos huecos y la estrategia duda.
 
 **Lo normal en el coche del equipo (LD19)** `[coche]`:
 
@@ -711,7 +764,12 @@ Si la mano de la izquierda sale a -90, **el scan está espejado**: `reverse`. Si
 
 ## Caso 10: cámara y sentido de la vuelta
 
-**Cómo se ve.** Sin imagen. O colores cambiados. O el coche decide el sentido contrario y choca en la primera esquina. O tarda muchos segundos en decidir. O se queda en rojo fijo (`DIRECTION_FAULT`).
+**Cómo se ve.** Sin imagen. O colores cambiados. O el coche decide el sentido contrario y choca en la primera esquina. O tarda muchos segundos en decidir. O se para con `DIRECTION_FAULT`.
+
+**Reflejos de luz.** El 4 de noviembre de 2026 una luz de frente dejó blanca la línea azul (más cerca) y la cámara solo
+vio la naranja del fondo: eligió el sentido horario en una pista antihoraria y el coche chocó `[coche]`. Evita luz
+directa sobre el tapete. El Open v5 comprueba el sentido con el LiDAR antes de la primera esquina: si se abre el lado
+contrario al de la isla que esperaba, cambia el sentido.
 
 En tu estrategia la cámara solo decide **una cosa**: el sentido de la vuelta (`DirectionVote`: línea azul más larga = antihorario, naranja = horario). Pero es la decisión más cara si falla.
 
@@ -719,7 +777,7 @@ En tu estrategia la cámara solo decide **una cosa**: el sentido de la vuelta (`
 
 1. **Un falso color en el fondo.** Es lo que le pasó al equipo (intento 1): la pared beige de la sala, por encima del muro negro del campo, cayó dentro del rango naranja (en una imagen, 434 píxeles de naranja y 0 de azul), así que el coche decidió "horario" con la esquina abierta antihoraria `[coche]`. Los rangos HSV del curso (`BLUE_HSV`, `ORANGE_HSV` en `vision.py`) son los **del simulador**.
 2. **Rojo y azul intercambiados.** Si el nodo de cámara declara `bgr8` pero los datos son `rgb8`, azul y naranja se cambian y el sentido sale al revés `[código]`. Mira la codificación: `ros2 topic echo --field encoding --once /usb_cam/image_raw`.
-3. **Línea demasiado corta o no visible al arrancar.** En el intento 6, la línea naranja se veía corta (74 a 322 px) y el sentido tardó 12,4 s `[coche]`. El tiempo máximo en tu estrategia es `DIRECTION_TIMEOUT = 15` s: pasado ese tiempo, `STOP` con `DIRECTION_FAULT` y los LED en rojo fijo.
+3. **Línea demasiado corta o no visible al arrancar.** En el intento 6, la línea naranja se veía corta (74 a 322 px) y el sentido tardó 12,4 s `[coche]`. El tiempo máximo en tu estrategia es `DIRECTION_TIMEOUT = 15` s: pasado ese tiempo, `STOP` con `DIRECTION_FAULT` (los LED quedan en azul: ya se pulsó).
 4. **Pocas imágenes por segundo.** La cámara del equipo da entre 6 y 9 imágenes por segundo con exposición automática, y 4,6 con huecos de 4,8 s si la CPU está saturada `[coche]`. `DirectionVote` necesita 5 imágenes seguidas que coincidan (`CONFIRMATIONS = 5`), o sea, al menos 0,8 s a 6 fps `[código]`, y tu `drive.py` descarta el voto si pasan 0,5 s sin imagen. La estrategia del equipo, con 3 confirmaciones, tardaba entre 0,9 y 1,1 s en calibrar y decidir `[coche]`.
 5. **Iluminación.** La exposición automática alarga el obturador con poca luz y baja los fps. Con exposición manual se llegó a 17 fps, pero la imagen sale más oscura y hay que recomprobar los colores `[coche]`.
 6. **Inclinación y giro de la cámara.** Mira demasiada sala por encima del muro o la línea cae fuera de la imagen. En el coche del equipo, medida el 8 oct con el montaje anterior, la cámara mira unos 10 grados hacia abajo, con campo de visión de unos 67 grados y girada 4,4 grados a la izquierda (`REAL_CAMERA_*` en `vehicle.py`) `[coche]`. Con el montaje nuevo (cámara más alta y más atrás) hay que volver a medir.
@@ -854,6 +912,11 @@ El sesgo depende del eje: en la placa de canto, el eje que ahora es `z` del coch
 - **Un USB movido de puerto** hace que el LiDAR y la cámara cambien de nombre: relanza el stack. Usa las rutas `/dev/serial/by-id/...` y `/dev/v4l/by-id/...`.
 - **La placa se resetea y pierde el puerto serie.** El driver del equipo reabre el puerto si el USB se cae; el de este curso no: **relanza el launch** `[coche]`.
 - **Vibración.** Los conectores de una placa de canto trabajan al rodar: sujétalos `[código]`.
+- **El USB de la placa se cae por ruido eléctrico** (4 nov 2026, dos veces en la última esquina, con el servo a tope y
+  el motor tirando): el kernel dice `usb ... disabled by hub (EMI?), re-enabling`. La placa vuelve en 1 s, pero el
+  driver muere y el coche se queda sin dirección ni freno unos segundos `[coche]`. Ferrita en el cable USB de la placa,
+  cable corto y apantallado, y separado de los cables del motor y del servo. Con el arranque automático de robotek-learn,
+  cada ronda guarda `kernel.log` en `~/runs/<fecha>-autostart/`: ahí se ve si pasó.
 
 <details>
 <summary>Diagnóstico, arreglo y cómo comprobarlo</summary>
@@ -883,19 +946,21 @@ journalctl -b -1 -n 50 --no-pager               # el final del arranque anterior
 ### Se para antes de acabar
 
 1. **Stop del operador.** Una segunda pulsación del botón, aunque sea sin querer (antirrebote de 1,5 s). Relanza para correr otra vez.
-2. **`DIRECTION_FAULT`.** Sin sentido en 15 s (caso 10): LED rojo fijo y el coche ni arranca.
+2. **`DIRECTION_FAULT`.** Sin sentido en 15 s (caso 10): el coche ni arranca.
 3. **Se atascó (`STALLED`).** Solo la estrategia del equipo lo detecta. Pasó con el cable del motor suelto `[coche]`. La tuya, si no avanza, se queda esperando.
 4. **Se cayó el nodo** (caso 17).
 5. **Frenó por sensor viejo** (el freno del equipo, caso 2).
 
 ### No se para
 
+- **El motor no se queda en 0** (motor 310 en el coche del equipo): el coche sigue de largo después de `DONE`. Es el
+  caso 8, «No se para»: el freno por reset de la placa lo arregla.
 - `FINISH` solo termina si la pared de enfrente es finita. Si `front_axis` es `inf` (LiDAR ciego, caso 9), el coche **no avanza ni termina** en `FINISH`.
 - Si el motor no mueve el coche con 0,15 m/s (con la calibración, 17,5 por ciento), el coche se queda parado en `FINISH` sin llegar. Con la batería baja puede pasar `[código]`.
 
 ### Se pasa de la sección de salida o para antes
 
-El coche para donde la pared de enfrente vuelve a estar a la distancia del Start. Si en el Start lo pusiste al fondo de la sección, para al fondo; si lo pusiste al borde delantero, un poco de inercia lo saca. Y la rampa de parada del motor (0,6 s) añade unos centímetros.
+El coche para donde la pared de enfrente vuelve a estar a la distancia del Start. Si en el Start lo pusiste al fondo de la sección, para al fondo; si lo pusiste al borde delantero, un poco de inercia lo saca. Y la rampa de parada del motor (0,6 s) añade unos centímetros. Con el freno por reset de la placa (coche del equipo) se pasa unos 17 cm: el Open v5 lo compensa con `finish_lead: 0.25` `[coche]`.
 
 En el intento 8, el `FINISH` duró solo 0,9 s: la distancia al frente al terminar la última esquina (1,47 m) ya era menor que la del Start (1,61 m) más el margen, así que frenó **en seguida**, y al llegar a `DONE` los dos lados estaban abiertos, o sea que pudo parar **antes** de la sección de salida. No se verificó `[coche]`.
 
@@ -1025,7 +1090,13 @@ ros2 node list                                       # ¿hay nodos repetidos?
 
 **Qué hace el coche cuando muere el nodo de estrategia.** El perro guardián de `base_adapter` (0,3 s) baja el objetivo a 0, pero con la rampa de `decel_limit = 0,6` m/s2: desde 0,6 m/s son unos 0,3 s a velocidad más 1 s de frenada, es decir, **unos 0,5 m de más** `[código]`. La parada del botón es inmediata. Si el nodo no muere sino que se **congela**, el control sigue con el último escenario, y por eso hace falta el freno por sensor viejo (caso 2).
 
-**Si el Pi va justo de CPU.** Estrategia, cámara y driver compiten por 4 núcleos. La imagen es lo primero que sufre (cayó a 4,6 fps con la CPU al 100 por ciento `[coche]`). Y tu control: `drive.py` integra el giroscopio con `dt = 1/50` fijo, así que si el temporizador va a 40 Hz el rumbo sale un 20 por ciento corto `[código]`. Mira `top` y `ros2 topic hz /cmd_vel_raw` durante una ronda. En las rondas del equipo no se vieron huecos de control en marcha `[coche]`.
+**Nodos sobrantes de una prueba anterior.** Un launch parado por ssh o desde un script puede dejar sus nodos vivos.
+El 4 de noviembre de 2026, tres `round_reporter` olvidados (22–30 % de CPU cada uno) frenaron el Open hasta 4–14 ciclos
+por segundo y el coche se fue recto contra la pared; otra vez, quedaron una estrategia y un driver de la placa de la
+prueba anterior corriendo junto a los nuevos `[coche]`. Antes de cada prueba: `bash tools/car-clean.sh` (el arranque
+automático de robotek-learn ya lo hace).
+
+**Si el Pi va justo de CPU.** Estrategia, cámara y driver compiten por 4 núcleos. La imagen es lo primero que sufre (cayó a 4,6 fps con la CPU al 100 por ciento `[coche]`). Y tu control: `drive.py` integra el giroscopio con `dt = 1/50` fijo, así que si el temporizador va a 40 Hz el rumbo sale un 20 por ciento corto `[código]`. Al Open v5 le pasó en el coche: el bucle iba a 33–39 Hz y cada esquina giraba ~115°; se arregló usando el tiempo real entre ciclos `[coche]`. Mira `top` y `ros2 topic hz /cmd_vel_raw` durante una ronda. Las luces de estado miraban la cámara entera y gastaban ~17 % de CPU: ahora solo leen el estado de la estrategia.
 
 </details>
 
@@ -1055,14 +1126,14 @@ Imprímela. Marca cada punto, uno por uno. Los marcados con (*) se pueden hacer 
 
 1. [ ] Batería cargada, `ros2 topic echo /rrc/battery --once` por encima de 7000 mV (caso 18). Anota el valor: la misma batería mueve el motor y el Pi.
 2. [ ] Cables y conectores (motor, servo, LiDAR, cámara, placa): tira de cada uno. Ninguno a menos de 10 mm de una rueda o de la palanca del servo (casos 3, 12).
-3. [ ] (*) Un solo `ros2 launch` vivo: `ros2 node list` sin repetidos (caso 16).
-4. [ ] (*) LED en verde, mirados de cerca. Rojo con un color dice qué sensor falta: azul LiDAR, magenta IMU, amarillo cámara (casos 9, 4, 10).
-5. [ ] (*) Frecuencias con `ros2 topic hz`: LiDAR unos 10 Hz, IMU unos 50 Hz, cámara más de 5 Hz y `/cmd_vel_raw` a 50 Hz.
+3. [ ] (*) Nada de pruebas anteriores: `bash tools/car-clean.sh` antes de lanzar (o el arranque automático, que lo hace), y `ros2 node list` sin repetidos (casos 16, 17).
+4. [ ] (*) LED en verde, mirados de cerca (la estrategia espera el botón). Los sensores, con `ros2 topic hz` (casos 9, 4, 10): las luces ya no avisan de un sensor que falta.
+5. [ ] (*) Frecuencias con `ros2 topic hz`: LiDAR unos 10 Hz, IMU unos 45–50 Hz, cámara más de 5 Hz y `/cmd_vel_raw` unos 40 Hz en el Pi.
 6. [ ] (*) Giroscopio: quieto 10 s, `media` de `z` entre -0,01 y +0,01; un giro a mano a la izquierda da `z` positivo (caso 4).
 7. [ ] (*) Servo, con las ruedas en el aire: `+steer` va a la izquierda, 0 queda recto (caso 3).
 8. [ ] (*) LiDAR: mano delante, ángulo 0; mano a la izquierda, ángulo +90 (caso 9).
 9. [ ] Cámara: una imagen guardada con el coche en el Start; los colores se ven bien y la línea mide más de 40 px (caso 10).
-10. [ ] `motor_max_rps` fijo y anotado (casos 5, 8).
+10. [ ] `motor_max_rps` fijo y anotado (2,5 en el coche del equipo), y el freno de `base_adapter` activo (casos 5, 8).
 11. [ ] Coche en la sección de salida. Pulsa el botón con un dedo y aparta la mano de inmediato: no sostengas el coche ni lo muevas durante el primer segundo, que es cuando calibra (caso 2). Ten la otra mano lista para el Stop.
 12. [ ] No cambies calibraciones ni datos en la preparación de la ronda (§9.9). Los ejes de la IMU, el centro del servo y los colores se miden en la práctica.
 13. [ ] Tras la ronda: anota batería, tope del motor, resultado, dónde paró y qué roces hubo; guarda el log (`tee`).
