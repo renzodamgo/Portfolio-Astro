@@ -47,7 +47,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 ## Tres reglas antes de tocar nada
 
 1. **Primero con el coche en el aire.** Apóyalo sobre una caja para que las ruedas no toquen la mesa. Casi todo lo de aquí (sentido del servo, sentido del motor, ejes del giroscopio) se comprueba sin que el coche se mueva del sitio.
-2. **Primeras rondas despacio.** `motor_max_rps` en `robot.yaml` es el tope de velocidad que se pide a la placa (hoy 7). Con el motor anterior, al 40 por ciento el coche del equipo completó una ronda y al 90 por ciento se estrelló `[coche]`. Empieza bajo (`motor_max_rps:=3` al lanzar) y sube poco a poco.
+2. **Primeras rondas despacio.** `motor_max_rps` es el tope de velocidad que se pide a la placa (en `robot.yaml`, o al lanzar). Con el motor anterior, al 40 por ciento el coche del equipo completó una ronda y al 90 por ciento se estrelló `[coche]`. Con el motor 310 el Open del equipo corre con `motor_max_rps:=2.5` (~0,45–0,5 m/s); más rps casi no dan más velocidad `[coche]`.
 3. **Un cambio cada vez, y anota la batería.** La velocidad del coche depende de la carga (caso 5). Si cambias dos cosas y la ronda mejora, no sabrás cuál fue.
 
 **Ten siempre la mano lista para parar.** Una segunda pulsación del botón de la placa publica `/robotek/stop`: el motor se corta al instante y no vuelve hasta relanzar `[coche]` (se añadió porque en la primera ronda el coche chocó y no había forma de detenerlo). Ojo con el antirrebote: una segunda pulsación en menos de 1,5 s se ignora. En una ronda oficial, qué cuenta como parar el coche lo decide el reglamento y el árbitro: pregúntalo antes.
@@ -448,7 +448,7 @@ Si `z` da -90, el signo está invertido: `up_axis` tiene el signo contrario (nor
 **Causas, de más a menos probable.**
 
 1. **Arranque a fondo.** Desde parado a 100 por ciento el coche se encabrita: las ruedas delanteras quedan en el aire y **la dirección no actúa hasta que vuelven a tocar el suelo**. Con 50 por ciento desde parado el morro empieza a levantarse (la aceleración vertical cae a 4,4 m/s2 en vez de 8) `[coche]`.
-2. **Más rápido que el modelo.** La tabla de velocidades del modelo es la del **motor anterior** (el de antes del 1 de noviembre), medida con la batería **baja** (7,0 a 7,4 V); la del motor 310 está por medir. Con la batería cargada, el mismo porcentaje da más velocidad `[coche]`. Con 90 por ciento y 7,6 V, el coche iba "mucho más rápido que antes" y chocó (intento 7). Y por encima del 30 por ciento la recta de calibración no vale: el coche iba un 25 a 30 por ciento más lento de lo pedido con la batería casi descargada `[coche]`. La velocidad depende de la carga, del porcentaje y del suelo.
+2. **Más rápido que el modelo.** La tabla de velocidades del modelo es la del **motor anterior** (el de antes del 1 de noviembre), medida con la batería **baja** (7,0 a 7,4 V). El motor 310 con el tipo 2 va a ~0,45–0,5 m/s con 2,5 rps y ~0,75 m/s con 4–6 rps (4 nov 2026), y no está en el modelo. Con la batería cargada, el mismo porcentaje da más velocidad `[coche]`. Con 90 por ciento y 7,6 V, el coche iba "mucho más rápido que antes" y chocó (intento 7). Y por encima del 30 por ciento la recta de calibración no vale: el coche iba un 25 a 30 por ciento más lento de lo pedido con la batería casi descargada `[coche]`. La velocidad depende de la carga, del porcentaje y del suelo.
 3. **Frenar de golpe.** El primer freno del driver era invertir el motor 0,12 s: las ruedas **derrapaban** y la deceleración era brutal `[coche]`. Hoy `base_adapter` frena con una rampa (`decel_limit`).
 4. **Velocidad alta con dirección a tope.** La aceleración lateral en una curva es `v^2 * tan(ángulo) / distancia_entre_ejes`. Con la dirección a 17,6 grados y la distancia de 0,1174 m: a 0,6 m/s son unos 1,0 m/s2 (0,1 g); a 1,2 m/s son 3,9 (0,4 g); a 1,5 m/s, 6,1 (0,6 g) `[código]`.
 5. **Enganchar algo.** El borde del tapete, una pared, una rueda atascada.
@@ -1029,7 +1029,7 @@ Esta tabla resume las diferencias que más fallos causaron. La última columna d
 |---|---|---|---|
 | El IMU sale en el marco del coche | La placa va de canto: ejes y signo hay que medirlos | Giroscopio invertido | 4 |
 | `/start` lo publica el árbitro, cuando tu nodo ya está suscrito | `/start` sale del botón, con la durabilidad por defecto | Solo si tu nodo se suscribe con `TRANSIENT_LOCAL`: el botón no arranca | 1 |
-| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior; el motor 310 está sin medir, y depende de la batería y de `motor_max_rps` | Más rápido o más lento que el modelo | 5, 8 |
+| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (tipo 2) va a ~0,45–0,5 m/s con 2,5 rps, ~0,75 m/s de tope, y con 0 no siempre se para | Más rápido o más lento que el modelo | 5, 8 |
 | Servo con retardo 0,06 s y 1,2 rad/s | Lo mismo de media, pero con holgura, topes y calor | Esquinas anchas o servo que zumba | 6, 7 |
 | Ángulo de rueda igual al pedido hasta 17,6 grados | Igual al pedido gracias a la tabla medida (±19 grados); sin ella, la rueda da menos y distinto a cada lado | Gira poco o desigual | 6 |
 | Arranque y frenada suaves, sin deslizar | Encabrita y derrapa sin rampas | Vuelco, derrape | 5 |

@@ -50,7 +50,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 - Una **Raspberry Pi 5** con Ubuntu 24.04 (la del equipo). Una Pi 4 no la he probado.
 - La placa **HiWonder RRC Lite**: IMU (MPU6050), botones K1 y K2, dos LED RGB, el servo de dirección y el motor de tracción.
 - El **LiDAR LDROBOT LD19**, con su adaptador USB serie, y una **cámara USB** (la del equipo solo da YUYV 640x480).
-- El **motor de tracción**: desde el 1 de noviembre de 2026, un motor **310** con reductora 1:90 y encoder, en el puerto **M1** de la RRC Lite. La placa mantiene su velocidad con el encoder. (Antes era un motor de 25 mm movido por un puente TB6612FNG desde los GPIO del Pi; el código aún lo admite con `motor_backend: tb6612`.)
+- El **motor de tracción**: desde el 1 de noviembre de 2026, un motor **310** con reductora 1:90 y encoder, en el puerto **M1** de la RRC Lite, con el tipo de motor 2 de la placa. La placa debería mantener su velocidad con el encoder; con este motor no lo hace del todo (no se queda en 0: el coche del equipo frena reiniciando la placa, [sección 4 de El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/)). (Antes era un motor de 25 mm movido por un puente TB6612FNG desde los GPIO del Pi; el código aún lo admite con `motor_backend: tb6612`.)
 - Una **batería LiPo 2S** (7,4 V nominales) en la RRC Lite: alimenta la placa, el servo, el motor y el Pi.
 - Soportes para levantar el coche del suelo (cajas, libros). Es lo más útil de la lista.
 
