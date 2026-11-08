@@ -9,7 +9,7 @@ compareFrom: "obstacle-step-0"
 race: "obstacle"
 ---
 
-> **El coche es el mismo del Open.** Si vas a llevar la estrategia al coche real, las instrucciones de montaje y de cables están en [Armar y conectar el coche](/learn/open-strategy/armar-y-conectar-el-coche/).
+> **El coche es el mismo del Open.** Si vas a llevar la estrategia al coche real, las instrucciones de montaje y de cables están en [Armar y conectar el coche](/learn/open-strategy/armar-y-conectar-el-coche/). Cómo corre el Obstacle del equipo en el coche (comando, motor, cámara y lo que falta), en el [paso 10](/learn/obstacle-strategy/paso-10-el-v3/#en-el-coche-real).
 
 <!-- videos:start -->
 ## Para entrar en tema

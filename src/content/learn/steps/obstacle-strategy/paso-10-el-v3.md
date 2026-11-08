@@ -3,7 +3,7 @@ guide: "obstacle-strategy"
 order: 10
 slug: "paso-10-el-v3"
 title: "El v3: lo que aprendimos del top 3"
-summary: "Lo que cambió en la estrategia del equipo después del curso: un aparcamiento de lazo cerrado, las ideas de los tres primeros de la final de 2025 probadas una a una, y el v3, que pasa de 5 a 8 rondas válidas de 10 en Gazebo."
+summary: "Lo que cambió en la estrategia del equipo después del curso: un aparcamiento de lazo cerrado, las ideas de los tres primeros de la final de 2025 probadas una a una, el v3, que pasa de 5 a 8 rondas válidas de 10 en Gazebo, y su primera ronda completa en el coche real."
 tag: "obstacle-step-9"
 compareFrom: "obstacle-step-9"
 ---
@@ -111,11 +111,60 @@ El v3 es el v2 con tres cambios: las esquinas por el recorrido simulado, 0,15 m/
 
 Una variante con 0,5 pts más en el laboratorio se quedó fuera: 36 de sus rondas válidas pasaban de 160 s, y en Gazebo, más lento, una se quedó sin tiempo antes de terminar de aparcar.
 
+## En el coche real
+
+El 8 de noviembre de 2026 el v3 hizo su **primera ronda completa en el coche**. Llegó a DONE a los 118,7 s del Start, con tres vueltas y la parada. No había juez ni bag, así que no hay puntuación medida. Llegar hasta ahí costó más por el coche que por la estrategia.
+
+### Cómo se lanza
+
+En la Raspberry, con `robotek-learn` al día:
+
+```bash
+bash tools/car-autostart.sh stop && bash tools/car-clean.sh      # el arranque automático del Open tiene la placa ocupada
+ros2 launch robotek_course car.launch.py strategy:=robotek_obstacle_v3 camera_driver:=picam motor_max_rps:=3.4 \
+    strategy_params:=$HOME/.config/robotek/obstacle_v3_car_picam.yaml
+```
+
+El botón de la placa da el Start y otra pulsación lo para. Con `button:=false` arranca solo a los 12 s. Para ver qué detecta, el nodo publica la imagen con los pilares marcados (`/obstacle/debug_image/compressed`) y las señales en RViz (`/obstacle/signs`), solo mientras alguien las mira.
+
+### La cámara nueva
+
+- **Qué cambió:** el coche lleva ahora una IMX708 Wide en el cable plano, no la USB de la simulación.
+- **Geometría:** se midió con tres pilares a ~0,9 m comparados con los grupos del LiDAR. Da ~102° de campo (1,78 rad), 0,14 rad de inclinación y 3,1° de giro a la izquierda, con un error de 0,8°.
+- **Colores:** también cambian: el rojo de un pilar sale con H ≈ 177 y el verde con H ≈ 55.
+- **Con la geometría de antes:** no veía un pilar rojo y emparejaba un verde con un objeto a 2,1 m.
+- **Dónde va:** todo está en `obstacle_v3_car_picam.yaml`, que el nodo lee como parámetros.
+
+### El motor que no podía ir despacio
+
+El v3 pide 0,15–0,30 m/s. Las primeras rondas en el coche fallaban de dos maneras: o el coche no arrancaba, o salía disparado a ~0,4–0,75 m/s y se pasaba en los cambios de carril.
+
+- **El lab no lo veía:** con la velocidad real puesta en el perfil del coche real, pasó de 191 a 101 rondas válidas de 200, y ningún ajuste de dirección lo arreglaba.
+- **La causa:** se le mandaba a la placa RRC Lite el **tipo de motor 2**. El firmware de Hiwonder (su código está publicado) tiene para ese motor ganancias PID **negativas**, y el encoder de nuestro motor cuenta al revés que el suyo. El control de velocidad empujaba en el sentido equivocado: potencia al máximo con cualquier consigna, el coche no paraba con 0 y a veces iba hacia atrás.
+- **El arreglo:** **no mandar el tipo** (`motor_type: -1`), como hace el MentorPi de Hiwonder. Ahora el coche sigue la velocidad desde ~0,02 m/s, en los dos sentidos, y para con un 0.
+- **Lo que quedó:** el freno por reinicio de la placa y la velocidad mínima, los parches de antes, ya no hacen falta.
+
+### Otros ajustes para el Obstacle
+
+- **Sin el freno de pared** del adaptador (`wall_stop_m: 0`). Frenaba en cuanto el LiDAR veía algo a menos de 0,30 m delante, lo que en el Obstacle pasa todo el rato junto a pilares y paredes. El coche acababa parado. Gazebo nunca lo tuvo.
+- **Engranajes.** Con el grande en el motor (54:30), al motor le falta fuerza a 0,15–0,20 m/s, sobre todo con la dirección a tope. Con el pequeño en el motor (30:54) hay 3,24 veces más fuerza y la máxima baja a ~0,65 m/s, de sobra para el Obstacle. El Open va mejor con 54:30.
+
+### Lo que el coche real enseñó de la estrategia
+
+- **La salida con un pilar en la recta.** Con un pilar a ~1 m, el plan pide pasar 0,30 m al lado de la isla ya desde donde está el coche, sin rampa. La dirección se va a tope y el coche llega a la línea con ~57° de rumbo. Al enderezarse se pasa ~17 cm y toca la isla.
+  - Se vio pasando la grabación por la estrategia en el Mac, con la misma dirección que el coche, y el lab lo reproduce con la velocidad real.
+  - Los arreglos candidatos son limitar el ángulo con que se busca la línea o empezar el plan desde el carril real.
+- **A veces la dirección no gira.** En algunas curvas el servo recibe todo el giro y el coche sigue recto. Pasó en rondas del Open.
+  - Durante el fallo, la CPU y las frecuencias del Pi son normales, y el servo responde con el coche quieto.
+  - Está sin resolver.
+- **La placa se reinicia sola** cuando el coche se queda atascado empujando.
+
 ## Lo que todavía falla
 
 1. **Las esquinas cruzadas en sentido horario.** Son la mayoría de los fallos que quedan (33 de 200). La próxima idea es una maniobra con marcha atrás, como hace STORMS cuando llega tarde a una curva.
 2. **Dos campos que solo fallan en Gazebo** (CW, campos 1 y 4). El laboratorio los pasa, así que todo apunta a la cámara.
 3. **El tiempo.** Unos 142 s con aparcamiento, frente a 49–63 s de los tres primeros. Hace falta curvar más rápido o medir la distancia de verdad: los tres primeros tienen encoder o motor paso a paso.
+4. **En el coche real**: la salida con un pilar en la recta, la dirección que a veces no gira y el aparcamiento (`car.launch.py` aún no lo activa). Ver [En el coche real](#en-el-coche-real).
 
 ### Prueba esto
 

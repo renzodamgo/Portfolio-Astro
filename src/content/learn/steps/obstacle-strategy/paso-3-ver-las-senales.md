@@ -43,6 +43,8 @@ La cámara busca manchas rojas y verdes con umbrales HSV y estima el ángulo de 
 
 La cámara del coche real tiene **66,7°** de campo y está **girada 4,4° a la izquierda**. Mirando hacia delante ve de −29° a +37,8°. En CW, con el campo espejado, el lado de la isla solo llega hasta **28,9°**. Esto importa en el paso 7.
 
+> **En el coche del equipo, desde el 4 nov 2026, hay otra cámara**: la IMX708 Wide, por el cable plano, con ~102° de campo y girada 3,1° a la izquierda. Se midió con tres pilares comparados con el LiDAR. La simulación y este curso siguen con la cámara de 66,7°. En el coche, el nodo del v3 lee la geometría y los colores de la cámara como parámetros (`obstacle_v3_car_picam.yaml`); lo cuenta el [paso 10](/learn/obstacle-strategy/paso-10-el-v3/#en-el-coche-real).
+
 ### Un asiento por señal
 
 Con la pose del paso 2, cada clúster se pasa al campo y se mide su progreso con `progress_of` y su desplazamiento lateral respecto al carril. Como las señales solo pueden estar en los asientos:
