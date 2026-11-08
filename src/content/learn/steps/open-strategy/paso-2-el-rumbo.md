@@ -271,6 +271,14 @@ Cuando termines, compara tu `heading.py` con la referencia en la caja «Los camb
 - **Con calibración el error es grande (más de 0,03 rad), o el registro dice `Sesgo del giroscopio: 0.0000`.** Revisa que `calibrate` use el promedio de las lecturas y que `update` **reste** el sesgo. Si el sesgo sale 0, no llegan lecturas del IMU: revisa la suscripción a `/imu`.
 - **El coche gira en círculos en vez de ir recto.** Casi siempre es el signo: el error es `goal - yaw`.
 
+> **En el coche real, el giroscopio no basta.** El de la placa del equipo marca un ~5 % menos de lo que gira el coche:
+> cada esquina sale 4–6° de más y, en dos vueltas, el coche iba 35–40° torcido hacia la isla creyendo ir recto. Restar
+> el sesgo no lo arregla, porque no es un error constante sino de escala. El Open v5 lo corrige con el LiDAR: en las
+> rectas mide el ángulo de las paredes de los lados y acerca su rumbo un 30 % a lo que dicen ellas
+> (`wall_heading_gain`). Está explicado en
+> [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/#los-ajustes-del-open-v5-para-el-coche). En el
+> simulador no hace falta.
+
 ## Resumen
 
 - El rumbo es la suma de `(gyro - sesgo) * dt`; el sesgo del giroscopio (unos 0,006 rad/s) hace que el coche se tuerza unos 3° en 10 s si no lo restas.

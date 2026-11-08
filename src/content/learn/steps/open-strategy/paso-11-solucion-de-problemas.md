@@ -81,6 +81,20 @@ Y estas, las del **4 de noviembre de 2026**, ya con el motor 310 en M1 y el Open
 | Frenaba sola y chocó; otra vez, dos estrategias a la vez | Nodos sobrantes de pruebas anteriores | 17 |
 | **Rondas completas de 3 vueltas en ~30 s**, parando en la sección de salida | Todo lo anterior corregido | — |
 
+Y por la noche, ya con la cámara IMX708:
+
+| Qué pasó | Causa | Caso |
+|---|---|---|
+| La cámara eligió horario en una salida antihoraria | Gana la línea más larga en la imagen, y una junta del tapete partía la azul. El LiDAR lo corrigió antes de la primera esquina | 10 |
+| Se quedó 15 s calculando el sentido y se paró (`DIRECTION_FAULT`) | La IMX708 no daba imagen: el flex estaba suelto | 10 |
+| Desde otra posición, la cámara no decidía el sentido | Las dos líneas se veían igual de largas: ahora sale con `direction_fallback` | 10 |
+| No avanzó con el motor en M2 | El motor en M2 solo daba tirones: volvió a M1 | 8 |
+| Paró 4 s en mitad de la ronda | Una frenada por un corte del giroscopio también reiniciaba la placa: ahora el reset es solo al final | 13 |
+| Los LED siguieron en verde tras el Start y el botón se pulsó otra vez | Se perdió el único mensaje del color. Ahora se reenvía cada segundo, y el botón no hace nada los 5 s siguientes al Start | 1 |
+| La esquina 9 no giró y fue recto contra la pared | La dirección no respondió con la orden a tope (como en otra ronda de la tarde); batería en 7,06 V. Sin aclarar | 6, 12 |
+| No avanzó y luego fue hacia atrás | La placa se reinició sola y perdió el tipo de motor: ahora se reenvía en cuanto vuelve | 8, 12 |
+| **Ronda completa en ~32 s**, parada a 2 cm de la salida | Con la IMX708 en el arranque automático | — |
+
 ## Índice de síntomas
 
 | Lo que ves | Caso |
@@ -638,7 +652,8 @@ TB6612 ni pines GPIO. La placa necesita saber qué motor tiene (`motor_type` en
 1. **La placa perdió el tipo de motor.** El interruptor del coche apaga la placa pero no el Pi: al encenderla vuelve a
    su tipo por defecto, que **no tiene fuerza en el suelo** (el motor zumba o ni eso). Pasó dos veces el 4 de noviembre:
    el Open pedía velocidad y la pared seguía a la misma distancia `[coche]`. El driver de robotek-learn reenvía el tipo
-   cada 3 s mientras el coche está parado; si usas otro driver, relánzalo después de encender la placa.
+   cada 3 s mientras el coche está parado, y en cuanto la placa vuelve tras un reinicio solo (más de 1 s sin datos),
+   aunque el coche esté en marcha. Si usas otro driver, relánzalo después de encender la placa.
 2. **Cable suelto, o el motor en otro puerto.** Tira del conector del motor y del cable del encoder. `rrc_motor_port` en
    `robot.yaml` debe ser el puerto donde está enchufado (M1 → 1).
 3. **Muy pocas rps.** Con el tipo 2, a 2,5 rps el coche va a ~0,45 m/s, pero con las ruedas giradas a tope puede quedarse
@@ -667,7 +682,8 @@ nada se repitió dos veces igual. Lo más probable es que la placa no lea bien e
 
 **El arreglo que funciona:** reiniciar la placa. `base_adapter` con `brake_reset: true` publica `/rrc/reset` al pasar a 0
 después de moverse, y `rrc_driver` reinicia la placa (la línea RTS de su USB va a RESET) y la vuelve a preparar 2,5 s
-después. El coche se para ~17 cm después de la orden. Si con 0 se sigue moviendo y no tienes este freno: **apaga la
+después. El coche se para ~17 cm después de la orden. Solo lo hace al final de la ronda (FINISH, DONE o un fallo), con la
+parada del botón o si dejan de llegar órdenes; después ya no manda nada al motor hasta relanzar. Si con 0 se sigue moviendo y no tienes este freno: **apaga la
 placa** con el interruptor.
 
 **Lo que queda por hacer:** revisar el cable y los pines del encoder del 310, o intercambiar sus cables de potencia. Si
@@ -686,7 +702,12 @@ la placa vuelve a leerlo bien, el 0 debería bastar y el motor iría a la veloci
 
 ### Gira al revés
 
-Si con la velocidad positiva el coche va hacia atrás, cambia el signo de `rrc_motor_sign` en `robot.yaml`. En el coche
+**Si iba bien y de pronto va hacia atrás**, la placa se reinició sola y volvió al tipo de motor por defecto, con el que
+la misma orden mueve el motor al revés. Pasó el 4 de noviembre en mitad de una ronda `[coche]`. En el log se ve como un
+corte de ~2,5 s del giroscopio («Stale LiDAR/IMU») sin ningún `/rrc/reset`. El driver de robotek-learn ya reenvía el
+tipo en cuanto vuelven los datos («Board data back after … s»).
+
+Si con la velocidad positiva el coche va hacia atrás desde el principio, cambia el signo de `rrc_motor_sign` en `robot.yaml`. En el coche
 del equipo, con el motor 310 y el **tipo 2**, es `1.0` (+rps hacia delante) `[coche]`; con el motor anterior era `-1`.
 Si cambias el tipo de motor, vuelve a comprobarlo: el sentido cambia con el tipo.
 
@@ -770,6 +791,18 @@ Si la mano de la izquierda sale a -90, **el scan está espejado**: `reverse`. Si
 vio la naranja del fondo: eligió el sentido horario en una pista antihoraria y el coche chocó `[coche]`. Evita luz
 directa sobre el tapete. El Open v5 comprueba el sentido con el LiDAR antes de la primera esquina: si se abre el lado
 contrario al de la isla que esperaba, cambia el sentido.
+
+**Con la cámara IMX708 (el coche del equipo desde el 4 de noviembre)** `[coche]`:
+
+- **Sin imagen y `DIRECTION_FAULT` a los 15 s.** El log del nodo de la cámara dice «Camera frontend has timed out»: el
+  flex se movió. Apaga el Pi del todo (el interruptor del coche no lo apaga), vuelve a encajar el flex por los dos lados
+  (recto hasta el fondo y la pestaña cerrada) y enciéndelo. El nodo reinicia la cámara solo si pasan 3 s sin imagen.
+- **Ve las dos líneas igual de largas y no decide.** Pasa desde algunas posiciones de salida. El Open v5 del coche sale
+  entonces en antihorario (`direction_fallback: ccw`) y el LiDAR lo corrige antes de la primera esquina.
+- **Elige mal porque una línea sale partida.** La regla es «gana la más larga en la imagen», y una junta del tapete
+  puede partir una línea en dos. El LiDAR lo corrige igual.
+- **El muro sale azul o un pilar rojo sale naranja.** Son los colores de la cámara USB: usa `open_v5_car_picam.yaml`,
+  que tiene los de la IMX708.
 
 En tu estrategia la cámara solo decide **una cosa**: el sentido de la vuelta (`DirectionVote`: línea azul más larga = antihorario, naranja = horario). Pero es la decisión más cara si falla.
 
@@ -912,6 +945,11 @@ El sesgo depende del eje: en la placa de canto, el eje que ahora es `z` del coch
 - **Un USB movido de puerto** hace que el LiDAR y la cámara cambien de nombre: relanza el stack. Usa las rutas `/dev/serial/by-id/...` y `/dev/v4l/by-id/...`.
 - **La placa se resetea y pierde el puerto serie.** El driver del equipo reabre el puerto si el USB se cae; el de este curso no: **relanza el launch** `[coche]`.
 - **Vibración.** Los conectores de una placa de canto trabajan al rodar: sujétalos `[código]`.
+- **La placa se reinicia sola, sin que se caiga el USB** (4 nov 2026, varias veces, también con el coche parado
+  esperando el botón): el giroscopio se corta ~2,5 s y la placa vuelve al tipo de motor por defecto. Según cuándo pase,
+  el coche no avanza o va hacia atrás `[coche]`. El driver de robotek-learn reenvía el tipo de motor y los offsets del
+  servo en cuanto vuelven los datos. La causa (alimentación de la placa, un conector) no está encontrada: si pasa a
+  menudo, revisa los cables de la batería a la placa.
 - **El USB de la placa se cae por ruido eléctrico** (4 nov 2026, dos veces en la última esquina, con el servo a tope y
   el motor tirando): el kernel dice `usb ... disabled by hub (EMI?), re-enabling`. La placa vuelve en 1 s, pero el
   driver muere y el coche se queda sin dirección ni freno unos segundos `[coche]`. Ferrita en el cable USB de la placa,
@@ -945,11 +983,11 @@ journalctl -b -1 -n 50 --no-pager               # el final del arranque anterior
 
 ### Se para antes de acabar
 
-1. **Stop del operador.** Una segunda pulsación del botón, aunque sea sin querer (antirrebote de 1,5 s). Relanza para correr otra vez.
+1. **Stop del operador.** Una segunda pulsación del botón, aunque sea sin querer. En robotek-learn, las de los primeros 5 s después del Start se ignoran. Relanza para correr otra vez.
 2. **`DIRECTION_FAULT`.** Sin sentido en 15 s (caso 10): el coche ni arranca.
 3. **Se atascó (`STALLED`).** Solo la estrategia del equipo lo detecta. Pasó con el cable del motor suelto `[coche]`. La tuya, si no avanza, se queda esperando.
 4. **Se cayó el nodo** (caso 17).
-5. **Frenó por sensor viejo** (el freno del equipo, caso 2).
+5. **Frenó por sensor viejo** (el freno del equipo, caso 2). En robotek-learn esa frenada manda solo 0 y no reinicia la placa: antes, el reset cortaba el giroscopio 2,5 s más y el coche perdía unos 4 s `[coche]`.
 
 ### No se para
 

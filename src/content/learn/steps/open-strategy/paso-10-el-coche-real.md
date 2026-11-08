@@ -409,7 +409,7 @@ Y esto es lo que **no** modela:
 - **Patinaje de las ruedas** y la **fricción del suelo**. En Gazebo las ruedas no resbalan como en el piso real.
 - **La caída de la batería** al acelerar, y el motor 310: va a la velocidad que le deja la placa, no a la pedida, y con 0 a veces sigue de largo.
 - **El bucle de control más lento.** En el Pi, la estrategia corre a ~35–40 ciclos por segundo, no a 50. Si integras el giroscopio suponiendo 1/50 s por ciclo, el rumbo te sale corto y cada esquina gira de más (al Open v5 le pasaba: ~115° en vez de 90°). Usa el tiempo real entre ciclos.
-- **El giroscopio no es exacto.** El de la placa marca un ~5 % menos de lo que gira el coche: en tres vueltas son decenas de grados. Corrige el rumbo con lo que ves (las paredes con el LiDAR).
+- **El giroscopio no es exacto.** El de la placa marca un ~5 % menos de lo que gira el coche: en tres vueltas son decenas de grados. Corrige el rumbo con lo que ves: el Open v5 ajusta una recta a las paredes de cada lado con el LiDAR y, en las rectas, acerca su rumbo a ellas (`wall_heading_gain`, explicado en [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/#los-ajustes-del-open-v5-para-el-coche)).
 - **El encabritamiento:** a fondo desde parado el morro se levanta. No pasa en simulación.
 - **La luz.** El simulador tiene colores perfectos. Los rangos de `line_lengths` de la guía son los del simulador y con la luz de tu sala pueden fallar. Al equipo le pasó: la pared beige de la sala cayó dentro del naranja y el coche giró mal. El remedio fue mirar solo la parte del suelo de la imagen y medir los colores reales.
 - **La distorsión de la lente** de la cámara y el retardo propio de los sensores.
