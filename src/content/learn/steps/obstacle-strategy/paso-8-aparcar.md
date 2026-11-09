@@ -464,6 +464,7 @@ python3 course/obstacle/verify_step.py 8          # Gazebo sin ventana: exige 55
 - **Toca un tope al entrar.** Sube el margen del plan o la guardia; revisa que esperas al servo.
 - **Se queda maniobrando sin terminar.** Tu coche rueda más de lo que crees tras la orden de parar: mide cuánto y ajusta el margen de parada.
 - **En Gazebo se queda quieto varios segundos y después la ronda llega a 180 s.** Es el límite conocido del paso 9: una corrección larga bloquea el nodo.
+- **En el coche real no se mueve al aparcar.** Este plan necesita ir a ~0,06 m/s con la dirección a tope, y el motor del coche del equipo (engranajes 54:30) no tiene fuerza para eso (8 nov 2026). Con más velocidad mínima se mueve, pero se pasa en cada maniobra corta. El equipo prueba ahora un aparcamiento fijo de pocos pasos, cada uno cerrado con el giroscopio o el LiDAR: está en el [capítulo 10](/learn/obstacle-strategy/paso-10-el-v3/#el-aparcamiento-en-el-coche). Antes de probar en el coche, mide el aparcamiento de tu campo.
 
 ## Resumen
 

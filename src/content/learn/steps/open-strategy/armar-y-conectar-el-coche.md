@@ -27,13 +27,13 @@ Antes de llevar tu nodo al coche real ([el capítulo siguiente](/learn/open-stra
 | Raspberry Pi 5 | 1 | El cerebro: corre ROS 2 y tu nodo |
 | Placa RRC Lite | 1 | IMU, servo, motor, botón, medida de batería; da los 5 V del Pi |
 | LiDAR LD19 (STL-19P) con su adaptador USB | 1 | Distancias en ±110° hacia delante |
-| Cámara USB (icSpring) | 1 | Color de las líneas y de las señales |
+| Cámara IMX708 Wide (Raspberry Pi Camera Module 3 Wide) con su cable plano | 1 | Color de las líneas y de las señales (desde el 4 nov 2026; antes, una cámara USB icSpring, que sigue sirviendo) |
 | Servo digital de 15 kg·cm | 1 | La dirección |
-| Motor 310 con reductora 1:90 y encoder | 1 | La tracción trasera, en el puerto M1 de la RRC Lite (desde el 1 nov 2026; antes, un motor de 25 mm con un puente TB6612) |
+| Motor 310 (JGA27-310R 20:1, 450 rpm) con encoder, y dos engranajes 54:30 | 1 | La tracción trasera, en el puerto **M2** de la RRC Lite (desde el 8 nov 2026; antes, M1 y un motor de 25 mm con un puente TB6612) |
 | Batería | 1 | La RRC Lite, que da 5 V al Pi y mueve el servo y el motor |
 | Anillo de 16 LED WS2812 | 1 | Luz para ver mejor los colores |
 | Protectores de rueda de maleta | 4 | Los neumáticos de las ruedas impresas |
-| Cables USB (3), USB-C (1), dupont hembra-hembra (3, los LED) | | Las conexiones |
+| Cables USB (2), USB-C (1), dupont hembra-hembra (3, los LED) | | Las conexiones |
 | Tornillos M2×10 (7) y M2×14 (1), tuercas M2 (8) | | La Raspberry Pi y la RRC Lite a la caja |
 | Tornillos PA2×6 (4) | | El LiDAR |
 | Tornillos M1.6×16 (2) y tuercas M1.6 (2) | | La cámara a su soporte |
@@ -113,7 +113,7 @@ Herramientas: destornilladores pequeños, llave para las tuercas del kit y, si v
 <div><div class="lego-num">10</div>
 <div class="lego-parts"><figure><img src="/learn/assembly/part-camSupport.png" alt="soporte de la cámara" loading="lazy"><figcaption><b>1x</b>soporte de la cámara</figcaption></figure><figure><img src="/learn/assembly/part-camera.png" alt="cámara" loading="lazy"><figcaption><b>1x</b>cámara</figcaption></figure><figure><img src="/learn/assembly/part-m16x16.png" alt="tornillo M1.6×16" loading="lazy"><figcaption><b>2x</b>tornillo M1.6×16</figcaption></figure><figure><img src="/learn/assembly/part-nutM16.png" alt="tuerca M1.6" loading="lazy"><figcaption><b>2x</b>tuerca M1.6</figcaption></figure></div></div>
 <img class="lego-view" src="/learn/assembly/step-10.png" alt="Paso 10: el soporte baja detrás del LiDAR, la cámara encaja arriba con dos tornillos M1.6" loading="lazy">
-<p class="lego-note">El soporte de la cámara va justo detrás del LiDAR y es más alto, para que la cámara vea por encima; la cámara se sujeta con dos tornillos M1.6×16 y sus tuercas. Medido en el coche: la cámara queda a 144,6 mm del suelo, mirando unos 10° hacia abajo y 4,4° a la izquierda.</p>
+<p class="lego-note">El soporte de la cámara va justo detrás del LiDAR y es más alto, para que la cámara vea por encima; la cámara se sujeta con dos tornillos M1.6×16 y sus tuercas. Medido en el coche con la cámara USB: queda a 144,6 mm del suelo, mirando unos 10° hacia abajo y 4,4° a la izquierda. La IMX708 Wide (desde el 4 nov 2026) va en el mismo sitio: a 142 mm, unos 8° hacia abajo y 3,1° a la izquierda.</p>
 </div>
 
 
@@ -123,17 +123,19 @@ Con todo montado, conecta los cables **con la batería desenchufada**. Va a la R
 
 <img class="lego-wiring" src="/learn/assembly/wiring-usb.svg" alt="Paso 11: cámara, LiDAR y placa RRC Lite por USB a la Raspberry Pi 5" loading="lazy">
 
-<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el motor 310 al puerto M1 de la placa RRC Lite y el servo al conector J4 (canal PWM 1)" loading="lazy">
+El dibujo es del montaje con la cámara USB. Con la IMX708, la cámara va por su cable plano al conector de cámara del Pi y solo el LiDAR y la RRC Lite van por USB.
+
+<img class="lego-wiring" src="/learn/assembly/wiring-motor.svg" alt="Paso 12: el motor 310 al puerto M2 de la placa RRC Lite y el servo al conector J4 (canal PWM 1)" loading="lazy">
 
 <img class="lego-wiring" src="/learn/assembly/wiring-power.svg" alt="Paso 13: la batería a la RRC Lite, que da 5 V al Pi por USB-C; el anillo de LED al GPIO10" loading="lazy">
 
 | Cable | De | A | Ojo con |
 |---|---|---|---|
-| USB | Cámara | Pi, USB 0 azul | el nodo de la cámara muere si la conectas con todo en marcha: relánzalo |
+| cable plano | Cámara IMX708 | Pi, conector de cámara (CAM/DISP) | con el Pi apagado; si se suelta, el Open se queda calculando el sentido (`DIRECTION_FAULT`). Con la cámara USB: USB 0 azul |
 | USB | Adaptador del LiDAR | Pi, USB 0 negro | 230 400 baudios; `/dev/serial/by-id/usb-Silicon_Labs_CP2102_…` |
 | USB | RRC Lite | Pi, USB 1 negro | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_…` |
 | 3 hilos | Servo | RRC Lite, conector J4 | es el canal PWM 1 (`acker_channel: 1`, medido el 1 nov 2026) |
-| cable del motor | Motor 310 (motor y encoder) | RRC Lite, puerto M1 | `rrc_motor_port: 1`; con el tipo de motor 2, +rps hacia delante (`rrc_motor_sign: 1.0`) |
+| cable del motor | Motor 310 (motor y encoder) | RRC Lite, puerto **M2** | `rrc_motor_port: 2`, sin mandar el tipo de motor (`motor_type: -1`), `rrc_motor_sign: -1.0` |
 | batería | Batería | RRC Lite, entrada de batería | la placa se apaga bajo 6 V |
 | USB-C | RRC Lite (5 V, 5 A) | Pi, entrada USB-C | es la alimentación del Pi |
 | dupont | Pi 5 V, GND y GPIO10 (pin 19) | anillo de LED: 5 V, GND y DIN | brillo bajo: al 100 % reinició el Pi |
@@ -149,8 +151,10 @@ Con todo montado, conecta los cables **con la batería desenchufada**. Va a la R
 
 ## Si algo falla
 
-- **El motor no gira y el servo sí.** Revisa el cable del motor en M1 y que `rrc_motor_port` de `robot.yaml` sea ese puerto. Con el motor 310 nuevo, a menos de unos 2 rps de la placa las ruedas giran en el aire pero no mueven el coche en el suelo.
+- **El motor no gira y el servo sí.** Revisa el cable del motor en M2 y que `rrc_motor_port` de `robot.yaml` sea ese puerto. Con los engranajes 54:30 tiene poca fuerza a poca velocidad: con la dirección a tope, desde parado, necesita ~1 rps de la placa.
+- **El motor va siempre a tope, no para con 0 o va hacia atrás.** Se le está mandando un tipo de motor a la placa: deja `motor_type: -1` en `controller_params.yaml` (pasó hasta el 8 nov 2026, ver el [coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
 - **El motor está muy caliente.** Pasa si se queda frenado empujando (un choque de frente quemó el motor anterior): apágalo y no subas el tope `motor_max_rps` sin necesidad.
+- **La placa se reinicia sola** (el giroscopio se corta ~2,5 s) cuando el coche se queda atascado empujando: es normal, el driver la recupera.
 - **El Pi se reinicia.** Revisa cada conector (al equipo le pasó con un cable flojo) y baja el brillo de los LED.
 - **Falta un dispositivo en `/dev/serial/by-id`.** Es el cable o el adaptador; los nombres no dependen del puerto.
 - **Las ruedas delanteras no vuelven al centro o rozan.** Revisa que las piezas móviles de la dirección giren libres y que la bieleta corta vaya al lado contrario del eje del servo.
@@ -158,6 +162,6 @@ Con todo montado, conecta los cables **con la batería desenchufada**. Va a la R
 ## Resumen
 
 - Tres bolsas: el chasis (placa, dirección, motor, ruedas), la electrónica y los sensores (driver, caja, Pi, RRC Lite, LiDAR, cámara, con sus tornillos) y los cables (USB, motor y servo, energía y luces).
-- Los sensores y la RRC Lite van por USB al Pi; el motor, al puerto M1 de la RRC Lite, y el servo, a su conector J4 (canal 1).
+- El LiDAR y la RRC Lite van por USB al Pi, y la cámara por su cable plano; el motor, al puerto M2 de la RRC Lite, y el servo, a su conector J4 (canal 1).
 - Una batería, a la RRC Lite, que mueve el motor y el servo y da 5 V al Pi por USB-C.
 - Las piezas dibujadas salen del modelo 3D del equipo (el mismo de la simulación, más los tornillos, el LD19 y la RRC Lite de SolidCraft); el motor y la dirección, de la descripción del equipo.

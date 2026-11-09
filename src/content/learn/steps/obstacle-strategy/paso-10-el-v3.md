@@ -113,7 +113,7 @@ Una variante con 0,5 pts más en el laboratorio se quedó fuera: 36 de sus ronda
 
 ## En el coche real
 
-El 8 de noviembre de 2026 el v3 hizo su **primera ronda completa en el coche**. Llegó a DONE a los 118,7 s del Start, con tres vueltas y la parada. No había juez ni bag, así que no hay puntuación medida. Llegar hasta ahí costó más por el coche que por la estrategia.
+El 8 de noviembre de 2026 el v3 hizo su **primera ronda completa en el coche**. Llegó a DONE a los 118,7 s del Start, con tres vueltas y la parada, y más tarde otra en ~138 s. No había juez, así que no hay puntuación medida. Llegar hasta ahí costó más por el coche que por la estrategia.
 
 ### Cómo se lanza
 
@@ -121,11 +121,15 @@ En la Raspberry, con `robotek-learn` al día:
 
 ```bash
 bash tools/car-autostart.sh stop && bash tools/car-clean.sh      # el arranque automático del Open tiene la placa ocupada
-ros2 launch robotek_course car.launch.py strategy:=robotek_obstacle_v3 camera_driver:=picam motor_max_rps:=3.4 \
+ros2 launch robotek_course car.launch.py strategy:=robotek_obstacle_v3 camera_driver:=picam motor_max_rps:=4 \
     strategy_params:=$HOME/.config/robotek/obstacle_v3_car_picam.yaml
 ```
 
-El botón de la placa da el Start y otra pulsación lo para. Con `button:=false` arranca solo a los 12 s. Para ver qué detecta, el nodo publica la imagen con los pilares marcados (`/obstacle/debug_image/compressed`) y las señales en RViz (`/obstacle/signs`), solo mientras alguien las mira.
+- **Start:** el botón de la placa da el Start y otra pulsación lo para.
+- **Sin botón:** `button:=false start_delay:=20`. La estrategia tarda 13–17 s en estar lista; con los 12 s por defecto, el Start llega antes y se queda en `WAIT_START`.
+- **Dónde ponerlo:** centrado en el carril y a ~1,55–1,60 m de la pared de delante. Con un pilar en la recta sale con todo el giro, y desde 0,4–0,5 m más atrás va más rápido y choca.
+- **Giro:** el archivo del coche limita el giro a 17,5° (`steer_limit: 0.3054`), un poco menos que los 17,6° del lab, para no forzar el servo contra su tope.
+ Para ver qué detecta, el nodo publica la imagen con los pilares marcados (`/obstacle/debug_image/compressed`) y las señales en RViz (`/obstacle/signs`), solo mientras alguien las mira y como mucho a 5 Hz: a 25 fps dejaban a la estrategia sin cámara.
 
 ### La cámara nueva
 
@@ -142,7 +146,7 @@ El v3 pide 0,15–0,30 m/s. Las primeras rondas en el coche fallaban de dos mane
 - **El lab no lo veía:** con la velocidad real puesta en el perfil del coche real, pasó de 191 a 101 rondas válidas de 200, y ningún ajuste de dirección lo arreglaba.
 - **La causa:** se le mandaba a la placa RRC Lite el **tipo de motor 2**. El firmware de Hiwonder (su código está publicado) tiene para ese motor ganancias PID **negativas**, y el encoder de nuestro motor cuenta al revés que el suyo. El control de velocidad empujaba en el sentido equivocado: potencia al máximo con cualquier consigna, el coche no paraba con 0 y a veces iba hacia atrás.
 - **El arreglo:** **no mandar el tipo** (`motor_type: -1`), como hace el MentorPi de Hiwonder. Ahora el coche sigue la velocidad desde ~0,02 m/s, en los dos sentidos, y para con un 0.
-- **Lo que quedó:** el freno por reinicio de la placa y la velocidad mínima, los parches de antes, ya no hacen falta.
+- **Lo que quedó:** el freno por reinicio de la placa ya no hace falta. La velocidad mínima casi tampoco: en marcha basta, pero con la dirección a tope y desde parado el motor necesita ~1 rps (~0,23 m/s) para arrancar.
 
 ### Otros ajustes para el Obstacle
 
@@ -159,12 +163,29 @@ El v3 pide 0,15–0,30 m/s. Las primeras rondas en el coche fallaban de dos mane
   - Está sin resolver.
 - **La placa se reinicia sola** cuando el coche se queda atascado empujando.
 
+### El aparcamiento en el coche
+
+`car.launch.py` no tiene un argumento `parking`: se activa en el archivo de parámetros (`parking: true`). Con
+`lot_laps: 0`, las vueltas son las de una ronda sin aparcamiento y el lote solo se usa al final; con `park_after: 0`
+aparca nada más arrancar, para probar solo la maniobra.
+
+- **Las vueltas salen:** dos rondas con el aparcamiento activo dieron las tres vueltas en 90 y 115 s y pasaron a aparcar.
+- **El aparcamiento del curso no:** pide 0,06 m/s con todo el giro, y con 54:30 el motor no mueve el coche. Tampoco con
+  pulsos de 0,66–1 rps.
+- **Más rápido tampoco:** con un mínimo de 1,1–1,3 rps sí hace las maniobras, pero sus ~14 movimientos de 3 cm se pasan, y
+  se atasca contra un tope por detrás.
+- **Lo que se prueba ahora:** un **aparcamiento fijo** (`park_mode: 1`): colocarse pasado el tope del fondo, marcha atrás
+  a tope hasta un ángulo del giroscopio, marcha atrás recta hasta el tope (LiDAR), enderezar y centrarse. Son pocos
+  pasos, cada uno cerrado con un sensor. En el lab con el coche real aparca 195 de 200 veces, frente a 35 del planificado.
+- **Falta en el coche:** probarlo y medir el lote del campo: largo, fondo y posición (`park_lot_length`,
+  `park_lot_depth`, `park_lot_end`).
+
 ## Lo que todavía falla
 
 1. **Las esquinas cruzadas en sentido horario.** Son la mayoría de los fallos que quedan (33 de 200). La próxima idea es una maniobra con marcha atrás, como hace STORMS cuando llega tarde a una curva.
 2. **Dos campos que solo fallan en Gazebo** (CW, campos 1 y 4). El laboratorio los pasa, así que todo apunta a la cámara.
 3. **El tiempo.** Unos 142 s con aparcamiento, frente a 49–63 s de los tres primeros. Hace falta curvar más rápido o medir la distancia de verdad: los tres primeros tienen encoder o motor paso a paso.
-4. **En el coche real**: la salida con un pilar en la recta, la dirección que a veces no gira y el aparcamiento (`car.launch.py` aún no lo activa). Ver [En el coche real](#en-el-coche-real).
+4. **En el coche real**: la salida con un pilar en la recta, la dirección que a veces no gira y el aparcamiento (el fijo está por probar). Ver [En el coche real](#en-el-coche-real).
 
 ### Prueba esto
 

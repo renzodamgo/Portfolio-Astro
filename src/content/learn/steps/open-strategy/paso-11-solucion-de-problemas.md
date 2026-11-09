@@ -95,6 +95,16 @@ Y por la noche, ya con la cámara IMX708:
 | No avanzó y luego fue hacia atrás | La placa se reinició sola y perdió el tipo de motor: ahora se reenvía en cuanto vuelve | 8, 12 |
 | **Ronda completa en ~32 s**, parada a 2 cm de la salida | Con la IMX708 en el arranque automático | — |
 
+Y las del **8 de noviembre de 2026**, con el motor en M2 sin tipo y los engranajes 54:30:
+
+| Qué pasó | Causa | Caso |
+|---|---|---|
+| El motor iba a tope con cualquier orden, no paraba con 0 y a veces iba hacia atrás (desde el 1 nov) | Se le mandaba el tipo de motor 2, con el control invertido para nuestro encoder: ahora no se manda el tipo | 8 |
+| **Tres rondas perfectas seguidas: 28,5 / 26,7 / 26,7 s** con `motor_max_rps:=6.7` | El motor ya sigue la velocidad pedida (~0,87 m/s de media) | — |
+| Una ronda chocó en una esquina con la dirección a tope | La dirección recibió la orden y el coche no giró, como el 4 nov. Sin aclarar | 6 |
+| Con `button:=false`, la estrategia se quedó en `WAIT_START` | El Start automático (12 s) llegó antes de que la estrategia estuviera lista: `start_delay:=20` | 1 |
+| La placa dejó de mover el motor en una prueba | Sin causa clara; volvió al reiniciarla | 8 |
+
 ## Índice de síntomas
 
 | Lo que ves | Caso |
@@ -462,7 +472,7 @@ Si `z` da -90, el signo está invertido: `up_axis` tiene el signo contrario (nor
 **Causas, de más a menos probable.**
 
 1. **Arranque a fondo.** Desde parado a 100 por ciento el coche se encabrita: las ruedas delanteras quedan en el aire y **la dirección no actúa hasta que vuelven a tocar el suelo**. Con 50 por ciento desde parado el morro empieza a levantarse (la aceleración vertical cae a 4,4 m/s2 en vez de 8) `[coche]`.
-2. **Más rápido que el modelo.** La tabla de velocidades del modelo es la del **motor anterior** (el de antes del 1 de noviembre), medida con la batería **baja** (7,0 a 7,4 V). El motor 310 con el tipo 2 va a ~0,45–0,5 m/s con 2,5 rps y ~0,75 m/s con 4–6 rps (4 nov 2026), y no está en el modelo. Con la batería cargada, el mismo porcentaje da más velocidad `[coche]`. Con 90 por ciento y 7,6 V, el coche iba "mucho más rápido que antes" y chocó (intento 7). Y por encima del 30 por ciento la recta de calibración no vale: el coche iba un 25 a 30 por ciento más lento de lo pedido con la batería casi descargada `[coche]`. La velocidad depende de la carga, del porcentaje y del suelo.
+2. **Más rápido que el modelo.** La tabla de velocidades del modelo es la del **motor anterior** (el de antes del 1 de noviembre), medida con la batería **baja** (7,0 a 7,4 V). El motor 310 de ahora (M2, sin tipo, 54:30) va a ~0,22 m/s por cada rps de la placa, hasta ~0,77 m/s con 3,4 rps y más con `motor_max_rps:=6.7` (8 nov 2026), y no está en el modelo. Con la batería cargada, el mismo porcentaje da más velocidad `[coche]`. Con 90 por ciento y 7,6 V, el coche iba "mucho más rápido que antes" y chocó (intento 7). Y por encima del 30 por ciento la recta de calibración no vale: el coche iba un 25 a 30 por ciento más lento de lo pedido con la batería casi descargada `[coche]`. La velocidad depende de la carga, del porcentaje y del suelo.
 3. **Frenar de golpe.** El primer freno del driver era invertir el motor 0,12 s: las ruedas **derrapaban** y la deceleración era brutal `[coche]`. Hoy `base_adapter` frena con una rampa (`decel_limit`).
 4. **Velocidad alta con dirección a tope.** La aceleración lateral en una curva es `v^2 * tan(ángulo) / distancia_entre_ejes`. Con la dirección a 17,6 grados y la distancia de 0,1174 m: a 0,6 m/s son unos 1,0 m/s2 (0,1 g); a 1,2 m/s son 3,9 (0,4 g); a 1,5 m/s, 6,1 (0,6 g) `[código]`.
 5. **Enganchar algo.** El borde del tapete, una pared, una rueda atascada.
@@ -482,10 +492,10 @@ ros2 topic echo --field linear_acceleration.z /robotek/imu   # en el arranque, b
 
 La aceleración vertical sobre el arranque es un buen indicador: en reposo marca unos 9,6 a 9,8; una caída por debajo de unos 5 m/s2 es el morro levantándose `[coche]`. Para esto, el eje `z` debe estar ya en el marco del coche (caso 4).
 
-Mide además la velocidad real a unas rps fijas, con el coche en el suelo y una cinta en el suelo con una marca cada 25 cm. Con solo el driver de la placa en marcha, publica 3 s y graba con el móvil (con el motor del equipo y el tipo 2, +rps es hacia delante; al terminar, `bash tools/car-clean.sh`, que este motor no siempre se para con 0):
+Mide además la velocidad real a unas rps fijas, con el coche en el suelo y una cinta en el suelo con una marca cada 25 cm. Con solo el driver de la placa en marcha, publica 3 s y graba con el móvil (con el motor del equipo en M2, −rps en este tópico es hacia delante):
 
 ```bash
-ros2 topic pub -r 10 -t 30 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: 3.0}]}"
+ros2 topic pub -r 10 -t 30 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 2, rps: -3.0}]}"
 ```
 
 El driver para el motor si pasan 0,5 s sin órdenes: hay que seguir publicando, por eso `-r 10`. Mide el tiempo entre marcas en la parte estable del vídeo (no al arrancar ni al frenar): `v = 0,25 m / tiempo`.
@@ -642,87 +652,79 @@ La cuenta: con 240 fotogramas por segundo, 1 fotograma son 4,2 ms. Si el retardo
 <details>
 <summary>Diagnóstico, arreglo y cómo comprobarlo</summary>
 
-Desde el 1 de noviembre de 2026 el motor es un **310 con encoder en el puerto M1 de la RRC Lite**: ya no hay puente
-TB6612 ni pines GPIO. La placa necesita saber qué motor tiene (`motor_type` en
-`src/rrc_lite_driver/config/controller_params.yaml`); el coche del equipo usa el **tipo 2**
+Desde el 8 de noviembre de 2026 el motor es un **310 con encoder en el puerto M2 de la RRC Lite**, con engranajes
+54:30 hasta el eje. Ya no hay puente TB6612 ni pines GPIO. A la placa **no se le manda el tipo de motor**
+(`motor_type: -1` en `src/rrc_lite_driver/config/controller_params.yaml`) y controla la velocidad con el encoder
 ([El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
+
+### Va siempre a tope, no para con 0 o va hacia atrás
+
+Se le está mandando un tipo de motor. Con el **tipo 2** (JGA27), el firmware de la RRC Lite usa ganancias PID negativas,
+y nuestro encoder cuenta al revés que el de Hiwonder: el control empuja en el sentido equivocado. Le pasó al equipo del 1
+al 8 de noviembre `[coche]`:
+- iba a ~0,45–0,75 m/s pidiera lo que pidiera;
+- con 0 seguía de largo o aceleraba;
+- a veces se iba hacia atrás.
+
+Durante esos días se paraba reiniciando la placa (`brake_reset`, hoy apagado). **El arreglo:** `motor_type: -1`.
 
 ### No se mueve
 
-1. **La placa perdió el tipo de motor.** El interruptor del coche apaga la placa pero no el Pi: al encenderla vuelve a
-   su tipo por defecto, que **no tiene fuerza en el suelo** (el motor zumba o ni eso). Pasó dos veces el 4 de noviembre:
-   el Open pedía velocidad y la pared seguía a la misma distancia `[coche]`. El driver de robotek-learn reenvía el tipo
-   cada 3 s mientras el coche está parado, y en cuanto la placa vuelve tras un reinicio solo (más de 1 s sin datos),
-   aunque el coche esté en marcha. Si usas otro driver, relánzalo después de encender la placa.
-2. **Cable suelto, o el motor en otro puerto.** Tira del conector del motor y del cable del encoder. `rrc_motor_port` en
-   `robot.yaml` debe ser el puerto donde está enchufado (M1 → 1).
-3. **Muy pocas rps.** Con el tipo 2, a 2,5 rps el coche va a ~0,45 m/s, pero con las ruedas giradas a tope puede quedarse
-   sin fuerza (le pasó el 4 de noviembre en una esquina) `[coche]`.
+1. **Muy pocas rps para la carga.** Con 54:30 el motor tiene poca fuerza a poca velocidad. Con la dirección a tope,
+   desde parado, no arranca por debajo de ~1 rps (~0,23 m/s) `[coche]`. En el Open casi nunca pasa; en el Obstacle sí.
+   Remedios: los engranajes 30:54 (3,24 veces más fuerza), o `motor_min_rps` / `motor_kick_rps` al lanzar (README de
+   `robotek_hardware`).
+2. **La placa dejó de mover el motor.** Pasó una vez el 8 nov, en una prueba de velocidad: llegaban las órdenes, la placa
+   respondía (mandaba la batería) y el motor no giraba. Volvió al reiniciarla `[coche]`. Apaga y enciende el coche y
+   relanza.
+3. **Cable suelto, o el motor en otro puerto.** Tira del conector del motor y del cable del encoder. `rrc_motor_port` en
+   `robot.yaml` debe ser el puerto donde está enchufado (M2 → 2).
 4. **El motor está quemado.** Si se quedó empujando contra una pared, se calienta: así acabó el motor anterior `[coche]`.
 5. **El driver de la placa no corre** o no tiene `rrc_lite_msgs` (`motor_backend 'rrc' needs rrc_lite_msgs` en el log).
-6. Si la estrategia está parada (`STOP`, o Stop del botón), o el coche tiene una pared a menos de 0,10 m delante (el
-   freno de `base_adapter`), es lo esperado.
+6. Si la estrategia está parada (`STOP`, o Stop del botón), es lo esperado. Si encendiste el freno de pared
+   (`wall_stop_m` > 0), también para con una pared a menos de esa distancia delante.
 
 **Diagnostica.**
 
 ```bash
 ros2 topic hz /cmd_vel_raw      # unos 40-50 Hz; si llega a menos de 3 por segundo, el perro guardián (0.3 s) lo para
-ros2 topic echo /rrc/set_motor  # ¿llegan rps distintas de 0, en el puerto 1?
+ros2 topic echo /rrc/set_motor  # ¿llegan rps distintas de 0, en el puerto 2?
 ```
 
 Si `/rrc/set_motor` lleva rps y el coche no se mueve (la distancia a la pared en RViz no cambia), es la placa o el
-hardware: apaga y enciende el coche, relanza, y si sigue, revisa el conector de M1.
+hardware: apaga y enciende el coche, relanza, y si sigue, revisa el conector de M2.
 
-### No se para
+### Se pasa al parar
 
-Con el motor 310, **mandar 0 no basta**: a veces sigue de largo, acelera o se va hacia atrás `[coche]`. El 4 de
-noviembre chocó así al final de una ronda: el Open pidió parar en la sección de salida y el coche siguió a ~0,9 m/s
-hasta la pared. Se probaron ceros repetidos, uno solo, bajar despacio, pulsos marcha atrás y otros tipos de motor:
-nada se repitió dos veces igual. Lo más probable es que la placa no lea bien el encoder (cable, pines o sentido).
-
-**El arreglo que funciona:** reiniciar la placa. `base_adapter` con `brake_reset: true` publica `/rrc/reset` al pasar a 0
-después de moverse, y `rrc_driver` reinicia la placa (la línea RTS de su USB va a RESET) y la vuelve a preparar 2,5 s
-después. El coche se para ~17 cm después de la orden. Solo lo hace al final de la ronda (FINISH, DONE o un fallo), con la
-parada del botón o si dejan de llegar órdenes; después ya no manda nada al motor hasta relanzar. Si con 0 se sigue moviendo y no tienes este freno: **apaga la
-placa** con el interruptor.
-
-**Lo que queda por hacer:** revisar el cable y los pines del encoder del 310, o intercambiar sus cables de potencia. Si
-la placa vuelve a leerlo bien, el 0 debería bastar y el motor iría a la velocidad pedida.
+Con un 0 normal el coche se desliza **8–35 cm**, más cuanto más rápido iba, y se queda quieto `[coche]`. El Open v5 pide
+parar 25 cm antes (`finish_lead: 0.25`). Si se pasa más, baja la velocidad del final o sube `finish_lead`.
 
 ### Va a tirones
 
-1. **El tipo de motor equivocado.** Con el tipo que la placa tenía guardado el 4 de noviembre, el coche iba a rachas: más
-   de 1 m/s un momento y luego parado 1–2 s con la orden puesta `[coche]`. Con el tipo 2 va seguido.
-2. **El perro guardián.** `base_adapter` para el motor si pasan **0,3 s** sin recibir órdenes (`watchdog`), y el driver
+1. **El perro guardián.** `base_adapter` para el motor si pasan **0,3 s** sin recibir órdenes (`watchdog`), y el driver
    de la placa si pasan 0,5 s (`motor_watchdog`). Si tu estrategia publica a trompicones (CPU saturada, red), el motor
    arranca y para.
-3. **El freno junto a la pared.** `base_adapter` baja la velocidad hacia delante si el LiDAR ve algo a menos de 0,30 m
-   delante, y la deja en 0 a 0,10 m.
+2. **Los pulsos del adaptador.** Con `motor_pulse_rps` > 0, por debajo de esa velocidad el motor alterna ese valor y 0:
+   a tirones a propósito.
+3. **El freno junto a la pared**, si lo encendiste (`wall_stop_m` > 0): baja la velocidad hacia delante si el LiDAR ve
+   algo a menos de 0,30 m.
 4. **La alimentación o el USB.** Un reinicio de la placa o un corte de su USB se ve como un tirón (caso 12).
 
 ### Gira al revés
 
-**Si iba bien y de pronto va hacia atrás**, la placa se reinició sola y volvió al tipo de motor por defecto, con el que
-la misma orden mueve el motor al revés. Pasó el 4 de noviembre en mitad de una ronda `[coche]`. En el log se ve como un
-corte de ~2,5 s del giroscopio («Stale LiDAR/IMU») sin ningún `/rrc/reset`. El driver de robotek-learn ya reenvía el
-tipo en cuanto vuelven los datos («Board data back after … s»).
-
-Si con la velocidad positiva el coche va hacia atrás desde el principio, cambia el signo de `rrc_motor_sign` en `robot.yaml`. En el coche
-del equipo, con el motor 310 y el **tipo 2**, es `1.0` (+rps hacia delante) `[coche]`; con el motor anterior era `-1`.
-Si cambias el tipo de motor, vuelve a comprobarlo: el sentido cambia con el tipo.
+Si con la velocidad positiva de tu estrategia el coche va hacia atrás, cambia el signo de `rrc_motor_sign` en
+`robot.yaml`. En el coche del equipo, en M2 y sin tipo, es `-1.0`, porque `rrc_driver` invierte el signo
+`[coche]`. Si cambias de puerto o de motor, vuelve a comprobarlo.
 
 ### Va a una velocidad que no es la pedida
 
-`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps` (4,8), recortadas a `motor_max_rps`. Esas rps **no
-son vueltas reales** del motor: dependen del tipo de motor que la placa cree tener.
+`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps`, recortadas a `motor_max_rps`. Con 54:30, el factor
+es **4,4**: medido el 8 nov con el LiDAR, de 0,1 a 1 rps la velocidad real sigue a la pedida (±20 %) en los dos sentidos.
+La respuesta tarda ~0,5 s: en 1 s el coche no llega a la velocidad estable `[coche]`. Con 30:54, el factor es 13.
 
-- Con el motor 310 y el tipo 2: ~0,45–0,5 m/s con 2,5 rps; ~0,75 m/s con 4 y con 6 rps (casi el tope del motor, 0,70 m/s
-  sin carga) `[coche]`. Más rps no dan más velocidad.
-- Pedir **menos** velocidad puede hacerlo ir **más** rápido: con el encoder mal leído, la placa empuja de más
-  `[coche]`. Por eso el Open del equipo corre con el tope a 2,5 rps.
-
-**Mide.** Con el coche en el suelo hacia una pared y 2 m libres, mira la distancia a la pared con el LiDAR (RViz o
-`ros2 topic echo /robotek/scan`) antes y después de 1 s a 2, 3 y 4 rps. Repite cada punto, y para el motor al final.
+**Mide.** Con el coche en el suelo hacia una pared y 2 m libres, pide 0,15, 0,30 y 0,50 m/s por `/cmd_vel_raw` unos
+segundos y mira cuánto baja la distancia a la pared con el LiDAR (RViz o `ros2 topic echo /robotek/scan`). Si la real es
+menor que la pedida, sube `motor_rps_per_mps` en la misma proporción. Para el motor al final.
 
 **Comprueba que quedó.** `ros2 topic hz /cmd_vel_raw` estable, el coche arranca sin tirones, se para al final y una
 recta de 2 m se cruza en el tiempo esperado.
@@ -945,11 +947,11 @@ El sesgo depende del eje: en la placa de canto, el eje que ahora es `z` del coch
 - **Un USB movido de puerto** hace que el LiDAR y la cámara cambien de nombre: relanza el stack. Usa las rutas `/dev/serial/by-id/...` y `/dev/v4l/by-id/...`.
 - **La placa se resetea y pierde el puerto serie.** El driver del equipo reabre el puerto si el USB se cae; el de este curso no: **relanza el launch** `[coche]`.
 - **Vibración.** Los conectores de una placa de canto trabajan al rodar: sujétalos `[código]`.
-- **La placa se reinicia sola, sin que se caiga el USB** (4 nov 2026, varias veces, también con el coche parado
-  esperando el botón): el giroscopio se corta ~2,5 s y la placa vuelve al tipo de motor por defecto. Según cuándo pase,
-  el coche no avanza o va hacia atrás `[coche]`. El driver de robotek-learn reenvía el tipo de motor y los offsets del
-  servo en cuanto vuelven los datos. La causa (alimentación de la placa, un conector) no está encontrada: si pasa a
-  menudo, revisa los cables de la batería a la placa.
+- **La placa se reinicia sola, sin que se caiga el USB.** Pasó el 4 nov 2026 varias veces, también con el coche parado
+  esperando el botón. El 8 nov pasó sobre todo con el coche atascado empujando. El giroscopio se corta ~2,5 s («Board data
+  back after … s» en el log) y el driver de robotek-learn le reenvía los offsets del servo `[coche]`. Hasta el 8 nov
+  también perdía el tipo de motor y el coche no avanzaba o iba hacia atrás. Ya no pasa: no se manda tipo. Si se reinicia
+  a menudo con el coche libre, revisa los cables de la batería a la placa.
 - **El USB de la placa se cae por ruido eléctrico** (4 nov 2026, dos veces en la última esquina, con el servo a tope y
   el motor tirando): el kernel dice `usb ... disabled by hub (EMI?), re-enabling`. La placa vuelve en 1 s, pero el
   driver muere y el coche se queda sin dirección ni freno unos segundos `[coche]`. Ferrita en el cable USB de la placa,
@@ -991,14 +993,14 @@ journalctl -b -1 -n 50 --no-pager               # el final del arranque anterior
 
 ### No se para
 
-- **El motor no se queda en 0** (motor 310 en el coche del equipo): el coche sigue de largo después de `DONE`. Es el
-  caso 8, «No se para»: el freno por reset de la placa lo arregla.
+- **El motor no se queda en 0:** el coche sigue de largo después de `DONE`. Se le está mandando un tipo de motor a la
+  placa: caso 8.
 - `FINISH` solo termina si la pared de enfrente es finita. Si `front_axis` es `inf` (LiDAR ciego, caso 9), el coche **no avanza ni termina** en `FINISH`.
 - Si el motor no mueve el coche con 0,15 m/s (con la calibración, 17,5 por ciento), el coche se queda parado en `FINISH` sin llegar. Con la batería baja puede pasar `[código]`.
 
 ### Se pasa de la sección de salida o para antes
 
-El coche para donde la pared de enfrente vuelve a estar a la distancia del Start. Si en el Start lo pusiste al fondo de la sección, para al fondo; si lo pusiste al borde delantero, un poco de inercia lo saca. Y la rampa de parada del motor (0,6 s) añade unos centímetros. Con el freno por reset de la placa (coche del equipo) se pasa unos 17 cm: el Open v5 lo compensa con `finish_lead: 0.25` `[coche]`.
+El coche para donde la pared de enfrente vuelve a estar a la distancia del Start. Si en el Start lo pusiste al fondo de la sección, para al fondo; si lo pusiste al borde delantero, un poco de inercia lo saca. Y la rampa de parada del motor (0,6 s) añade unos centímetros. Con un 0 normal el coche del equipo se desliza 8–35 cm: el Open v5 lo compensa con `finish_lead: 0.25` `[coche]`.
 
 En el intento 8, el `FINISH` duró solo 0,9 s: la distancia al frente al terminar la última esquina (1,47 m) ya era menor que la del Start (1,61 m) más el margen, así que frenó **en seguida**, y al llegar a `DONE` los dos lados estaban abiertos, o sea que pudo parar **antes** de la sección de salida. No se verificó `[coche]`.
 
@@ -1067,7 +1069,7 @@ Esta tabla resume las diferencias que más fallos causaron. La última columna d
 |---|---|---|---|
 | El IMU sale en el marco del coche | La placa va de canto: ejes y signo hay que medirlos | Giroscopio invertido | 4 |
 | `/start` lo publica el árbitro, cuando tu nodo ya está suscrito | `/start` sale del botón, con la durabilidad por defecto | Solo si tu nodo se suscribe con `TRANSIENT_LOCAL`: el botón no arranca | 1 |
-| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (tipo 2) va a ~0,45–0,5 m/s con 2,5 rps, ~0,75 m/s de tope, y con 0 no siempre se para | Más rápido o más lento que el modelo | 5, 8 |
+| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (M2, sin tipo, 54:30) sigue la consigna a 4,4 rps por m/s, con ~0,5 s de retraso, y se desliza 8–35 cm tras un 0 | Más rápido o más lento que el modelo | 5, 8 |
 | Servo con retardo 0,06 s y 1,2 rad/s | Lo mismo de media, pero con holgura, topes y calor | Esquinas anchas o servo que zumba | 6, 7 |
 | Ángulo de rueda igual al pedido hasta 17,6 grados | Igual al pedido gracias a la tabla medida (±19 grados); sin ella, la rueda da menos y distinto a cada lado | Gira poco o desigual | 6 |
 | Arranque y frenada suaves, sin deslizar | Encabrita y derrapa sin rampas | Vuelco, derrape | 5 |

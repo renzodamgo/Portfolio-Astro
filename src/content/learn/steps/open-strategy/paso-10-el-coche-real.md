@@ -49,8 +49,8 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 - Una **Raspberry Pi 5** con Ubuntu 24.04 (la del equipo). Una Pi 4 no la he probado.
 - La placa **HiWonder RRC Lite**: IMU (MPU6050), botones K1 y K2, dos LED RGB, el servo de dirección y el motor de tracción.
-- El **LiDAR LDROBOT LD19**, con su adaptador USB serie, y una **cámara USB** (la del equipo solo da YUYV 640x480).
-- El **motor de tracción**: desde el 1 de noviembre de 2026, un motor **310** con reductora 1:90 y encoder, en el puerto **M1** de la RRC Lite, con el tipo de motor 2 de la placa. La placa debería mantener su velocidad con el encoder; con este motor no lo hace del todo (no se queda en 0: el coche del equipo frena reiniciando la placa, [sección 4 de El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/)). (Antes era un motor de 25 mm movido por un puente TB6612FNG desde los GPIO del Pi; el código aún lo admite con `motor_backend: tb6612`.)
+- El **LiDAR LDROBOT LD19**, con su adaptador USB serie, y una cámara: la del equipo es, desde el 4 nov 2026, una **IMX708 Wide** por el cable plano (`camera_driver:=picam`); antes, una **cámara USB** (solo da YUYV 640x480), que sigue sirviendo.
+- El **motor de tracción**: un motor **310** (JGA27-310R 20:1, 450 rpm) con encoder, con engranajes 54:30 hasta el eje, en el puerto **M2** de la RRC Lite y **sin mandarle el tipo de motor** a la placa (desde el 8 nov 2026). La placa mantiene la velocidad con el encoder y para con un 0 ([sección 4 de El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/)). (Antes era un motor de 25 mm movido por un puente TB6612FNG desde los GPIO del Pi; el código aún lo admite con `motor_backend: tb6612`.)
 - Una **batería LiPo 2S** (7,4 V nominales) en la RRC Lite: alimenta la placa, el servo, el motor y el Pi.
 - Soportes para levantar el coche del suelo (cajas, libros). Es lo más útil de la lista.
 
@@ -63,8 +63,9 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 | Botón de Start | **K1** de la RRC Lite (K2 también cuenta) | `/rrc/button` |
 | LED de estado | Los dos RGB de la RRC Lite (1 izquierdo, 2 derecho) | los maneja `status_leds` |
 | LiDAR LD19 | USB del Pi, con su adaptador CP2102 | `/dev/ttyUSB0`, 230400 baudios (USB `10c4:ea60`) |
-| Cámara | USB del Pi | `/dev/v4l/by-id/...-video-index0` |
-| Motor | Puerto **M1** de la RRC Lite (motor y encoder) | `rrc_motor_port: 1` en `robot.yaml`; con el tipo de motor 2 (`controller_params.yaml`), +rps es hacia delante: `rrc_motor_sign: 1.0` |
+| Cámara IMX708 | Conector de cámara del Pi, por el cable plano | `/picam/image_raw` (`camera_driver:=picam`) |
+| Cámara USB (alternativa) | USB del Pi | `/dev/v4l/by-id/...-video-index0` |
+| Motor | Puerto **M2** de la RRC Lite (motor y encoder) | `rrc_motor_port: 2` y `rrc_motor_sign: -1.0` en `robot.yaml`; `motor_type: -1` (no mandar el tipo) en `controller_params.yaml` |
 
 Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. Si cambias el motor de puerto (al equipo le pasó tras un choque), cambia `rrc_motor_port` en `robot.yaml`.
 
@@ -82,8 +83,8 @@ Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. Si cambias 
 2. **Una pulsación del botón es Start y la siguiente para el coche** (`/robotek/stop`). Pero el botón ignora pulsaciones separadas por menos de 1,5 s: en el primer segundo y medio no puedes parar con él. Ten la mano cerca de las ruedas y el cable de la batería a mano. `Ctrl+C` en la terminal también corta el motor.
 3. **Un Start falso es posible.** En una de las rondas del equipo `/start` se publicó sin que nadie tocara el botón. Por eso las ruedas en el aire valen también para las pruebas con la estrategia lanzada.
 4. **Pulsos cortos.** El equipo no encendió el motor más de 0,25 s seguidos en sus pruebas, y solo llegó a pulsos de 1 s con el 30 % o menos. Haz lo mismo: potencia baja, duración corta, y sube poco a poco.
-5. **Arranca siempre a baja potencia.** A fondo desde parado el coche del equipo levantó las ruedas delanteras y la dirección dejó de actuar. Por eso `base_adapter` limita la aceleración a 1 m/s² y la deceleración a 0,6 m/s², y `motor_max_rps` limita la velocidad que se pide a la placa (el Open del equipo corre con `motor_max_rps:=2.5`).
-6. **Freno junto a la pared.** `base_adapter` baja la velocidad hacia delante cuando el LiDAR ve algo a menos de 0,30 m delante y la deja en 0 a 0,10 m (`wall_slow_m`, `wall_stop_m`). Si el coche se para cerca de una pared aunque tu estrategia pida velocidad, es esto.
+5. **Arranca siempre a baja potencia.** A fondo desde parado el coche del equipo levantó las ruedas delanteras y la dirección dejó de actuar. Por eso `base_adapter` limita la aceleración a 1 m/s² y la deceleración a 0,6 m/s², y `motor_max_rps` limita la velocidad que se pide a la placa (el Open del equipo corre con `motor_max_rps:=6.7`; empieza con 2,5).
+6. **Freno junto a la pared** (apagado por defecto desde el 8 nov 2026). Con `wall_stop_m: 0.10` en `robot.yaml`, `base_adapter` baja la velocidad hacia delante cuando el LiDAR ve algo a menos de 0,30 m (`wall_slow_m`) y la deja en 0 a 0,10 m. Se apagó porque en el Obstacle frenaba junto a cada pilar y el coche acababa parado; si lo enciendes y el coche se para cerca de una pared, es esto.
 
 ## 2. Clonar y preparar el Pi con un comando
 
@@ -176,6 +177,8 @@ ros2 topic hz /usb_cam/image_raw
 ```
 
 Debes ver entre 5 y 15 imágenes por segundo. La cámara del equipo, con exposición automática, daba unos 6,5 con la luz de una sala y hasta unos 15 con otra. El simulador usa 6. El nodo `camera_publisher` busca la cámara solo; si no la encuentra, avisa y reintenta cada segundo (mira su mensaje en la primera terminal). Si usas otra cámara, `video_device:=/dev/v4l/by-id/...`, y `camera_driver:=usb_cam` cambia al paquete `ros-jazzy-usb-cam`.
+
+**Con la IMX708 del equipo** (cable plano): añade `camera_driver:=picam` al lanzar y mira `ros2 topic hz /picam/image_raw`. En el Open va a 1280x720 y 10 fps, y solo hasta que la estrategia elige el sentido; en el Obstacle, a 640x360 y 30 fps toda la ronda. Si no llega imagen, lo primero es el cable plano: suelto, el Open se queda calculando el sentido (`DIRECTION_FAULT`). Sus colores son otros que los de la USB: usa `~/.config/robotek/open_v5_car_picam.yaml`.
 
 Para **ver** la imagen, desde otro ordenador con pantalla (la red, en 3.3):
 
@@ -325,27 +328,27 @@ Aún con las ruedas en el aire y el servo parado. Solo el driver de la placa (el
 ros2 launch rrc_lite_driver controller.launch.py
 ```
 
-En otra terminal, una velocidad baja, en vueltas por segundo de la placa (rps) del puerto M1. Con este motor y el tipo 2, **+rps es hacia delante**:
+En otra terminal, una velocidad baja, en vueltas por segundo de la placa (rps) del puerto M2. `rrc_driver` invierte el signo, así que en este tópico **−rps es hacia delante**:
 
 ```bash
-ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 1, rps: 2.0}]}"
+ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 2, rps: -2.0}]}"
 ```
 
-Las ruedas traseras deben girar **hacia delante**. Hay que repetir la orden: el driver para el motor si pasan 0,5 s sin ninguna. Para (`Ctrl+C`), y prueba `rps: -2.0` para la marcha atrás. No dejes el motor encendido más de unos segundos, y al terminar `bash tools/car-clean.sh`: con este motor, a veces la rueda sigue girando después de la última orden.
+Las ruedas traseras deben girar **hacia delante**. Hay que repetir la orden: el driver para el motor si pasan 0,5 s sin ninguna. Para (`Ctrl+C`): la rueda se para. Prueba `rps: 2.0` para la marcha atrás. No dejes el motor encendido más de unos segundos. Si va siempre a tope o no para con 0, se le está mandando un tipo de motor: `motor_type: -1`.
 
 Lo que se sabe del motor:
 
-- La "rps" de la placa **no es una vuelta real** del motor: depende del tipo de motor que la placa cree tener. Con el motor anterior, 1 rps daba 0,209 m/s (medido con el LiDAR) y ~1,9 rps, unos 0,65–0,69 m/s.
-- Con el motor 310 y el **tipo 2** de la placa (el único con fuerza en el suelo), el coche va a ~0,45–0,5 m/s con 2,5 rps y a ~0,75 m/s con 4 o 6 rps (4 de noviembre de 2026). Con 0 no siempre se para: el coche del equipo frena reiniciando la placa ([El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
-- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` (4,8, la del motor anterior) y nunca pide más de `motor_max_rps`.
-- Por la reductora (1:90, 110 rpm sin carga) y el engranaje de 1:2 hasta las ruedas de 61 mm, el coche no puede pasar de unos 0,70 m/s.
+- La "rps" de la placa **no es una vuelta real** del motor: depende del tipo de motor que la placa cree tener. Sin mandarle el tipo, en el coche del equipo, 1 rps son ~0,22 m/s (medido con el LiDAR el 8 nov 2026).
+- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` (**4,4**, con los engranajes 54:30) y nunca pide más de `motor_max_rps`. El tope de `robot.yaml`, 3,4 rps, son ~0,77 m/s.
+- El coche sigue la consigna desde ~0,1 rps (~0,02 m/s) en los dos sentidos. Pero con la dirección a tope, desde parado, le falta fuerza por debajo de ~1 rps. Tras un 0 se desliza 8–35 cm.
+- Hasta el 8 nov 2026 se le mandaba el **tipo 2** a la placa. Con nuestro encoder, el control iba al revés: a tope con cualquier consigna y sin parar con 0. Está en [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4.
 
 ## 4. La primera ronda, en el suelo
 
 ### Antes de poner el coche en el campo
 
 1. Las comprobaciones 3.1 a 3.6 pasan, y `servo_measured` e `imu_adapter.measured` son `true`.
-2. **Una recta corta antes de la ronda.** El motor 310 con el tipo 2 va a ~0,45–0,5 m/s con 2,5 rps y no más de ~0,75 m/s con más: lanza con `motor_max_rps:=2.5` (el [coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
+2. **Una recta corta antes de la ronda,** y la primera ronda despacio: `motor_max_rps:=2.5` son ~0,57 m/s. El Open v5 del equipo corre con 6,7 ([coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 6).
 3. La batería cargada: `ros2 topic echo /rrc/battery --once`.
 4. Un campo Open montado, la isla fija y el coche en la sección de salida, como en el simulador.
 
@@ -378,10 +381,10 @@ sin datos, pero para eso miraban la cámara entera y quitaban CPU a la estrategi
 ### El botón
 
 - **Primera pulsación:** publica `/start` y pita una vez. El zumbador de la placa del equipo está quemado, así que allí no suena: no dependas del pitido.
-- **Segunda pulsación:** publica `/robotek/stop` y pita dos veces. `base_adapter` para el motor (en el coche del equipo, reiniciando la placa: el motor 310 no se queda en 0 de otro modo) y lo mantiene. Tu nodo pasa a `OPERATOR_STOP` y no se mueve más hasta lanzar de nuevo.
+- **Segunda pulsación:** publica `/robotek/stop` y pita dos veces. `base_adapter` para el motor con un 0 y lo mantiene. Tu nodo pasa a `OPERATOR_STOP` y no se mueve más hasta lanzar de nuevo.
 - Las pulsaciones a menos de 1,5 s de la anterior se ignoran.
 
-**Qué imprime la consola.** Son líneas del código, no la captura de una ronda real. Al arrancar: `Press the button to start; press it again to stop.` (`start_button`) y `Status RGBs at level 2/255: green = ready, blue = running.` (`status_leds`). Con el primer pulso: `Start.` y el `Start` de tu `drive`, y después lo que escribiste en cada paso (`Giro a la izquierda (esquina N)`). Con el segundo: `Stop (button pressed again).`, `Stopping after moving: board reset.` y `Operator stop: motor held at 0.`. Si la batería baja de 6,8 V: `Battery X V < 6.80 V: change it before the next round`.
+**Qué imprime la consola.** Son líneas del código, no la captura de una ronda real. Al arrancar: `Press the button to start; press it again to stop.` (`start_button`) y `Status RGBs at level 2/255: green = ready, blue = running.` (`status_leds`). Con el primer pulso: `Start.` y el `Start` de tu `drive`, y después lo que escribiste en cada paso (`Giro a la izquierda (esquina N)`). Con el segundo: `Stop (button pressed again).` y `Operator stop: motor held at 0.`. Si la batería baja de 6,8 V: `Battery X V < 6.80 V: change it before the next round`.
 
 ### El registro de una ronda
 

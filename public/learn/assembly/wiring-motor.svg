@@ -7,7 +7,7 @@
 <text x="520.0" y="116" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Placa RRC Lite</text>
 <text x="520.0" y="137" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">puertos de motor con encoder</text>
 <text x="520.0" y="155" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">y de servo PWM</text>
-<circle cx="660" cy="150" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="650" y="155" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">M1</text>
+<circle cx="660" cy="150" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="650" y="155" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">M2</text>
 <circle cx="660" cy="220" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="650" y="225" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">M2</text>
 <circle cx="660" cy="290" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="650" y="295" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">M3</text>
 <circle cx="660" cy="360" r="5.5" fill="#f2c94c" stroke="#1d2430" stroke-width="1.5"/><text x="650" y="365" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="end" fill="#1d2430">M4</text>
@@ -22,7 +22,7 @@
 <text x="175.0" y="526" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#1d2430">Servo de dirección</text>
 <text x="175.0" y="547" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">al conector J4 de la RRC Lite</text>
 <text x="175.0" y="565" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#1d2430">(canal PWM 1)</text>
-<text x="30" y="180" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">El motor va al puerto M1.</text>
+<text x="30" y="180" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">El motor va al puerto M2.</text>
 <text x="30" y="200" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">La placa mantiene la velocidad</text>
 <text x="30" y="220" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" text-anchor="start" fill="#1d2430">con el encoder (en rps).</text>
 <text x="30" y="252" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start" fill="#1d2430">Puerto en robot.yaml:</text>
