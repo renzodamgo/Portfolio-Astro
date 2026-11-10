@@ -319,7 +319,7 @@ Este es el síntoma que más causas distintas tiene, así que primero **mira qu�
 
 **Diagnostica con el coche en el aire**, antes de volver al suelo:
 
-1. Lanza el launch y espera los LED verdes. Pulsa y mira `/robotek/state`: debe llegar a `FOLLOW` en 1 a 2 s. Las ruedas deben girar hacia delante y la dirección quedar casi recta.
+1. Lanza el launch y espera los LED verdes parpadeando. Pulsa y mira `/robotek/state`: debe llegar a `FOLLOW` en 1 a 2 s. Las ruedas deben girar hacia delante y la dirección quedar casi recta.
 2. Gira el coche a mano 90 grados a la izquierda mientras corre `imu_probe.py`: debe dar `z` cerca de +90 (caso 4).
 3. Con `scan_probe.py`, tu mano delante da ángulo 0 y a la izquierda da +90 (caso 9).
 4. Mira cómo se mueve la dirección al girar el coche a mano: si el coche cree que se desvía a la izquierda, las ruedas deben girar a la derecha para corregir. Si no, el signo de algo está invertido.
@@ -1167,7 +1167,7 @@ Imprímela. Marca cada punto, uno por uno. Los marcados con (*) se pueden hacer 
 1. [ ] Batería cargada, `ros2 topic echo /rrc/battery --once` por encima de 7000 mV (caso 18). Anota el valor: la misma batería mueve el motor y el Pi.
 2. [ ] Cables y conectores (motor, servo, LiDAR, cámara, placa): tira de cada uno. Ninguno a menos de 10 mm de una rueda o de la palanca del servo (casos 3, 12).
 3. [ ] (*) Nada de pruebas anteriores: `bash tools/car-clean.sh` antes de lanzar (o el arranque automático, que lo hace), y `ros2 node list` sin repetidos (casos 16, 17).
-4. [ ] (*) LED en verde, mirados de cerca (la estrategia espera el botón). Los sensores, con `ros2 topic hz` (casos 9, 4, 10): las luces ya no avisan de un sensor que falta.
+4. [ ] (*) LED en verde parpadeando (desde el 9 nov 2026; antes, verde fijo), mirados de cerca (la estrategia espera el botón). Los sensores, con `ros2 topic hz` (casos 9, 4, 10): las luces ya no avisan de un sensor que falta.
 5. [ ] (*) Frecuencias con `ros2 topic hz`: LiDAR unos 10 Hz, IMU unos 45–50 Hz, cámara más de 5 Hz y `/cmd_vel_raw` unos 40 Hz en el Pi.
 6. [ ] (*) Giroscopio: quieto 10 s, `media` de `z` entre -0,01 y +0,01; un giro a mano a la izquierda da `z` positivo (caso 4).
 7. [ ] (*) Servo, con las ruedas en el aire: `+steer` va a la izquierda, 0 queda recto (caso 3).
@@ -1187,7 +1187,7 @@ Cuando algo falla y no sabes por dónde empezar, haz esto en orden y **para en e
 | 1 | `ros2 node list` | Todos los nodos del launch, una sola vez | 16, 17 |
 | 2 | `ros2 topic hz` de `/scan`, `/robotek/imu`, la cámara y `/cmd_vel_raw` | 10, 50, más de 5 y 50 Hz | 9, 11, 10, 17 |
 | 3 | `ros2 topic echo /rrc/battery --once` | Más de 7000 mV | 18 |
-| 4 | Mira los LED | Verde en los dos | 9, 4, 10 |
+| 4 | Mira los LED | Verde parpadeando en los dos | 9, 4, 10 |
 | 5 | `scan_probe.py`: mano delante y a la izquierda | Ángulos 0 y +90 | 9 |
 | 6 | `imu_probe.py`: giro a la izquierda de 90 grados | `z` cerca de +90 | 4, 11 |
 | 7 | Ruedas en el aire: `/steer` +0,30 | Ruedas a la izquierda | 3 |

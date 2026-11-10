@@ -3,7 +3,7 @@ guide: "obstacle-strategy"
 order: 10
 slug: "paso-10-el-v3"
 title: "El v3: lo que aprendimos del top 3"
-summary: "Lo que cambió en la estrategia del equipo después del curso: un aparcamiento de lazo cerrado, las ideas de los tres primeros de la final de 2025 probadas una a una, el v3, que pasa de 5 a 8 rondas válidas de 10 en Gazebo, y su primera ronda completa en el coche real."
+summary: "Lo que cambió en la estrategia del equipo después del curso: un aparcamiento de lazo cerrado, las ideas de los tres primeros de la final de 2025 probadas una a una, el v3, que pasa de 5 a 8 rondas válidas de 10 en Gazebo, su primera ronda completa en el coche real y, el 9 de noviembre, una ronda completa saliendo del aparcamiento con recuperación frontal."
 tag: "obstacle-step-9"
 compareFrom: "obstacle-step-9"
 ---
@@ -180,12 +180,124 @@ aparca nada más arrancar, para probar solo la maniobra.
 - **Falta en el coche:** probarlo y medir el lote del campo: largo, fondo y posición (`park_lot_length`,
   `park_lot_depth`, `park_lot_end`).
 
+## En el coche real, 9 de noviembre: salir del aparcamiento
+
+El 9 de noviembre el v3 aprendió a **empezar dentro del aparcamiento**, como pide la regla de la salida (+7). Dio una
+**ronda completa** saliendo del hueco: llegó a DONE con las tres vueltas. No había juez, así que no hay puntos medidos.
+
+### Cómo se lanza
+
+```bash
+cd ~/robotek-learn && bash tools/car-clean.sh && source install/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_DOMAIN_ID=1 ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET
+ros2 launch robotek_course car.launch.py strategy:=robotek_obstacle_v3 camera_driver:=picam start_lot:=true
+```
+
+- **Dónde ponerlo:** dentro del hueco, pegado al muro exterior y a ~1 cm del tope de atrás, mirando en el sentido de la
+  vuelta.
+- **Luces:** verde parpadeando mientras espera; azul en cuanto pulsas y la ronda empieza.
+- **Start:** el pulsador nuevo del GPIO 16 del Pi o el botón de la placa. Sin botón: `button:=false` (arranca a los
+  20 s).
+- **Siempre `car-clean` antes:** los nodos que quedan de otra prueba mandan órdenes al mismo motor.
+- **Todos los parámetros**, con su valor y qué hacen: [PARAMETROS.md](https://github.com/renzodamgo/robotek-learn/blob/main/src/robotek_obstacle_v3/PARAMETROS.md).
+
+### 1. La dirección, con el LiDAR
+
+Dentro del hueco, el muro exterior está pegado a un costado. El LiDAR mira a los dos lados: el lado con el muro cerca
+(o sin nada, porque no ve a menos de 12 cm) es el del muro.
+
+- Muro a la **derecha** → **antihorario**.
+- Muro a la **izquierda** → **horario**, y todo lo que sigue va en espejo.
+
+### 2. Salir con pulsos
+
+Un solo arco con todo el giro no sale: con el coche de 24,5 cm en un hueco de 36,75 cm, la esquina delantera del lado
+del muro toca el tope de delante a los ~11 cm. Hay que maniobrar adelante y atrás, como un aparcamiento en paralelo al
+revés.
+
+La salida es una lista de pulsos, `lot_exit_steps`. Cada pulso es `<lado><sentido><segundos>`:
+
+| Letra | Significa |
+|---|---|
+| `L` / `R` | todo el giro a la izquierda (lejos del muro) / a la derecha |
+| `C` | ruedas al centro |
+| `+` / `-` | adelante / atrás |
+
+La que dio la ronda completa, a 0,9 m/s (`lot_exit_speed`):
+
+```
+L+0.45 R-0.55 L+0.45 R-0.55 L+0.45 R-0.55 L+0.78 C-0.4
+```
+
+Cada pulso gira el coche unos grados más hacia fuera: 3° → 11° → 17° → 23° → 27° → 33° → 41°… Después, ruedas al
+centro; el LiDAR ubica el coche y empiezan las vueltas.
+
+Lo que se aprendió por el camino:
+
+- **El motor no se arrastra despacio.** A 0,12–0,25 m/s casi no se movía, y menos con la batería baja (6,7 V). Durante la
+  salida el adaptador da un golpe de arranque y pulsos de 1,8 rps (`low_speed_states`).
+- **Sin rampas.** Las rampas de aceleración y frenado del adaptador se comían los pulsos cortos: uno de 0,3 s apenas
+  llegaba a la velocidad pedida. En la salida el pulso arranca de golpe y frena a 0 en seco (`no_ramp_states`).
+- **Las ruedas giran antes de moverse.** La orden es una velocidad y una curvatura; con velocidad 0 el ángulo del servo
+  no se puede mandar. Antes de cada pulso se manda una velocidad diminuta, por debajo de lo que mueve el motor.
+- **El último paso cuenta.** Con `C-0.6` (recto atrás) al final, en una prueba el coche volvió a meterse en el hueco.
+- **El sensor de atrás** frena en seco en los pasos hacia atrás a menos de 20 mm, pero mira solo hacia atrás: no ve el
+  muro de al lado cuando la trasera se abre hacia él.
+
+### 3. La recuperación frontal
+
+En las vueltas, a veces el coche esquiva un pilar sin giro suficiente y se va contra él o contra una pared. Ahora, si va
+a chocar de frente, se recupera:
+
+1. **Detecta:** con el giro que lleva, proyecta el coche **18 cm a lo largo de su curva**. Si algo de lo que hay
+   **delante del morro** cae en ese camino, salta. Si está girando y lo va a esquivar, no salta. Tampoco los costados:
+   un pilar que pasa de cerca al lado ya no la dispara.
+2. **Frena en seco** (`/robotek/estop`, sin la rampa de frenado): con rampa el coche todavía tocaba.
+3. **Marcha atrás** con todo el giro, **a la derecha en antihorario y a la izquierda en horario**, durante
+   `recover_back` segundos (0,5). El lado sale del sentido de la vuelta, no del rumbo calculado.
+4. **Si se repite** en el mismo sitio (a menos de 0,3 m y 8 s), retrocede 0,6 s más cada vez, hasta 3: así el seguidor
+   de línea tiene sitio para rodear el obstáculo. Sin esto, una vez saltó 168 veces seguidas delante del tope del
+   aparcamiento.
+
+Antes de implementarla se dibujó con el modelo del coche: con un tiempo fijo y el giro hacia paralelo, de 35° pasaba a
+−11°.
+
+### El sensor de distancia trasero
+
+Un VL53L0X en la parte de atrás, en el I2C del Pi (`/robotek/rear_range_mm`).
+
+- **Sin arrancarlo bien mide mal:** con solo los registros de fábrica marcaba 218 mm a 10 cm. El nodo hace el arranque
+  completo (los ajustes de ST y la calibración, como la librería de Pololu).
+- **Aun así mide de más y no en proporción**, y muy cerca casi no cambia. Se corrige con una tabla medida contra una pared
+  con regla:
+
+| Real (mm) | 10 | 20 | 30 | 40 | 50 | 85 | 170 | 420 |
+|---|---|---|---|---|---|---|---|---|
+| Crudo (mm) | 70 | 75 | 77 | 83 | 96 | 138 | 231 | 476 |
+
+  Desde 5 cm acierta a ±5 mm; entre 1 y 4 cm, a ±1 cm.
+- **Se cae del I2C** con el cable flojo, y una vez se quedó en otra página de registros aunque el Pi estaba apagado (el
+  sensor seguía con corriente). El nodo vuelve a seleccionar la página y se reinicia solo.
+
+### Otras cosas que enseñó el coche
+
+- **La batería manda.** Con 6,7–6,9 V los pulsos casi no movían el coche, y en una prueba bajó de 6,26 a 5,1 V
+  esperando y el Pi se apagó.
+- **El motor se bloquea tras chocar.** Si el coche empuja contra una pared, la placa deja de mover el motor hasta
+  reiniciar su driver (`car-clean` y volver a lanzar).
+- **La cámara llegaba tarde.** 0,35–0,43 s de retraso, 48 veces en una ronda, y cada vez el coche paraba
+  (`WAIT_SENSOR`). Ahora la cámara puede tener hasta 0,8 s; el LiDAR y el giroscopio siguen en 0,35 s.
+- **Grabar desde el Mac:** `tools/car_bag_mac.sh <nombre>` en WRO-Strategies graba el LiDAR, el giroscopio, el sensor
+  trasero, las órdenes y el registro de la estrategia, que dice cada pulso de la salida y cada recuperación.
+
 ## Lo que todavía falla
 
 1. **Las esquinas cruzadas en sentido horario.** Son la mayoría de los fallos que quedan (33 de 200). La próxima idea es una maniobra con marcha atrás, como hace STORMS cuando llega tarde a una curva.
 2. **Dos campos que solo fallan en Gazebo** (CW, campos 1 y 4). El laboratorio los pasa, así que todo apunta a la cámara.
 3. **El tiempo.** Unos 142 s con aparcamiento, frente a 49–63 s de los tres primeros. Hace falta curvar más rápido o medir la distancia de verdad: los tres primeros tienen encoder o motor paso a paso.
 4. **En el coche real**: la salida con un pilar en la recta, la dirección que a veces no gira y el aparcamiento (el fijo está por probar). Ver [En el coche real](#en-el-coche-real).
+5. **Salir del aparcamiento** depende de la batería y del tiempo de cada pulso; la recuperación frontal todavía se activa
+   de más en algunas esquivadas. Ver [salir del aparcamiento](#en-el-coche-real-9-de-noviembre-salir-del-aparcamiento).
 
 ### Prueba esto
 
