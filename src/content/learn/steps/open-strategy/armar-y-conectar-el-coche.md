@@ -21,6 +21,8 @@ Antes de llevar tu nodo al coche real ([el capítulo siguiente](/learn/open-stra
 
 ## Lo que necesitas
 
+La lista completa, con un render y el STL de cada pieza, está en [Lista de piezas del coche](/learn/open-strategy/piezas-del-coche/).
+
 | Pieza | Cantidad | Para qué |
 |---|---:|---|
 | Placa base y piezas impresas en 3D (caja, soporte de cámara, ruedas) | 1 juego | El chasis; los STL están en [`models`](https://github.com/strvaeq/Robotek-WRO2026/tree/main/models) |
