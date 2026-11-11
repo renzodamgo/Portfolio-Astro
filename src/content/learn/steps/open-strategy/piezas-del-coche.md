@@ -8,11 +8,16 @@ tag: "step-9"
 compareFrom: "step-9"
 ---
 
-Esta es la **lista de piezas** (BOM, *bill of materials*) del coche del equipo Robotek, tal como estaba el 11 de noviembre de 2026. Cada pieza con modelo 3D tiene su render y su STL. Las imágenes y los STL salen del modelo del coche, `Assembly3.stp`, al que se añadieron el soporte trasero del VL53L0X y el soporte del botón. Cómo se monta todo está en [el capítulo siguiente](/learn/open-strategy/armar-y-conectar-el-coche/).
+Esta es la **lista de piezas** (BOM, *bill of materials*) del coche del equipo Robotek, tal como estaba el 11 de noviembre de 2026. Cada pieza con modelo 3D tiene su render y su STL. Las imágenes y los STL salen del modelo del coche, `Assembly3.stp`, al que se añadieron el soporte trasero del VL53L0X, el soporte del botón y la RRC Lite real (el STEP oficial de Hiwonder). El ensamblaje completo se puede bajar en STEP: [robotek-car-assembly.step.zip](/learn/piezas/robotek-car-assembly.step.zip) (11 MB). Cómo se monta todo está en [el capítulo siguiente](/learn/open-strategy/armar-y-conectar-el-coche/).
 
 <figure>
 <img src="/learn/piezas/car-iso.png" alt="Render del coche completo: placa base, caja, Raspberry Pi, cámara, LiDAR y las cuatro ruedas" width="600" loading="lazy">
-<figcaption>El coche completo en el modelo 3D, con el soporte del VL53L0X en la parte trasera de la placa.</figcaption>
+<figcaption>El coche completo en el modelo 3D, visto por el lado de la Raspberry Pi, con el soporte del VL53L0X en la parte trasera de la placa.</figcaption>
+</figure>
+
+<figure>
+<img src="/learn/piezas/car-rrc-side.png" alt="Render del coche por el lado derecho: la RRC Lite de canto en la caja" width="470" loading="lazy">
+<figcaption>El otro lado: la RRC Lite de canto en el lado derecho de la caja, en los mismos agujeros (58 × 49 mm) que la Raspberry Pi.</figcaption>
 </figure>
 
 > **Antes de imprimir.** Cada STL conserva la posición que tiene la pieza en el coche, así que no siempre está apoyado sobre la cama. En Bambu Studio o en tu laminador, usa *Colocar sobre una cara* (o *Lay on face*) antes de laminar. Las medidas van en milímetros.
@@ -46,7 +51,7 @@ Sus STL son los modelos del ensamblaje (el de la RRC Lite, el STEP oficial de Hi
 | Render | Pieza | Cant. | Para qué | Modelo |
 |---|---|---:|---|---|
 | <img src="/learn/piezas/raspberry-pi-5.png" alt="Raspberry Pi 5" width="160" loading="lazy"> | **Raspberry Pi 5** | 1 | El cerebro: corre ROS 2 y la estrategia | [raspberry-pi-5.stl](/learn/piezas/raspberry-pi-5.stl) |
-| <img src="/learn/piezas/rrc-lite.png" alt="RRC Lite" width="160" loading="lazy"> | **Placa RRC Lite** (Hiwonder) | 1 | IMU, servo, motor, botón y medida de la batería; da los 5 V del Pi. El modelo es el STEP oficial de Hiwonder (en el ensamblaje del coche tiene la forma de una Raspberry Pi). | [rrc-lite.step.zip](/learn/piezas/rrc-lite.step.zip) (STEP, 7 MB) |
+| <img src="/learn/piezas/rrc-lite.png" alt="RRC Lite" width="160" loading="lazy"> | **Placa RRC Lite** (Hiwonder) | 1 | IMU, servo, motor, botón y medida de la batería; da los 5 V del Pi. El modelo es el STEP oficial de Hiwonder, sin sus cuatro torretas de 19 mm. | [rrc-lite.step.zip](/learn/piezas/rrc-lite.step.zip) (STEP, 7 MB) |
 | <img src="/learn/piezas/lidar-ld19.png" alt="LiDAR LD19" width="160" loading="lazy"> | **LiDAR LD19** (STL-19P) con su adaptador USB y 4 tornillos PA2×6 | 1 | Distancias en ±110° hacia delante | [lidar-ld19.stl](/learn/piezas/lidar-ld19.stl) |
 | <img src="/learn/piezas/camera.png" alt="cámara" width="160" loading="lazy"> | **Cámara IMX708 Wide** (Raspberry Pi Camera Module 3 Wide) con su cable plano | 1 | El color de las líneas y de las señales. El modelo es la cámara del ensamblaje de octubre, no la IMX708. | [camera.stl](/learn/piezas/camera.stl) |
 | <img src="/learn/piezas/servo.png" alt="servo" width="160" loading="lazy"> | **Servo digital de 15 kg·cm** (en el modelo, TGY-1501) | 1 | La dirección | [servo.stl](/learn/piezas/servo.stl) |
