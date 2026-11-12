@@ -126,8 +126,6 @@ Dos cosas se ven aquí:
 - Cuánto antes hay que soltar **depende del servo**. Si cambias de servo, este número se vuelve a medir (paso 12).
 - El amortiguamiento no cambia nada con el servo real soltando a 17 grados (0,0 en los dos casos), pero es lo que quita el sobrepaso cuando el servo es peor.
 
-Una versión anterior de esta guía giraba con una rampa, un término de anticipación y un aflojado. En el laboratorio y en el coche del equipo esta regla, mucho más corta, dio las mismas rondas (12 nov 2026), y es la que usa el coche.
-
 > **Antes de escribirlo, juega un rato.** Toma las 4 esquinas de una vuelta sin tocar la pared. Fíjate en cuándo empiezas a girar y en cuándo vuelves a poner el volante recto. ¿Qué haces con el volante justo antes de terminar la esquina?
 >
 > [Abrir el simulador con el reto de este paso](/learn/open-strategy/simulador/?paso=5)

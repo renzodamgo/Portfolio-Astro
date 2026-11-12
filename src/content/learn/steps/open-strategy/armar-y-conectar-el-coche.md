@@ -8,7 +8,7 @@ tag: "step-9"
 compareFrom: "step-9"
 ---
 
-Antes de llevar tu nodo al coche real ([el capítulo siguiente](/learn/open-strategy/paso-10-el-coche-real/)) hay que armarlo y cablearlo. Estas instrucciones siguen el orden del README del equipo Robotek ([Robotek-WRO2026](https://github.com/strvaeq/Robotek-WRO2026), sección *Assembly Instructions*) y su diagrama de cables, con dibujos hechos a partir del modelo 3D del coche que usa la simulación: las mismas piezas (`robotek_description/meshes`, sacadas del `Assembly3.stp` del 20 y 21 de octubre de 2026) en el mismo sitio que en el URDF.
+Antes de correr el Open en el coche real ([el capítulo siguiente](/learn/open-strategy/correr-en-el-pi/)) hay que armarlo y cablearlo. Estas instrucciones siguen el orden del README del equipo Robotek ([Robotek-WRO2026](https://github.com/strvaeq/Robotek-WRO2026), sección *Assembly Instructions*) y su diagrama de cables, con dibujos hechos a partir del modelo 3D del coche que usa la simulación: las mismas piezas (`robotek_description/meshes`, sacadas del `Assembly3.stp` del 20 y 21 de octubre de 2026) en el mismo sitio que en el URDF.
 
 > **Qué es exacto y qué es aproximado.** La placa base, la caja, el soporte y la cámara, el servo, la Raspberry Pi, la placa del driver, el LiDAR LD19, la placa RRC Lite y todos los tornillos y tuercas son las piezas del modelo 3D del equipo (`Assembly3.stp`, abierto en SolidCraft), en su sitio; en ese modelo la RRC Lite tiene la forma de una Raspberry Pi. Las ruedas salen de las medidas del URDF (`vehicle.py`). El motor, el eje y las piezas de la dirección **no están en el modelo**: los dibujé con formas simples donde los describe el README del equipo, así que su forma y su posición son aproximadas. Ante cualquier duda, manda el coche real y las fotos del equipo ([`v-photos`](https://github.com/strvaeq/Robotek-WRO2026/tree/main/v-photos)).
 
@@ -31,7 +31,7 @@ La lista completa, con un render y el STL de cada pieza, está en [Lista de piez
 | LiDAR LD19 (STL-19P) con su adaptador USB | 1 | Distancias en ±110° hacia delante |
 | Cámara IMX708 Wide (Raspberry Pi Camera Module 3 Wide) con su cable plano | 1 | Color de las líneas y de las señales (desde el 4 nov 2026; antes, una cámara USB icSpring, que sigue sirviendo) |
 | Servo digital de 15 kg·cm | 1 | La dirección |
-| Motor 310 (JGA27-310R 20:1, 450 rpm) con encoder, y dos engranajes 54:30 | 1 | La tracción trasera, en el puerto **M2** de la RRC Lite (desde el 8 nov 2026; antes, M1 y un motor de 25 mm con un puente TB6612) |
+| Motor 310 (JGA27-310R 20:1, 450 rpm) con encoder, y dos engranajes iguales (1:1) | 1 | La tracción trasera, en el puerto **M2** de la RRC Lite |
 | Batería | 1 | La RRC Lite, que da 5 V al Pi y mueve el servo y el motor |
 | Anillo de 16 LED WS2812 | 1 | Luz para ver mejor los colores |
 | Protectores de rueda de maleta | 4 | Los neumáticos de las ruedas impresas |
@@ -153,7 +153,7 @@ El dibujo es del montaje con la cámara USB. Con la IMX708, la cámara va por su
 
 ## Si algo falla
 
-- **El motor no gira y el servo sí.** Revisa el cable del motor en M2 y que `rrc_motor_port` de `robot.yaml` sea ese puerto. Con los engranajes 54:30 tiene poca fuerza a poca velocidad: con la dirección a tope, desde parado, necesita ~1 rps de la placa.
+- **El motor no gira y el servo sí.** Revisa el cable del motor en M2 y que `rrc_motor_port` de `robot.yaml` sea ese puerto.
 - **El motor va siempre a tope, no para con 0 o va hacia atrás.** Se le está mandando un tipo de motor a la placa: deja `motor_type: -1` en `controller_params.yaml` (pasó hasta el 8 nov 2026, ver el [coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
 - **El motor está muy caliente.** Pasa si se queda frenado empujando (un choque de frente quemó el motor anterior): apágalo y no subas el tope `motor_max_rps` sin necesidad.
 - **La placa se reinicia sola** (el giroscopio se corta ~2,5 s) cuando el coche se queda atascado empujando: es normal, el driver la recupera.

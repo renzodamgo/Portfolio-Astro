@@ -99,10 +99,10 @@ Con el coche torcido 0,3 rad (17°) en (0, -0,75), la referencia da 1,378 m midi
 
 Con la isla de 1 × 1 m y el coche en (0, -0,75), la pared termina en x = 0,5 y el número sale 0,48 con ruido y pérdidas, y 0,495 sin ellos. Cuando el coche pasa de x ≈ 0,37 m, `left` salta de 0,27 a 2,25 m (ahora ve la pared exterior del otro lado) e `island_end` y `wall_heading` vuelven a `inf`. Con el coche girado 0,1 rad, `wall_heading` da 0,100; con el ruido normal se mueve ±3° de un escaneo a otro, y por eso el paso 7 solo corrige una parte con cada escaneo.
 
-Dos detalles de este método vienen de choques del coche del equipo (11 nov 2026):
+Dos detalles de este método vienen del coche real:
 
-- **El ángulo entre -π y π.** El LD19 real numera sus rayos de 0 a 2π, no de -π a π. Con `sign * angles` a secas, en sentido horario el lado de la isla quedaba en -270° en vez de +90°, ningún rayo caía «al lado» y el coche no veía la isla.
-- **Un hueco no es el final.** Cuando el LiDAR perdía un tramo de datos, la versión anterior contaba los rayos sin retorno como «fuera de la pared», creía que la isla terminaba allí y giraba contra ella.
+- **El ángulo entre -π y π.** El LD19 real numera sus rayos de 0 a 2π, no de -π a π. Con `sign * angles` a secas, en sentido horario el lado de la isla quedaría en -270° en vez de +90°, ningún rayo caería «al lado» y el coche no vería la isla.
+- **Un hueco no es el final.** Cuando el LiDAR pierde un tramo de datos, esos rayos no tienen retorno. Si contaran como «fuera de la pared», el coche creería que la isla termina allí y giraría contra ella.
 
 ### El nodo
 
@@ -118,7 +118,7 @@ Prueba, en este orden:
 
 1. **Antes de la esquina**: `island_end` debe quedar cerca de 0,5 m.
 2. Pulsa **Repetir 20 veces** y mira la tira de abajo. Con el ruido normal, `left` y `front_axis` son una línea casi plana y `island_end` también: en 500 escaneos del mini simulador de Python, ninguno se equivocó más de 10 cm.
-3. **Perder 15 % de rayos**: `island_end` aguanta: 0 de 500 escaneos con más de 10 cm de error, y lo mismo con el 25 %. Los rayos perdidos no cuentan como final de la pared. (Contándolos, como hacía la versión anterior, fallaban 70 de 500.)
+3. **Perder 15 % de rayos**: `island_end` aguanta: 0 de 500 escaneos con más de 10 cm de error, y lo mismo con el 25 %. Los rayos perdidos no cuentan como final de la pared.
 4. **Ruido de 30 mm**: el ajuste admite 3 cm de distancia a la recta (`WALL_TOLERANCE`); con ese ruido muchos rayos se salen de la pared sin que la pared cambie, y `island_end` sale casi siempre muy por debajo de 0,5 m (346 de 500 escaneos con más de 10 cm de error; con 15 mm fueron 6 y con 20 mm, 70). Aun así `left` queda entre 0,24 y 0,27 m y `front_axis` entre 1,34 y 1,41 m (lo ideal es 0,25 y 1,37).
 5. **Un rayo salvaje** y **Coche torcido 17°**: la mediana contra el promedio, y `front_axis` con y sin `forward_yaw`.
 

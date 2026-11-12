@@ -327,9 +327,9 @@ Este es el síntoma que más causas distintas tiene, así que primero **mira qu�
 
 **Frenos de seguridad: lo que la estrategia del equipo tiene y la del curso no.** `[coche]` en el equipo, `[código]` en el curso:
 
-- **Sensor viejo = frenar.** En el nodo del equipo, si el último LiDAR tiene más de 0,35 s o la última IMU más de 0,2 s (`scan_max_age`, `imu_max_age` en `open_realcar_v4.yaml`), el comando es velocidad 0 hasta que se recuperen. El `drive.py` del curso (desde el paso 7) ya lo hace con `SensorWatchdog` (`robotek_course/watchdog.py`): si un sensor lleva más de 0,35 s (LiDAR) o 0,2 s (IMU) sin mensajes, envía velocidad 0 y avisa en el log `A sensor went quiet`. Si escribes tu propio nodo, copia esa idea.
+- **Sensor viejo = frenar.** En el nodo del equipo, si el último LiDAR tiene más de 1 s (`scan_max_age` en `car_picam.yaml`; sus huecos normales duran hasta 0,5 s) o falta la IMU, el comando es velocidad 0 hasta que se recuperen. El `drive.py` del curso (desde el paso 7) ya lo hace con `SensorWatchdog` (`robotek_course/watchdog.py`): si un sensor lleva más de 0,35 s (LiDAR) o 0,2 s (IMU) sin mensajes, envía velocidad 0 y avisa en el log `A sensor went quiet`. Si escribes tu propio nodo, copia esa idea.
 - **A ciegas = no avanzar.** Si `scene.left` y `scene.right` son los dos `inf`, el nodo del equipo publica velocidad 0. Sin el LiDAR, tu `perceive` devuelve `inf` y la misión sigue recto.
-- **Atasco = parar.** El equipo detecta que el coche no avanza y se recupera o se detiene. Ojo: la odometría del LiDAR que usaba antes **sumaba distancia aunque el coche estuviera quieto** si había ruido entre escaneos (3,6 m "recorridos" en 15,8 s con el frente cambiando solo 9 cm), y la detección de atasco tardó o no saltó `[coche]`. Por eso la estrategia mide ahora el avance con el cambio de la distancia al frente (paso 6).
+- **Atasco = parar.** El equipo detecta que el coche no avanza y se recupera o se detiene. La estrategia mide el avance con el cambio de la distancia al frente (paso 6): con el coche atascado, esa distancia no cambia.
 - **Parada del operador.** Segunda pulsación del botón (arriba).
 
 **Arréglalo.** Primero baja la velocidad (`motor_max_rps:=3` al lanzar), y arranca siempre con la batería cargada y anotada. Después, según el síntoma, el caso que corresponda. Mientras tanto, revisa los tres frenos de seguridad (el del sensor viejo ya está en el `drive.py` del curso): son pocas líneas y convierten un choque en una parada.
@@ -653,8 +653,8 @@ La cuenta: con 240 fotogramas por segundo, 1 fotograma son 4,2 ms. Si el retardo
 <details>
 <summary>Diagnóstico, arreglo y cómo comprobarlo</summary>
 
-Desde el 8 de noviembre de 2026 el motor es un **310 con encoder en el puerto M2 de la RRC Lite**, con engranajes
-54:30 hasta el eje. Ya no hay puente TB6612 ni pines GPIO. A la placa **no se le manda el tipo de motor**
+El motor es un **310 con encoder en el puerto M2 de la RRC Lite**, con engranajes 1:1 hasta el eje (desde el
+11 de noviembre de 2026; antes, 54:30). Ya no hay puente TB6612 ni pines GPIO. A la placa **no se le manda el tipo de motor**
 (`motor_type: -1` en `src/rrc_lite_driver/config/controller_params.yaml`) y controla la velocidad con el encoder
 ([El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
 
@@ -671,7 +671,7 @@ Durante esos días se paraba reiniciando la placa (`brake_reset`, hoy apagado). 
 
 ### No se mueve
 
-1. **Muy pocas rps para la carga.** Con 54:30 el motor tiene poca fuerza a poca velocidad. Con la dirección a tope,
+1. **Muy pocas rps para la carga.** Con los engranajes 54:30 el motor tenía poca fuerza a poca velocidad (con 1:1 tiene casi el doble). Con la dirección a tope,
    desde parado, no arranca por debajo de ~1 rps (~0,23 m/s) `[coche]`. En el Open casi nunca pasa; en el Obstacle sí.
    Remedios: los engranajes 30:54 (3,24 veces más fuerza), o `motor_min_rps` / `motor_kick_rps` al lanzar (README de
    `robotek_hardware`).
@@ -719,8 +719,8 @@ Si con la velocidad positiva de tu estrategia el coche va hacia atrás, cambia e
 
 ### Va a una velocidad que no es la pedida
 
-`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps`, recortadas a `motor_max_rps`. Con 54:30, el factor
-es **4,4**: medido el 8 nov con el LiDAR, de 0,1 a 1 rps la velocidad real sigue a la pedida (±20 %) en los dos sentidos.
+`base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps`, recortadas a `motor_max_rps`. Con los engranajes 1:1 el factor
+es **8,0** (se pasa al lanzar: `motor_rps_per_mps:=8.0`; `robot.yaml` aún trae 4,4, de los 54:30). Medido el 8 nov con el LiDAR y 54:30, de 0,1 a 1 rps la velocidad real sigue a la pedida (±20 %) en los dos sentidos.
 La respuesta tarda ~0,5 s: en 1 s el coche no llega a la velocidad estable `[coche]`. Con 30:54, el factor es 13.
 
 **Mide.** Con el coche en el suelo hacia una pared y 2 m libres, pide 0,15, 0,30 y 0,50 m/s por `/cmd_vel_raw` unos
@@ -1089,7 +1089,7 @@ Esta tabla resume las diferencias que más fallos causaron. La última columna d
 |---|---|---|---|
 | El IMU sale en el marco del coche | La placa va de canto: ejes y signo hay que medirlos | Giroscopio invertido | 4 |
 | `/start` lo publica el árbitro, cuando tu nodo ya está suscrito | `/start` sale del botón, con la durabilidad por defecto | Solo si tu nodo se suscribe con `TRANSIENT_LOCAL`: el botón no arranca | 1 |
-| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (M2, sin tipo, 54:30) sigue la consigna a 4,4 rps por m/s, con ~0,5 s de retraso, y se desliza 8–35 cm tras un 0 | Más rápido o más lento que el modelo | 5, 8 |
+| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (M2, sin tipo, engranajes 1:1) sigue la consigna a 8,0 rps por m/s, con ~0,5 s de retraso, y se desliza 8–35 cm tras un 0 | Más rápido o más lento que el modelo | 5, 8 |
 | Servo con retardo 0,06 s y 1,2 rad/s | Lo mismo de media, pero con holgura, topes y calor | Esquinas anchas o servo que zumba | 6, 7 |
 | Ángulo de rueda igual al pedido hasta 17,6 grados | Igual al pedido gracias a la tabla medida (±19 grados); sin ella, la rueda da menos y distinto a cada lado | Gira poco o desigual | 6 |
 | Arranque y frenada suaves, sin deslizar | Encabrita y derrapa sin rampas | Vuelco, derrape | 5 |

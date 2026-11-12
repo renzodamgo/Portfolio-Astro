@@ -96,7 +96,7 @@ La condición 1 necesita saber cuántos metros avanzó el coche en esta recta, y
 - La distancia **nunca baja**: el ruido del LiDAR puede dar una lectura 3 cm más lejos, y el coche no fue marcha atrás.
 - Durante la esquina no se actualiza (la pared de enfrente está cambiando), y al terminarla se llama a `reset()`: la recta siguiente empieza de cero, con su propia pared.
 
-Una versión anterior usaba una odometría con LiDAR que alineaba escaneos consecutivos. Medir con la pared de enfrente dio las mismas rondas en el laboratorio desde nueve posiciones de salida (12 nov 2026) con una fracción del código. Lo que **no** vale es contar la velocidad pedida por el tiempo: desde parado, el coche «creía» haber avanzado 0,25 m cuando llevaba 2 cm, y giraba al instante.
+Lo que **no** vale es contar la velocidad pedida por el tiempo: desde parado, el coche «creería» haber avanzado 0,25 m cuando lleva 2 cm, y giraría al instante.
 
 ### Sin offset en la esquina
 

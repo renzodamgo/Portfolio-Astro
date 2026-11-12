@@ -17,9 +17,8 @@ Aquí importa ir despacio: un error en el simulador cuesta una ronda, y uno aqu�
 > **Qué está probado y qué no.** Separo lo que se midió en un coche real de lo que solo he visto en simulación.
 >
 > - **Medido en el coche real** (equipo Robotek, 7 a 9 de octubre de 2026, montaje anterior): el retardo del servo, el ángulo real de las ruedas con círculos, la tabla de velocidad del motor, el LiDAR, la IMU, la cámara, el botón y los LED de la placa. De ahí salen los números de `robot.yaml` y del simulador.
-> - **Rondas Open en el coche real:** el 8 de octubre el equipo hizo ocho intentos con su propia estrategia (el v4) y su propio lanzador, que viven en otro repositorio. El primero chocó contra el muro a los 2,9 s: el color de la pared de la sala se confundió con una línea. Con el motor limitado al 40 % el coche dio los 12 giros y llegó a `DONE` en 47,1 s, y el operador dijo que funcionó. Con el 50 %, 40,4 s, pero rozó dos veces la isla interior. Los demás fallaron por un cable suelto (varias veces), un Start falso, un reinicio del Pi con la batería a 6,5 V y un choque al 90 % del motor. No hubo juez: no sé cuántos puntos habrían sido, solo hay una estimación provisional.
-> - **Después de eso el coche se reconstruyó** (21 de octubre): el servo de dirección cambió de sitio y giró 90 grados, y la Raspberry y la placa van de canto. Hasta donde llegan mis notas, el servo y los ejes de la IMU de esa construcción no se han vuelto a medir y no se ha hecho ninguna ronda con ella.
-> - **No probado en el coche real:** `car.launch.py`, `tools/setup-pi.sh`, el paquete `my_open` de esta guía y los comandos de este capítulo. Los he escrito leyendo el código y los datos del equipo, no ejecutándolos en el coche. Si algo no coincide con lo que ves, tú tienes la razón: cuéntamelo.
+> - **Rondas Open en el coche real:** la estrategia del equipo (el Open v5, la misma del curso con los valores del coche) hace rondas completas de 3 vueltas en los dos sentidos; el 11 de noviembre de 2026, en 31 a 38 s. Cómo lanzarla, en [Correr el Open en el Pi desde cero](/learn/open-strategy/correr-en-el-pi/).
+> - **No probado en el coche real:** el paquete `my_open` de esta guía y `tools/setup-pi.sh` en un Pi recién instalado. `car.launch.py` sí: es el que lanza el Open del equipo. Los he escrito leyendo el código y los datos del equipo, no ejecutándolos en el coche. Si algo no coincide con lo que ves, tú tienes la razón: cuéntamelo.
 
 <!-- step-video:start -->
 <figure class="learn-step-video">
@@ -50,7 +49,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 - Una **Raspberry Pi 5** con Ubuntu 24.04 (la del equipo). Una Pi 4 no la he probado.
 - La placa **HiWonder RRC Lite**: IMU (MPU6050), botones K1 y K2, dos LED RGB, el servo de dirección y el motor de tracción.
 - El **LiDAR LDROBOT LD19**, con su adaptador USB serie, y una cámara: la del equipo es, desde el 4 nov 2026, una **IMX708 Wide** por el cable plano (`camera_driver:=picam`); antes, una **cámara USB** (solo da YUYV 640x480), que sigue sirviendo.
-- El **motor de tracción**: un motor **310** (JGA27-310R 20:1, 450 rpm) con encoder, con engranajes 54:30 hasta el eje, en el puerto **M2** de la RRC Lite y **sin mandarle el tipo de motor** a la placa (desde el 8 nov 2026). La placa mantiene la velocidad con el encoder y para con un 0 ([sección 4 de El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/)). (Antes era un motor de 25 mm movido por un puente TB6612FNG desde los GPIO del Pi; el código aún lo admite con `motor_backend: tb6612`.)
+- El **motor de tracción**: un motor **310** (JGA27-310R 20:1, 450 rpm) con encoder, con engranajes 1:1 hasta el eje, en el puerto **M2** de la RRC Lite y **sin mandarle el tipo de motor** a la placa. La placa mantiene la velocidad con el encoder y para con un 0 ([sección 4 de El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/)).
 - Una **batería LiPo 2S** (7,4 V nominales) en la RRC Lite: alimenta la placa, el servo, el motor y el Pi.
 - Soportes para levantar el coche del suelo (cajas, libros). Es lo más útil de la lista.
 
@@ -339,9 +338,8 @@ Las ruedas traseras deben girar **hacia delante**. Hay que repetir la orden: el 
 Lo que se sabe del motor:
 
 - La "rps" de la placa **no es una vuelta real** del motor: depende del tipo de motor que la placa cree tener. Sin mandarle el tipo, en el coche del equipo, 1 rps son ~0,22 m/s (medido con el LiDAR el 8 nov 2026).
-- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` (**4,4**, con los engranajes 54:30) y nunca pide más de `motor_max_rps`. El tope de `robot.yaml`, 3,4 rps, son ~0,77 m/s.
+- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` y nunca pide más de `motor_max_rps`. Con los engranajes 1:1 son **8,0** rps por m/s: pásalo al lanzar (`motor_rps_per_mps:=8.0`), porque `robot.yaml` aún trae 4,4, de los engranajes 54:30 de antes.
 - El coche sigue la consigna desde ~0,1 rps (~0,02 m/s) en los dos sentidos. Pero con la dirección a tope, desde parado, le falta fuerza por debajo de ~1 rps. Tras un 0 se desliza 8–35 cm.
-- Hasta el 8 nov 2026 se le mandaba el **tipo 2** a la placa. Con nuestro encoder, el control iba al revés: a tope con cualquier consigna y sin parar con 0. Está en [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4.
 
 ## 4. La primera ronda, en el suelo
 
