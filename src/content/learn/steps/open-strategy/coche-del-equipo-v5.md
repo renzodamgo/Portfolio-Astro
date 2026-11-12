@@ -526,8 +526,8 @@ El paso a paso (las luces, el botón, primero en el aire, dónde queda la ronda,
 
 ### Los valores del Open para el coche
 
-Están en el repositorio, en `src/robotek_open/config/car_picam.yaml`, y el launch los carga solo. La tabla completa,
-con el valor del curso al lado, está en [Correr el Open en el Pi](/learn/open-strategy/correr-en-el-pi/#6-los-valores-del-coche).
+Están en el repositorio, en `src/robotek_open/config/car_picam.yaml`, y el launch los carga solo. Todos los parámetros
+(estrategia, nodo, cámara y launch), con el valor del código al lado, están en [Correr el Open en el Pi](/learn/open-strategy/correr-en-el-pi/#6-los-valores-del-coche).
 Los que más pesan:
 
 - **`wall_heading_gain: 0.3`: el giroscopio corregido con la pared de la isla.** El giroscopio de la placa lee un 6 %
