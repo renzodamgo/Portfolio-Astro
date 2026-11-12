@@ -276,7 +276,7 @@ Cuando termines, compara tu `heading.py` con la referencia en la caja «Los camb
 > el sesgo no lo arregla, porque no es un error constante sino de escala. El Open v5 lo corrige con el LiDAR: en las
 > rectas mide el ángulo de las paredes de los lados y acerca su rumbo un 30 % a lo que dicen ellas
 > (`wall_heading_gain`). Está explicado en
-> [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/#los-ajustes-del-open-v5-para-el-coche). En el
+> [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/#los-valores-del-open-para-el-coche). En el
 > simulador no hace falta.
 
 ## Resumen

@@ -2,15 +2,15 @@
 guide: "open-strategy"
 order: 10
 slug: "paso-10-el-coche-real"
-title: "Del git clone al primer arranque en el coche real"
-summary: "Instala el repositorio en la Raspberry Pi, comprueba cada sensor y haz la primera ronda con el coche real."
+title: "Comprobar el coche real, sensor por sensor"
+summary: "Comprueba la cámara, el LiDAR, la IMU, la dirección y el motor del coche real, uno a uno, antes de la primera ronda."
 tag: "step-9"
 compareFrom: "step-9"
 ---
 
-Hasta aquí todo fue simulación. En este capítulo llevas el mismo nodo `drive` al coche real: lo montas, instalas el repositorio en la Raspberry Pi, compruebas cada sensor y cada actuador por separado, y solo al final haces una primera ronda en el campo.
+Hasta aquí todo fue simulación. Antes de soltar el coche real en el campo conviene saber que **cada sensor y cada actuador hace lo que el código cree**: este capítulo los comprueba uno a uno, con el coche parado o sobre soportes.
 
-¿Vas a probar en el coche del equipo Robotek después de su reconstrucción? La receta corta, en orden y empezando siempre por el `git pull` de robotek-learn, está en [El coche del equipo: calibrar la IMU y correr la estrategia](/learn/open-strategy/coche-del-equipo-v5/).
+Para instalar el Pi y lanzar una ronda, el camino corto es [Correr el Open en el Pi desde cero](/learn/open-strategy/correr-en-el-pi/). Vuelve aquí cuando algo no cuadre, cuando cambies una pieza o antes de correr **tu propia** estrategia.
 
 Aquí importa ir despacio: un error en el simulador cuesta una ronda, y uno aquí puede costar un cable arrancado o un coche contra la pared.
 
@@ -85,59 +85,16 @@ Enchufa la placa, el LiDAR y la cámara **antes** de encender el Pi. Si cambias 
 5. **Arranca siempre a baja potencia.** A fondo desde parado el coche del equipo levantó las ruedas delanteras y la dirección dejó de actuar. Por eso `base_adapter` limita la aceleración a 1 m/s² y la deceleración a 0,6 m/s², y `motor_max_rps` limita la velocidad que se pide a la placa (el Open del equipo corre con `motor_max_rps:=6.7`; empieza con 2,5).
 6. **Freno junto a la pared** (apagado por defecto desde el 8 nov 2026). Con `wall_stop_m: 0.10` en `robot.yaml`, `base_adapter` baja la velocidad hacia delante cuando el LiDAR ve algo a menos de 0,30 m (`wall_slow_m`) y la deja en 0 a 0,10 m. Se apagó porque en el Obstacle frenaba junto a cada pilar y el coche acababa parado; si lo enciendes y el coche se para cerca de una pared, es esto.
 
-## 2. Clonar y preparar el Pi con un comando
+## 2. El Pi preparado y tu estrategia
 
-### El camino corto: la estrategia de referencia
+Instala el Pi como en [Correr el Open en el Pi desde cero](/learn/open-strategy/correr-en-el-pi/), sección 2: `git clone`, `bash tools/setup-pi.sh`, cerrar sesión y `bash tools/setup-pi.sh --check`.
 
-Si solo quieres ver al coche hacer la ronda con la estrategia terminada de los pasos 2 a 9, son tres comandos en el Pi, con internet:
+Eso basta para el Open del equipo. Para correr **tu** `my_open` del curso hay que llevarlo al Pi, porque no está en git (el repositorio lo ignora en `main`):
 
-```bash
-git clone https://github.com/renzodamgo/robotek-learn.git && cd robotek-learn
-bash tools/setup-pi.sh --with-reference
-source install/setup.bash && ros2 launch robotek_course open_challenge.launch.py
-```
+- **La tuya:** cópiala desde tu ordenador a `~/robotek-learn/src/my_open/` con `rsync` o `scp`, cada vez que la cambies.
+- **La de referencia** (la solución del paso 9): `bash tools/get-reference.sh`. No pisa la tuya: avisa y sale; con `--force` guarda antes una copia.
 
-El segundo comando instala todo y, además, saca la estrategia terminada de la etiqueta `step-9` y la deja en `src/my_open`. Con el tercero arrancan los nodos del coche. Cuando las luces estén **verdes**, pulsas el botón de la placa **una vez** para empezar y **otra vez** para parar. Antes de pulsarlo la primera vez, lee la sección 4: el coche en alto y la batería cargada. Y ojo con la dirección: el archivo `robot.yaml` trae la dirección **medida en el coche del equipo** (centro 1403 µs, ±19°, `servo_measured: true`). Si tu coche es otro, el servo saltará a ese centro en cuanto la estrategia publique y el coche saldrá torcido. Haz antes las comprobaciones 3.5 y 3.6.
-
-Si ya tienes la estrategia de otra forma, `get-reference.sh` no la pisa: avisa y sale. Con `--force` guarda una copia (`src/my_open.bak-FECHA`) y la reemplaza. Si lanzas sin tener `my_open`, el lanzador no da un error técnico: te dice en español los dos caminos y sale.
-
-### El camino largo: tu propia estrategia
-
-Clona igual:
-
-```bash
-git clone https://github.com/renzodamgo/robotek-learn.git
-cd robotek-learn
-```
-
-Tu estrategia `my_open` no está en git (el repositorio la ignora en `main`). Cópiala desde tu ordenador a `robotek-learn/src/my_open/` antes de seguir, con `rsync`, `scp` o clonándola de tu propio repositorio. Cada vez que cambies tu código en el ordenador tendrás que volver a copiarla.
-
-Ahora el script (sin `--with-reference`, porque ya tienes tu paquete):
-
-```bash
-bash tools/setup-pi.sh
-```
-
-Es repetible: lo que ya está hecho se salta. Pide `sudo` y tarda varios minutos (`--dry-run` muestra los comandos sin ejecutarlos). Hace cuatro cosas:
-
-1. Comprueba que el sistema es Ubuntu 24.04. En otro sistema se niega, salvo `ROBOTEK_FORCE=1`.
-2. Instala ROS 2 Jazzy **sin Gazebo ni RViz** (en el Pi no los necesitas) y los paquetes de apt del coche: `cv_bridge`, `robot_state_publisher`, `xacro`, `python3-serial`, `python3-lgpio`, `python3-opencv`, `v4l-utils`.
-3. Instala las **reglas de udev** (`tools/99-robotek.rules`) y te añade a los grupos `dialout` (puertos serie), `video` (cámara) y `gpio` (motor).
-4. Compila todo con `colcon build --symlink-install`.
-
-Los **drivers de terceros ya vienen en el repositorio**, en `src/`: el del LiDAR (`ldlidar_stl_ros2`, de LDROBOT, con licencia MIT) y el de la placa (`rrc_lite_driver` y `rrc_lite_msgs`, basado en el código de Hiwonder). Los de Hiwonder se incluyen con su permiso; los créditos están en `CREDITS.md`. No hay que descargar nada más.
-
-Las reglas de udev dan nombres fijos, `/dev/rrc_lite` a la placa y `/dev/ldlidar` al LiDAR, que no dependen del puerto USB, y evitan que ModemManager ocupe la placa. Los grupos solo cuentan en una sesión nueva: **cierra la sesión y vuelve a entrar, o reinicia el Pi**.
-
-Después, comprueba sin tocar nada:
-
-```bash
-bash tools/setup-pi.sh --check
-```
-
-Imprime una línea por cosa: `ok`, `FALTA` o `aviso`. Mira el sistema, ROS, los paquetes compilados (incluido `my_open`), la placa, el LiDAR, la cámara, el GPIO, `lgpio`, `pyserial` y los grupos, y termina con el recuento. Un `FALTA` en un USB es casi siempre un cable. `--check` no arranca nada.
-
-El script no se ha probado en un Pi limpio. Si falla, mira qué comando falló y cuéntamelo.
+Después, `colcon build --symlink-install`. Tu estrategia se lanza con `ros2 launch robotek_course open_challenge.launch.py` (sección 4).
 
 ## 3. Las comprobaciones, una a una
 
@@ -341,57 +298,20 @@ Lo que se sabe del motor:
 - `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` y nunca pide más de `motor_max_rps`. Con los engranajes 1:1 son **8,0** rps por m/s: pásalo al lanzar (`motor_rps_per_mps:=8.0`), porque `robot.yaml` aún trae 4,4, de los engranajes 54:30 de antes.
 - El coche sigue la consigna desde ~0,1 rps (~0,02 m/s) en los dos sentidos. Pero con la dirección a tope, desde parado, le falta fuerza por debajo de ~1 rps. Tras un 0 se desliza 8–35 cm.
 
-## 4. La primera ronda, en el suelo
+## 4. Después de las comprobaciones
 
-### Antes de poner el coche en el campo
+Con las comprobaciones 3.1 a 3.6 bien, y `servo_measured` e `imu_adapter.measured` en `true` en `robot.yaml`:
 
-1. Las comprobaciones 3.1 a 3.6 pasan, y `servo_measured` e `imu_adapter.measured` son `true`.
-2. **Una recta corta antes de la ronda,** y la primera ronda despacio: `motor_max_rps:=2.5` son ~0,57 m/s. El Open v5 del equipo corre con 6,7 ([coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 6).
-3. La batería cargada: `ros2 topic echo /rrc/battery --once`.
-4. Un campo Open montado, la isla fija y el coche en la sección de salida, como en el simulador.
-
-### Lanzar
-
-Guarda la salida de la consola, que es tu registro:
+- **El Open del equipo:** [Correr el Open en el Pi desde cero](/learn/open-strategy/correr-en-el-pi/), desde la sección 4. Allí están las luces, el botón, dónde queda la ronda y el arranque automático.
+- **Tu `my_open`:** el mismo coche y el mismo botón, con otro lanzador. Empieza despacio:
 
 ```bash
-mkdir -p ~/rondas-coche
-ros2 launch robotek_course open_challenge.launch.py motor_max_rps:=2.5 2>&1 | tee ~/rondas-coche/ronda-01.log
+cd ~/robotek-learn && bash tools/car-clean.sh
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
+ros2 launch robotek_course open_challenge.launch.py motor_rps_per_mps:=8.0 motor_max_rps:=4.0
 ```
 
-Espera a que las luces se pongan **verdes**. Con la batería cargada y el coche en su posición de salida, pulsa el botón **una vez**.
-
-### Qué significan los LED
-
-Las luces son muy tenues a propósito (2 de 255): con más brillo se reflejaban en la cámara. Míralas de cerca.
-
-| Estado | Los dos LED |
-|---|---|
-| Arrancando (tu nodo todavía no publicó su estado) | apagados |
-| **Listo: pulsa el botón** (`WAIT_START`) | **verde** |
-| **Pulsado: la ronda corre**, terminó o la paraste | **azul** |
-| Batería baja (menos de 6,8 V): hay que cambiarla | rojo parpadeando |
-
-Los estados salen de lo que publica **tu** nodo en `/robotek/state` (lo hace `drive.py` desde el paso 7): verde mientras
-publica `WAIT_START`, azul con cualquier otro. Hasta el 4 de noviembre de 2026 las luces también avisaban de un sensor
-sin datos, pero para eso miraban la cámara entera y quitaban CPU a la estrategia; ahora son solo estas tres.
-
-### El botón
-
-- **Primera pulsación:** publica `/start` y pita una vez. El zumbador de la placa del equipo está quemado, así que allí no suena: no dependas del pitido.
-- **Segunda pulsación:** publica `/robotek/stop` y pita dos veces. `base_adapter` para el motor con un 0 y lo mantiene. Tu nodo pasa a `OPERATOR_STOP` y no se mueve más hasta lanzar de nuevo.
-- Las pulsaciones a menos de 1,5 s de la anterior se ignoran.
-
-**Qué imprime la consola.** Son líneas del código, no la captura de una ronda real. Al arrancar: `Press the button to start; press it again to stop.` (`start_button`) y `Status RGBs at level 2/255: green = ready, blue = running.` (`status_leds`). Con el primer pulso: `Start.` y el `Start` de tu `drive`, y después lo que escribiste en cada paso (`Giro a la izquierda (esquina N)`). Con el segundo: `Stop (button pressed again).` y `Operator stop: motor held at 0.`. Si la batería baja de 6,8 V: `Battery X V < 6.80 V: change it before the next round`.
-
-### El registro de una ronda
-
-En el coche no hay juez, ni posición real, ni registro de contactos, y `ros2 run robotek_course score` no puntúa rondas reales. El juez eres tú. Apunta, para cada intento, también los fallidos:
-
-- El archivo de registro, la batería antes (`ros2 topic echo /rrc/battery --once`), `motor_max_rps` y qué cambiaste desde el intento anterior.
-- El sentido que detectó y desde dónde salió.
-- El tiempo desde el botón hasta `DONE` con cronómetro (el estado se ve con `ros2 topic echo /robotek/state`).
-- Si tocó un muro o movió la isla, dónde se paró y qué viste.
+`motor_max_rps:=4.0` no deja pasar de 0,5 m/s con los engranajes 1:1. Tu `my_open` trae las constantes del simulador (pide 1,28 m/s en las rectas), y en el coche los m/s son reales: sin ese tope iría mucho más rápido que en Gazebo. Súbelo cuando las esquinas salgan bien, o baja `CRUISE_SPEED` y `CORNER_SPEED` en tu `mission.py`. Los valores con los que corre el equipo están en la [tabla del capítulo del Pi](/learn/open-strategy/correr-en-el-pi/#6-los-valores-del-coche). **Nadie ha corrido `my_open` en el coche todavía.**
 
 ## 5. El coche real no es el simulador
 
@@ -410,7 +330,7 @@ Y esto es lo que **no** modela:
 - **Patinaje de las ruedas** y la **fricción del suelo**. En Gazebo las ruedas no resbalan como en el piso real.
 - **La caída de la batería** al acelerar, y el motor 310: va a la velocidad que le deja la placa, no a la pedida, y con 0 a veces sigue de largo.
 - **El bucle de control más lento.** En el Pi, la estrategia corre a ~35–40 ciclos por segundo, no a 50. Si integras el giroscopio suponiendo 1/50 s por ciclo, el rumbo te sale corto y cada esquina gira de más (al Open v5 le pasaba: ~115° en vez de 90°). Usa el tiempo real entre ciclos.
-- **El giroscopio no es exacto.** El de la placa marca un ~5 % menos de lo que gira el coche: en tres vueltas son decenas de grados. Corrige el rumbo con lo que ves: el Open v5 ajusta una recta a las paredes de cada lado con el LiDAR y, en las rectas, acerca su rumbo a ellas (`wall_heading_gain`, explicado en [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/#los-ajustes-del-open-v5-para-el-coche)).
+- **El giroscopio no es exacto.** El de la placa marca un ~5 % menos de lo que gira el coche: en tres vueltas son decenas de grados. Corrige el rumbo con lo que ves: el Open v5 ajusta una recta a las paredes de cada lado con el LiDAR y, en las rectas, acerca su rumbo a ellas (`wall_heading_gain`, explicado en [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/#los-valores-del-open-para-el-coche)).
 - **El encabritamiento:** a fondo desde parado el morro se levanta. No pasa en simulación.
 - **La luz.** El simulador tiene colores perfectos. Los rangos de `line_lengths` de la guía son los del simulador y con la luz de tu sala pueden fallar. Al equipo le pasó: la pared beige de la sala cayó dentro del naranja y el coche giró mal. El remedio fue mirar solo la parte del suelo de la imagen y medir los colores reales.
 - **La distorsión de la lente** de la cámara y el retardo propio de los sensores.
@@ -425,4 +345,4 @@ Una ronda perfecta en Gazebo no demuestra nada sobre el coche. Y una mala en el 
 
 Antes, repite la primera ronda un par de veces con la misma batería y el mismo tope de motor: una ronda buena no dice nada todavía.
 
-¿Quieres ver la estrategia del equipo, el Open v5? Está en el mismo repositorio (`src/robotek_open`); cómo se lanza en el coche, con sus ajustes y el arranque automático, está en [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/) (sección 6).
+Para lanzar la estrategia del equipo: [Correr el Open en el Pi desde cero](/learn/open-strategy/correr-en-el-pi/).

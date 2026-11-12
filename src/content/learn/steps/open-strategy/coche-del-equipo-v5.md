@@ -2,15 +2,15 @@
 guide: "open-strategy"
 order: 10.5
 slug: "coche-del-equipo-v5"
-title: "El coche del equipo: calibrar la IMU y correr la estrategia"
+title: "El coche del equipo: medir la IMU, el servo y el motor"
 summary: "Las medidas del coche del equipo y dónde se guardan: los ejes de la IMU, el servo y el motor, qué hacer antes de cada prueba y los valores con los que corre el Open."
 tag: "step-9"
 compareFrom: "step-9"
 ---
 
-Esta página es la receta para el **coche del equipo Robotek**: qué medir, en qué orden, dónde se guarda cada medida y cómo se lanza la ronda. Todo sale del repositorio del curso, **[robotek-learn](https://github.com/renzodamgo/robotek-learn)**: es el que está en el Raspberry Pi del coche y el que se baja con `git pull` antes de cada prueba. La estrategia es la **de referencia del paso 9** (`my_open`) o la tuya si ya la terminaste; el **Open v5** del equipo también está en robotek-learn y se lanza igual ([sección 6](#6-la-primera-ronda)).
+Esta página es para cuando el coche **cambia**: una IMU girada, otro servo, otro motor u otros engranajes. Dice qué medir, en qué orden y dónde se guarda cada medida. Todo está en el repositorio del curso, **[robotek-learn](https://github.com/renzodamgo/robotek-learn)**, el que corre en el Raspberry Pi del coche.
 
-El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) explica cada pieza con más calma (instalar el Pi desde cero, el LiDAR en RViz, la cámara). Aquí está el camino corto, en orden.
+Si el coche no cambió y solo quieres correr una ronda, no te hace falta nada de aquí: ve a [Correr el Open en el Pi desde cero](/learn/open-strategy/correr-en-el-pi/). Si quieres comprobar un sensor suelto, al [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/).
 
 > **Qué está probado y qué no** (12 de noviembre de 2026).
 >
@@ -38,12 +38,12 @@ El [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/) explica cada piez
 
 | # | Qué | Bloquea la ronda | Dónde queda |
 |---|---|---|---|
-| 1 | **Antes de cada prueba:** `git pull` de robotek-learn, compilar y limpiar el Pi | sí, siempre | — |
+| 1 | **Antes de cada medida:** el código al día y el Pi limpio | sí, siempre | — |
 | 2 | Ejes de la IMU | **sí** | `robot.yaml` → `imu_adapter` |
 | 3 | Servo: centro, signo y ángulo real (**hecho** el 1 nov) | **sí** | `robot.yaml` → `base_adapter` |
 | 4 | Motor: sin tipo, M2, sentido, velocidad y parada (**hecho** el 8 nov) | **sí** | `controller_params.yaml`, `robot.yaml` |
 | 5 | LiDAR y cámara | no, pero la cámara decide el sentido | `robot.yaml` → `scan_adapter`; colores en `vision.py` |
-| 6 | Primera ronda, despacio; después, arranque automático | — | `~/runs/` en el Pi |
+| 6 | La ronda, con los valores del coche | — | `~/runs/` en el Pi |
 | 7 | Anotar la ronda | — | tu cuaderno de rondas |
 
 Todos los archivos están en robotek-learn: `src/robotek_hardware/config/robot.yaml`, `src/robotek_evaluation/config/real_car_v1.yaml`, `src/robotek_course/robotek_course/minisim.py` y `src/robotek_course/robotek_course/vision.py`.
@@ -52,97 +52,26 @@ Haz las mediciones **en este orden** y con el coche **sobre soportes, con las ru
 
 ## 1. Antes de cada prueba (siempre)
 
-Haz esto **al empezar cada prueba**, aunque ya lo hayas hecho antes ese día: así el Pi corre exactamente el código de robotek-learn y no queda nada de la prueba anterior. Cada sección siguiente empieza recordándolo.
-
-### La primera vez: el repositorio en el Pi
-
-Si el Pi todavía no tiene robotek-learn (o lo tiene en otra carpeta), clónalo en la carpeta de usuario e instala lo que falta, como en el [capítulo 10](/learn/open-strategy/paso-10-el-coche-real/):
+El Pi ya tiene robotek-learn instalado ([Correr el Open en el Pi](/learn/open-strategy/correr-en-el-pi/), sección 2). Antes de cada medida, en el Pi:
 
 ```bash
-cd ~
-git clone https://github.com/renzodamgo/robotek-learn.git
-cd robotek-learn
-bash tools/setup-pi.sh --with-reference      # ROS, dependencias, udev, grupos, la estrategia de referencia y colcon build
-```
-
-Cierra la sesión y vuelve a entrar (por los grupos nuevos) y comprueba con `bash tools/setup-pi.sh --check`.
-
-Si el `~/.bashrc` del Pi carga **otro** workspace (por ejemplo `source ~/Projects/WRO-Strategies/install/setup.bash` o `~/wro_controller_ws`), quita esa línea: tienen paquetes con el mismo nombre (`robotek_hardware`, `rrc_lite_driver`…) y se mezclan.
-
-### De dónde vienen los cambios
-
-- **El código y las medidas del coche** (`robot.yaml`, `minisim.py`, …) están en robotek-learn, en GitHub. Quien tiene permiso los cambia en su ordenador y hace `git push`. En el Pi **solo se hace `git pull`**: si editas en el Pi, el siguiente `git pull` choca o pierdes el cambio.
-- **Tu estrategia `my_open`** no está en git (el repositorio la ignora). Si usas la tuya y no la de referencia, cópiala al Pi cada vez que la cambies (con `rsync` o `scp`, como en el capítulo 10).
-
-Si mediste algo en el Pi (por ejemplo los ejes de la IMU), pásalo al ordenador, súbelo y vuelve a hacer `git pull` en el Pi.
-
-### En el Pi: entra, para lo que corre, baja el código y compila
-
-Desde tu ordenador, en la misma red Wi‑Fi que el coche:
-
-```bash
-ssh <usuario>@<ip-del-pi>
-```
-
-La IP la da el router por DHCP y puede cambiar después de un reinicio. Si no responde, espera un minuto (el Pi tarda en volver a la red) o búscala en el router.
-
-Ya dentro del Pi, siempre en este orden:
-
-```bash
-~/scripts/stop_ros.sh                       # 1. para el software del equipo, que arranca solo (si lo tiene)
-bash ~/robotek-learn/tools/car-autostart.sh stop   #    y el Open del arranque automático (sección 6), si está
 cd ~/robotek-learn
-git pull                                    # 2. baja la última versión de robotek-learn
-git log -1 --oneline                        #    el mismo commit que ves en GitHub
-colcon build --symlink-install              # 3. compila
-source install/setup.bash                   # 4. carga lo que acabas de compilar
-echo $ROS_DOMAIN_ID                         # 5. el número del coche: el mismo en el ordenador que mira RViz
+bash tools/car-autostart.sh stop            # si el Open arranca solo al encender
+git pull && colcon build --symlink-install  # el código al día
+bash tools/car-clean.sh                     # nada de una prueba anterior
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ```
 
-- **`stop_ros.sh`**: el Pi del equipo arranca solo su software (`ros_autostart.service`), que usa los mismos puertos que las pruebas. Escríbelo tú en la sesión de ssh. No lo metas en una línea como `ssh pi '~/scripts/stop_ros.sh && ...'`: el script mata procesos por nombre y puede matar tu propia conexión. Si tu Pi no tiene ese script, sáltalo.
-- **`colcon build --symlink-install`** cada vez: es lo que usa `setup-pi.sh`, y con él los cambios de Python y de `robot.yaml` llegan sin copiar nada a mano.
-- **`git pull` falla** con "local changes": alguien editó en el Pi. Pasa ese cambio al ordenador antes de descartarlo (`git stash`), no lo borres.
-- **El dominio:** el coche del equipo usa el **1**. En clase, cada coche tiene el suyo (capítulo 10, sección 3.3).
-
-### Comprueba que no quedó nada de la prueba anterior
-
-```bash
-bash tools/car-clean.sh
-```
-
-Para todos los nodos del coche que hayan quedado vivos (de un launch parado por ssh o desde un script, que a veces
-deja sus nodos corriendo) y pone los motores a 0. Debe decir `no car nodes running` o los nombres de los que paró.
-Un nodo viejo vivo es la causa típica de un LiDAR que da *timeout* (dos lectores en el mismo puerto), de un coche que
-se mueve solo o de una estrategia lenta: el 4 de noviembre, tres nodos olvidados de pruebas anteriores frenaron el
-Open hasta que chocó de frente.
-
-Y la batería, si la prueba mueve el motor:
-
-```bash
-ros2 topic echo /rrc/battery --once         # en mV: 8000 o más es una 2S cargada (necesita la placa en marcha)
-```
-
-### Cada terminal nueva
-
-Cada prueba usa dos o tres terminales en el Pi. Cada una es otro `ssh <usuario>@<ip-del-pi>`, y en cada una:
-
-```bash
-cd ~/robotek-learn && source install/setup.bash && echo $ROS_DOMAIN_ID
-```
-
-### Cómo parar los nodos al terminar
-
-`Ctrl+C` en cada terminal que lanzaste y después `bash tools/car-clean.sh`.
+- **Las medidas se guardan en el ordenador, no en el Pi.** `robot.yaml` y los demás archivos están en GitHub: se cambian en el ordenador, se suben con `git push` y en el Pi **solo se hace `git pull`**. Si mediste algo en el Pi, pásalo al ordenador, súbelo y vuelve a hacer `git pull`. Si `git pull` falla con "local changes", alguien editó en el Pi: guarda ese cambio (`git stash`) antes de descartarlo.
+- **`car-clean.sh`** para los nodos del coche que hayan quedado vivos y pone los motores a 0. Un nodo viejo es la causa típica de un LiDAR que da *timeout* (dos lectores en el mismo puerto) o de un coche que se mueve solo.
+- **Otro software en el Pi.** Si el `~/.bashrc` carga otro workspace con paquetes del mismo nombre (`robotek_hardware`, `rrc_lite_driver`…), quita esa línea. Si el Pi arranca solo otro programa que usa la placa o el LiDAR, páralo antes.
+- **Cada terminal nueva** del Pi necesita los dos `source` de arriba. El coche del equipo usa `ROS_DOMAIN_ID` 1.
+- **La batería,** si la prueba mueve el motor: `ros2 topic echo /rrc/battery --once` (en mV; 8000 o más es una 2S cargada).
+- **Al terminar:** `Ctrl+C` en cada terminal y otra vez `bash tools/car-clean.sh`.
 
 ## 2. Los ejes de la IMU (bloquea)
 
-**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
-
-```bash
-~/scripts/stop_ros.sh
-cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
-bash tools/car-clean.sh                     # para lo que quedó de antes
-```
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre).
 
 ### Por qué hay que medirlos
 
@@ -368,13 +297,7 @@ Con el montaje anterior salió un sesgo de 0,006 rad/s y un ruido de 0,0019. No 
 
 ## 3. El servo (bloquea)
 
-**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
-
-```bash
-~/scripts/stop_ros.sh
-cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
-bash tools/car-clean.sh                     # para lo que quedó de antes
-```
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre).
 
 **Ya está medido** (1 de noviembre de 2026). Esta sección explica cómo se hizo y cómo comprobarlo; repítela si cambias el servo, la palanca o la dirección.
 
@@ -463,13 +386,7 @@ Medir el coche es lo que da más trabajo. Con las medidas, reajustar la estrateg
 
 ## 4. El motor
 
-**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
-
-```bash
-~/scripts/stop_ros.sh
-cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
-bash tools/car-clean.sh                     # para lo que quedó de antes
-```
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre).
 
 El coche lleva un **motor 310** (JGA27-310R: reductora 20:1, 7,4 V, 450 rpm sin carga, encoder Hall) en el puerto
 **M2** de la RRC Lite, con dos engranajes iguales (**1:1**) hasta el eje. La placa mantiene la velocidad pedida con el
@@ -553,13 +470,7 @@ uno rápido que choca.
 
 ## 5. LiDAR y cámara
 
-**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre). En el Pi:
-
-```bash
-~/scripts/stop_ros.sh
-cd ~/robotek-learn && git pull && colcon build --symlink-install && source install/setup.bash
-bash tools/car-clean.sh                     # para lo que quedó de antes
-```
+**Antes de empezar,** siempre, la [preparación de la sección 1](#1-antes-de-cada-prueba-siempre).
 
 La forma más simple de tener los tres sensores es el launch del coche: arranca la placa, el LiDAR y la cámara, y la estrategia **espera el botón** sin moverse. Con las ruedas en el aire:
 
@@ -613,8 +524,6 @@ El paso a paso (las luces, el botón, primero en el aire, dónde queda la ronda,
 
 1. `robot.yaml` tiene `imu_adapter.measured: true` y `servo_measured: true`, y la prueba del giro a la izquierda dio positivo.
 2. El motor está como en la sección 4: M2, sin tipo (`motor_type: -1`), `rrc_motor_sign: -1.0`, y un 0 lo para.
-3. Batería cargada (`ros2 topic echo /rrc/battery --once`).
-4. Campo Open montado y el coche en la sección de salida. Para llevarlo hasta allí sin tocarlo, conduce con el teclado desde tu ordenador (`car.launch.py teleop:=true` y `tools/keyboard_racing`; ver el README de robotek-learn).
 
 ### Los valores del Open para el coche
 
@@ -662,7 +571,7 @@ Pasa los registros a tu ordenador (`scp -r <usuario>@<ip-del-pi>:runs/<carpeta> 
 
 ## Resumen
 
-1. **Siempre, antes de cada prueba,** en el Pi: `~/scripts/stop_ros.sh`; `car-autostart.sh stop`; `cd ~/robotek-learn`; `git pull`; `colcon build --symlink-install`; `source install/setup.bash`; `bash tools/car-clean.sh`.
+1. **Siempre, antes de cada medida,** en el Pi: `car-autostart.sh stop`; `git pull`; `colcon build --symlink-install`; `bash tools/car-clean.sh`; los dos `source`.
 2. **IMU:** `imu_axes` (quieto 3 s, un empujón) o a mano, eje por eje; copiar los ejes a `robot.yaml`, `measured: true`, y comprobar que girar a la izquierda da `z` positivo.
 3. **Servo (hecho el 1 nov):** `steer_calibration.py` en el suelo da el centro real y el ángulo de cada lado; `--check` lo comprueba.
 4. **Motor:** el 310 en M2 **sin tipo** (`motor_type: -1`), `rrc_motor_sign: -1.0`, 8,0 rps por m/s con los engranajes 1:1 (`motor_rps_per_mps:=8.0` al lanzar), parada con un 0.
