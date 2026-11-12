@@ -329,7 +329,7 @@ Este es el síntoma que más causas distintas tiene, así que primero **mira qu�
 
 - **Sensor viejo = frenar.** En el nodo del equipo, si el último LiDAR tiene más de 0,35 s o la última IMU más de 0,2 s (`scan_max_age`, `imu_max_age` en `open_realcar_v4.yaml`), el comando es velocidad 0 hasta que se recuperen. El `drive.py` del curso (desde el paso 7) ya lo hace con `SensorWatchdog` (`robotek_course/watchdog.py`): si un sensor lleva más de 0,35 s (LiDAR) o 0,2 s (IMU) sin mensajes, envía velocidad 0 y avisa en el log `A sensor went quiet`. Si escribes tu propio nodo, copia esa idea.
 - **A ciegas = no avanzar.** Si `scene.left` y `scene.right` son los dos `inf`, el nodo del equipo publica velocidad 0. Sin el LiDAR, tu `perceive` devuelve `inf` y la misión sigue recto.
-- **Atasco = parar.** El equipo detecta que el coche no avanza y se recupera o se detiene. Ojo: su odometría del LiDAR **suma distancia aunque el coche esté quieto** si hay ruido entre escaneos (3,6 m "recorridos" en 15,8 s con el frente cambiando solo 9 cm), y la detección de atasco tardó o no saltó `[coche]`. Si escribes la tuya, mide el cambio de la distancia al frente, no `travelled`.
+- **Atasco = parar.** El equipo detecta que el coche no avanza y se recupera o se detiene. Ojo: la odometría del LiDAR que usaba antes **sumaba distancia aunque el coche estuviera quieto** si había ruido entre escaneos (3,6 m "recorridos" en 15,8 s con el frente cambiando solo 9 cm), y la detección de atasco tardó o no saltó `[coche]`. Por eso la estrategia mide ahora el avance con el cambio de la distancia al frente (paso 6).
 - **Parada del operador.** Segunda pulsación del botón (arriba).
 
 **Arréglalo.** Primero baja la velocidad (`motor_max_rps:=3` al lanzar), y arranca siempre con la batería cargada y anotada. Después, según el síntoma, el caso que corresponda. Mientras tanto, revisa los tres frenos de seguridad (el del sensor viejo ya está en el `drive.py` del curso): son pocas líneas y convierten un choque en una parada.
@@ -509,7 +509,7 @@ El driver para el motor si pasan 0,5 s sin órdenes: hay que seguir publicando, 
 | Frenar sin derrapar | `decel_limit: 0.6`. Si aun así derrapa, `decel_limit: 0.4` | Frena más largo. Cuenta con 0,3 a 0,5 m de parada desde 0,6 m/s |
 | Coche más lento en general | `motor_max_rps` (tope de velocidad pedida a la placa). Es la protección más directa | Con el motor anterior: al 40 %, ronda completa en 47 s (batería en 6,66 V); al 50 %, en 40 s (7,40 V) `[coche]`. No son iguales: las baterías eran distintas |
 | Que el modelo coincida con el coche | Mide `motor_rps_per_mps` **con la batería cargada** (caso 8) | La velocidad real se parece a la pedida |
-| Esquinas más lentas | `LAST_CORNER_SPEED`, `CRUISE_SPEED` en tu `mission.py` | Menos aceleración lateral. La última esquina ya va más lenta a propósito |
+| Esquinas más lentas | `CORNER_SPEED`, `CRUISE_SPEED` en tu `mission.py` | Menos aceleración lateral. El coche ya frena antes de cada esquina |
 
 Una regla útil: **las distancias de giro de tu estrategia están afinadas para una velocidad real máxima de unos 0,6 m/s** (en el simulador, el comando 1,28 m/s equivale a 0,60 m/s reales). Si el coche supera eso (con el motor nuevo aún no se sabe), las esquinas llegan tarde.
 
@@ -557,7 +557,7 @@ El ángulo de rueda pasa por **cuatro límites en cadena**. El primero que corta
 
 *Gira demasiado*: lo contrario, y mira primero que el centro (caso 3) y el signo (caso 4) sean correctos, porque un giroscopio con el signo cambiado se nota igual.
 
-**Comprueba que quedó.** El radio medido con cinta coincide con el que calculas a partir de la tabla, y el coche termina cada esquina dentro de la tolerancia (`TURN_TOLERANCE`, 0,12 rad) sin rozar el muro exterior.
+**Comprueba que quedó.** El radio medido con cinta coincide con el que calculas a partir de la tabla, y el coche termina cada esquina sin pasarse del rumbo nuevo (suelta el tope a `TURN_TOLERANCE`, 0,3 rad) sin rozar el muro exterior.
 
 </details>
 
@@ -1032,7 +1032,7 @@ En el intento 8, el `FINISH` duró solo 0,9 s: la distancia al frente al termina
 |---|---|---|
 | Parar más adentro de la sección | Coloca el coche en el Start un poco más adentro de la sección; o sube `FINISH_LEAD` | Para antes de llegar a la pared de enfrente |
 | Parar más tarde | Baja `FINISH_LEAD` | Para más cerca de donde empezó, pero con menos margen si hay inercia |
-| Menos inercia | Baja `LAST_CORNER_SPEED` y `FINISH_SPEED`; sube `decel_limit` solo si no derrapa | Frena más corto |
+| Menos inercia | Baja `CORNER_SPEED` y `FINISH_SPEED`; sube `decel_limit` solo si no derrapa | Frena más corto |
 | Que no se quede parado en `FINISH` | Si `front_axis` es `inf`, repite el LiDAR (caso 9); si el motor no mueve a 0,15, sube un poco `FINISH_SPEED` | Termina siempre |
 
 **Comprueba que quedó.** Diez rondas, y en todas el coche queda con todo el cuerpo dentro de la sección de salida. Registra el resultado en la tabla de rondas; una ronda "buena" no vale si no mides dónde paró.

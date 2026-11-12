@@ -428,7 +428,7 @@ Otro servo, otra palanca u otra dirección cambian tres cosas: el **ángulo** qu
 **1. Ángulo máximo de la rueda: casi automático.** Basta con cambiar **una constante**, `STEER_LIMIT` en `minisim.py`. Es el ángulo real de la rueda, no el del servo.
 
 - La estrategia la usa como su tope de dirección.
-- Con ella calcula la **velocidad de giro en la esquina** (`arc.py`): `v · tan(STEER_LIMIT) / WHEELBASE`. Si el coche gira más cerrado, la rampa del arco se acelera sola; si gira menos, se hace más lenta.
+- En la esquina el volante va a ese tope (`arc.py`) hasta que faltan 17 grados para el rumbo nuevo (`TURN_TOLERANCE`). Si el coche gira más cerrado, llega antes; si cambia mucho, vuelve a medir cuándo soltar (paso 5).
 - En el coche va la misma medida en `robot.yaml` (`wheel_table_*`, `wheel_limit_deg`), y en el simulador en `real_car_v1.yaml` (`steer_limit`), como en la tabla de arriba.
 
 Lo que **no** se ajusta solo es el punto donde empieza el giro. Con un radio menor el coche puede girar más tarde, y con uno mayor tiene que girar antes. Eso lo deciden `TURN_FRONT` (1,19 m: la pared de enfrente a la que se puede empezar a girar) y `LOOKAHEAD` (0,35 m: lo cerca que tiene que estar el final de la isla), en `my_open/turn_gate.py`. Se prueban en el laboratorio sin tocar el archivo, con `--set`.
@@ -437,13 +437,13 @@ Lo que **no** se ajusta solo es el punto donde empieza el giro. Con un radio men
 
 - El retardo solo existe en el **modelo del simulador**: `steer_delay` (0,06 s), `steer_rate` (1,2 rad/s) y `steer_tau` en `real_car_v1.yaml`. El laboratorio los cambia con `--act` y Gazebo con `actuator_params:=` ([capítulo 12](/learn/open-strategy/paso-12-afinar/)).
 - Si el servo nuevo es **más lento**, la dirección llega tarde al tope en cada esquina y el coche abre la curva. El remedio es empezar a girar antes (subir `TURN_FRONT`). Compruébalo en el laboratorio y en Gazebo **con el retardo nuevo en el modelo**: si no, la simulación sigue con el servo viejo y no te muestra el problema.
-- Si es mucho más lento, quizá haya que tocar las ganancias: `KP` (0,8) en `heading.py`, `DAMPING` (0,1) y `EXIT_ANGLE` (0,25 rad) en `arc.py`. Ojo: en el capítulo 12, con el retardo triplicado, subir `DAMPING` empeoró las rondas; lo que dio margen fue bajar la velocidad.
+- Si es mucho más lento, hay que soltar el tope antes en cada esquina: `TURN_TOLERANCE` (0,3 rad) en `arc.py`, con el freno `DAMPING` (0,1) puesto. El widget del paso 5 enseña cuánto. Ojo: en el capítulo 12, con el retardo triplicado, ni `DAMPING` ni `TURN_TOLERANCE` cambiaron la ronda completa; lo que dio margen fue bajar la velocidad de esquina (`CORNER_SPEED`).
 
 **3. Ángulo del servo distinto, con el mismo giro de rueda.** Si solo cambia la palanca (por ejemplo, ahora hacen falta 30 grados de servo para el mismo ángulo de rueda), la estrategia no se entera: trabaja con el ángulo de la **rueda**. Solo cambia la tabla servo → rueda de `robot.yaml`. Recuerda que el equipo no pasa de **25 grados de servo**.
 
 | Cambio en el coche | Qué tocar | ¿Se ajusta solo? |
 |---|---|---|
-| Ángulo de rueda o radio de giro | `STEER_LIMIT`, `robot.yaml` y `real_car_v1.yaml` | El arco sí; el punto de giro hay que reajustarlo (`TURN_FRONT`, `LOOKAHEAD`) |
+| Ángulo de rueda o radio de giro | `STEER_LIMIT`, `robot.yaml` y `real_car_v1.yaml` | El tope sí; cuándo soltarlo (`TURN_TOLERANCE`) y el punto de giro (`TURN_FRONT`, `LOOKAHEAD`) hay que reajustarlos |
 | Servo más lento o más rápido | El modelo del simulador (`steer_delay`, `steer_rate`, `steer_tau`) | No: reajustar `TURN_FRONT`; si hace falta, `KP` y `DAMPING` |
 | Otra palanca, mismo giro de rueda | Solo la tabla servo → rueda de `robot.yaml` | Sí |
 | Otra distancia entre ejes | `WHEELBASE` en `minisim.py`, `vehicle.py` y `robot.yaml` (y el URDF) | El arco sí; el punto de giro hay que reajustarlo |

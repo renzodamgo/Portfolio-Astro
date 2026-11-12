@@ -18,24 +18,24 @@ export interface RoundResult {
 }
 
 export const RESULTS: RoundResult[] = [
-  { env: 'Gazebo', field: '', dir: 'ccw', points: 30, max: 30, time: 34.8, laps: [10.9, 10.6, 11.0], margin: 11.9 },
-  { env: 'Gazebo', field: '', dir: 'cw', points: 30, max: 30, time: 34.9, laps: [10.9, 10.6, 11.0], margin: 11.1 },
-  { env: 'Open lab', field: 'square100', dir: 'ccw', points: 30, max: 30, time: 32.58, laps: [10.4, 9.7, 10.3] },
-  { env: 'Open lab', field: 'square100', dir: 'cw', points: 30, max: 30, time: 32.58, laps: [10.4, 9.7, 10.3] },
-  { env: 'Open lab', field: 'square180', dir: 'ccw', points: 30, max: 30, time: 50.18, laps: [15.4, 15.2, 16.8] },
-  { env: 'Open lab', field: 'square180', dir: 'cw', points: 30, max: 30, time: 50.28, laps: [15.4, 15.2, 17.0] },
-  { env: 'Open lab', field: 'rect100x180', dir: 'ccw', points: 30, max: 30, time: 40.58, laps: [12.8, 12.4, 13.2] },
-  { env: 'Open lab', field: 'rect100x180', dir: 'cw', points: 30, max: 30, time: 40.58, laps: [12.8, 12.4, 13.2] },
-  { env: 'Open lab', field: 'rect180x100', dir: 'ccw', points: 30, max: 30, time: 42.28, laps: [13.0, 12.4, 14.2] },
-  { env: 'Open lab', field: 'rect180x100', dir: 'cw', points: 30, max: 30, time: 42.28, laps: [13.0, 12.5, 14.1] },
-  { env: 'Open lab', field: 'shift140', dir: 'ccw', points: 30, max: 30, time: 40.58, laps: [12.8, 12.4, 13.3] },
-  { env: 'Open lab', field: 'shift140', dir: 'cw', points: 30, max: 30, time: 42.08, laps: [12.8, 12.4, 14.2] },
-  { env: 'Open lab', field: 'east140x100', dir: 'ccw', points: 30, max: 30, time: 36.78, laps: [11.7, 11.2, 11.6] },
-  { env: 'Open lab', field: 'east140x100', dir: 'cw', points: 30, max: 30, time: 38.28, laps: [11.7, 11.1, 12.8] },
+  { env: 'Gazebo', field: '', dir: 'ccw', points: 30, max: 30, time: 35.56, laps: [11.4, 11.0, 11.0], margin: 17.7 },
+  { env: 'Gazebo', field: '', dir: 'cw', points: 30, max: 30, time: 35.53, laps: [11.4, 11.0, 11.0], margin: 18.0 },
+  { env: 'Open lab', field: 'square100', dir: 'ccw', points: 30, max: 30, time: 33.78, laps: [11.1, 10.6, 10.6] },
+  { env: 'Open lab', field: 'square100', dir: 'cw', points: 30, max: 30, time: 33.78, laps: [11.1, 10.6, 10.5] },
+  { env: 'Open lab', field: 'square180', dir: 'ccw', points: 30, max: 30, time: 51.38, laps: [16.6, 16.1, 16.4] },
+  { env: 'Open lab', field: 'square180', dir: 'cw', points: 30, max: 30, time: 51.28, laps: [16.5, 16.2, 16.4] },
+  { env: 'Open lab', field: 'rect100x180', dir: 'ccw', points: 30, max: 30, time: 41.98, laps: [13.6, 13.4, 13.4] },
+  { env: 'Open lab', field: 'rect100x180', dir: 'cw', points: 30, max: 30, time: 41.98, laps: [13.6, 13.4, 13.4] },
+  { env: 'Open lab', field: 'rect180x100', dir: 'ccw', points: 30, max: 30, time: 43.18, laps: [13.9, 13.4, 13.5] },
+  { env: 'Open lab', field: 'rect180x100', dir: 'cw', points: 30, max: 30, time: 43.18, laps: [13.9, 13.4, 13.5] },
+  { env: 'Open lab', field: 'shift140', dir: 'ccw', points: 30, max: 30, time: 42.08, laps: [13.7, 13.4, 13.4] },
+  { env: 'Open lab', field: 'shift140', dir: 'cw', points: 30, max: 30, time: 42.78, laps: [13.6, 13.4, 13.6] },
+  { env: 'Open lab', field: 'east140x100', dir: 'ccw', points: 30, max: 30, time: 37.78, laps: [12.4, 11.9, 12.0] },
+  { env: 'Open lab', field: 'east140x100', dir: 'cw', points: 30, max: 30, time: 38.68, laps: [12.6, 11.9, 12.0] },
 ];
 
 /** The report's own summary of the 12 Open lab rounds. */
-export const OPEN_LAB_SUMMARY = { valid: 12, total: 12, meanTime: 40.75 };
+export const OPEN_LAB_SUMMARY = { valid: 12, total: 12, meanTime: 41.82 };
 
 /** The rule: more points first, then less time from Start. Negative when `a` ranks ahead of `b`. */
 export function byRule(a: RoundResult, b: RoundResult): number {

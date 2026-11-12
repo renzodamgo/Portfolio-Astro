@@ -1,7 +1,7 @@
-// A small TypeScript port of the Open v5 strategy (robotek_open/v5/mission.py and scene.py) driving a
-// bicycle model on the WRO Open field (3 x 3 m, 1 x 1 m island). It only feeds the animations: the
-// sensors are ideal (no noise, no dropouts) and the distance travelled is the true one, where the car
-// uses LiDAR odometry. The numbers on screen come from the guide.
+// A small TypeScript port of the course's Open strategy (robotek-learn my_open: perception.py, arc.py,
+// turn_gate.py and mission.py, 12 Nov 2026) driving a bicycle model on the WRO Open field (3 x 3 m, 1 x 1 m
+// island). It only feeds the animations: the sensors are ideal (no noise, no dropouts, a perfect gyroscope).
+// The numbers on screen come from the guide.
 
 export const WHEELBASE = 0.1174; // m, as in the guide (paso 1)
 export const STEER_LIMIT = 0.30718; // rad, 17.6 deg: the real servo
@@ -27,9 +27,7 @@ export const realSpeed = (cmd: number) => {
 
 const KP = 0.8;
 const DAMPING = 0.1;
-const EXIT_ANGLE = 0.25;
-const TURN_TOLERANCE = 0.12;
-const LAST_TOLERANCE = 0.4;
+export const TURN_TOLERANCE = 0.3; // rad: full lock ends this far from the new heading
 const CONFIRMATIONS = 2;
 const ARM_DISTANCE = 0.25;
 const ISLAND_OPEN = 1.0;
@@ -38,9 +36,12 @@ const LATERAL_GAIN = 0.3;
 const LATERAL_MAX = 0.4;
 const BRAKE_GAIN = 2.0;
 const BRAKE_MARGIN = 0.15;
+const FINISH_STRAIGHT = 0.1;
+const WALL_HEADING_GAIN = 0.3;
+const WALL_HEADING_MAX = (25 * Math.PI) / 180;
 export const CORNERS = 12;
 export const P = {
-  cruise: 1.28, lastCorner: 0.6, gap: 0.25, turnFront: 1.19, lookahead: 0.35,
+  cruise: 1.28, corner: 1.0, gap: 0.25, turnFront: 1.19, lookahead: 0.35,
   finishSpeed: 0.15, finishLead: 0.08, stopWait: 0.9, calibrate: 0.3,
 };
 
@@ -80,7 +81,8 @@ export const raycast = (ox: number, oy: number, ang: number): [number, number] =
   return [best > 12 ? Infinity : best, seg];
 };
 
-export type Scene = { left: number; right: number; front: number; islandEnd: number };
+// wallHeading: the car's heading relative to the island wall beside it (rad, + = turned left of it)
+export type Scene = { left: number; right: number; front: number; islandEnd: number; wallHeading: number };
 
 export const perceive = (x: number, y: number, yaw: number, forwardYaw: number, sign: number): Scene => {
   const lx = x + LIDAR_X * Math.cos(yaw), ly = y + LIDAR_X * Math.sin(yaw);
@@ -91,25 +93,28 @@ export const perceive = (x: number, y: number, yaw: number, forwardYaw: number, 
     return Math.abs(d) <= (3 * Math.PI) / 180 && isFinite(r) ? [r * Math.cos(d)] : [];
   }));
   // island end: follow the island wall beside the car from 90 deg toward 20 deg
-  let islandEnd = Infinity;
+  let islandEnd = Infinity, wallHeading = Infinity;
   const ordered = BEAMS.map((b, i) => ({ b: sign * b, i })).filter((o) => o.b >= (20 * Math.PI) / 180 && o.b <= Math.PI / 2 + 1e-9)
     .sort((a, b) => b.b - a.b);
   const base = ordered[0] ? hits[ordered[0].i] : [Infinity, -1];
   const lateral = base[0];
   if (isFinite(lateral) && base[1] >= 4 && lateral >= 0.15 && lateral <= 0.9) {
+    const [wx0, wy0, wx1, wy1] = WALLS[base[1]];
+    const h = wrap(yaw - Math.atan2(wy1 - wy0, wx1 - wx0));
+    wallHeading = Math.abs(h) > Math.PI / 2 ? wrap(h + Math.PI) : h;
     let last = -1;
     for (const o of ordered) { if (hits[o.i][1] === base[1]) last = o.i; else break; }
     const lb = sign * BEAMS[last];
     if (last >= 0 && lb - (20 * Math.PI) / 180 > 0.05) islandEnd = hits[last][0] * Math.cos(lb) + LIDAR_X;
   }
-  return { left: side(Math.PI / 2), right: side(-Math.PI / 2), front, islandEnd };
+  return { left: side(Math.PI / 2), right: side(-Math.PI / 2), front, islandEnd, wallHeading };
 };
 
 // ---- the run ----
 export type Sample = {
   t: number; x: number; y: number; yaw: number; steer: number; speed: number; gyro: number; myYaw: number;
   state: 'SETUP' | 'RUN' | 'STOP'; label: string; completed: number; arc: boolean;
-  goal: number; ref: number; scene: Scene; hits: number; armed: boolean; travelled: number;
+  goal: number; scene: Scene; hits: number; travelled: number; // travelled: how much nearer the wall ahead is
   frontOk: boolean; islandDone: boolean; started: boolean; direction: string;
 };
 
@@ -123,9 +128,11 @@ export const simulate = (o: RunOptions = {}): Sample[] => {
   const delay: number[] = Array(3).fill(0); // 0.06 s servo delay
   let state: Sample['state'] = 'SETUP', time = 0, calibrated = false, direction = '';
   const fronts: number[] = [];
-  let startFront = Infinity, myYaw = 0, goal = 0, ref = 0, arc = false, armed = true, hits = 0;
-  let completed = 0, travelled = 0, braking = false, rest = 0, label = 'WAIT';
+  let startFront = Infinity, myYaw = 0, goal = 0, arc = false, hits = 0;
+  let completed = 0, braking = false, rest = 0, label = 'WAIT';
+  let straightStart: number | null = null, travelled = 0; // StraightDistance: no encoder, no LiDAR odometry
   let scene: Scene = perceive(x, y, yaw, 0, 1);
+  const damped = (target: number, gyro: number) => clamp(KP * wrap(target - myYaw) - DAMPING * gyro, -STEER_LIMIT, STEER_LIMIT);
   const out: Sample[] = [];
   const n = Math.round((o.seconds ?? 45) / DT);
   for (let k = 0; k < n; k++) {
@@ -141,57 +148,57 @@ export const simulate = (o: RunOptions = {}): Sample[] => {
       time += DT; label = 'SETUP';
       if (!calibrated && time < P.calibrate) fronts.push(scene.front);
       else if (!calibrated) { calibrated = true; time = 0; startFront = median(fronts.filter(isFinite)); }
-      else if (t - startAt >= 0.75) { direction = dir; state = 'RUN'; travelled = 0; }
+      else if (t - startAt >= 0.75) { direction = dir; state = 'RUN'; }
     } else if (state === 'RUN') {
       myYaw = wrap(myYaw + gyro * DT);
+      if (!arc && isFinite(scene.front)) {
+        if (straightStart === null) straightStart = scene.front;
+        travelled = Math.max(travelled, straightStart - scene.front);
+      }
       const inner = sign > 0 ? scene.left : scene.right;
       const open = isFinite(inner) && inner > ISLAND_OPEN;
+      // on a straight the island wall corrects the gyroscope heading (a share of the difference per scan)
+      if (newScan && !arc && travelled >= ARM_DISTANCE && isFinite(scene.wallHeading)) {
+        const difference = wrap(scene.wallHeading - wrap(myYaw - goal));
+        if (Math.abs(difference) <= WALL_HEADING_MAX) myYaw = wrap(myYaw + WALL_HEADING_GAIN * difference);
+      }
       if (newScan) {
-        const limit = Math.min(P.lookahead, Math.max(0, inner - END_CLEARANCE));
+        const limit = isFinite(inner) ? Math.min(P.lookahead, Math.max(0, inner - END_CLEARANCE)) : P.lookahead;
         hits = scene.islandEnd >= 0 && scene.islandEnd <= limit ? hits + 1 : 0;
       }
-      armed = armed || (isFinite(inner) && inner < ISLAND_OPEN && travelled >= ARM_DISTANCE && !arc);
       frontOk = scene.front <= P.turnFront;
       islandDone = open || hits >= CONFIRMATIONS;
       if (completed >= CORNERS) {
         label = braking ? 'DONE' : 'FINISH';
-        steer = clamp(KP * wrap(goal - myYaw) - DAMPING * gyro, -STEER_LIMIT, STEER_LIMIT);
-        if (!braking && isFinite(scene.front) && scene.front > startFront + P.finishLead) cmd = P.finishSpeed;
-        else if (isFinite(scene.front)) braking = true;
+        steer = damped(goal, gyro);
+        if (!braking && isFinite(scene.front)) {
+          const turned = Math.abs(wrap(goal - myYaw)) > FINISH_STRAIGHT; // the brake waits until the car is straight
+          if (turned || scene.front > startFront + P.finishLead) cmd = P.finishSpeed;
+          else braking = true;
+        }
         if (braking) { cmd = 0; steer = 0; rest += DT; if (rest >= P.stopWait) { state = 'STOP'; label = 'DONE'; } }
       } else {
-        const last = completed === CORNERS - 1;
-        const cs = last ? P.lastCorner : P.cruise;
-        if (armed && !arc && travelled >= ARM_DISTANCE && frontOk && islandDone) {
-          goal = wrap(goal + sign * Math.PI / 2); arc = true; armed = false;
+        if (!arc && travelled >= ARM_DISTANCE && frontOk && islandDone) {
+          goal = wrap(goal + sign * Math.PI / 2); arc = true;
         }
         if (arc) {
+          // the corner: full lock until TURN_TOLERANCE from the new heading, then the damped heading law
           label = 'TURN';
-          const rate = realSpeed(cs) * Math.tan(STEER_LIMIT) / WHEELBASE;
-          const ramping = ref !== goal;
-          if (ramping) {
-            const g = wrap(goal - ref);
-            ref = Math.abs(g) <= rate * DT ? goal : wrap(ref + Math.sign(g) * rate * DT);
-          }
-          const fade = Math.min(1, Math.max(0, sign * wrap(goal - myYaw)) / EXIT_ANGLE);
-          const feed = ramping ? sign * STEER_LIMIT * fade : 0;
-          const expected = ramping ? sign * rate * fade : 0;
-          steer = clamp(KP * wrap(ref - myYaw) + feed - DAMPING * (gyro - expected), -STEER_LIMIT, STEER_LIMIT);
-          if (Math.abs(wrap(goal - myYaw)) <= (last ? LAST_TOLERANCE : TURN_TOLERANCE)) {
-            arc = false; ref = goal; travelled = 0; completed += 1;
-          }
-          cmd = cs;
+          const error = wrap(goal - myYaw);
+          if (Math.abs(error) > TURN_TOLERANCE) steer = Math.sign(error) * STEER_LIMIT;
+          else { steer = damped(goal, gyro); arc = false; straightStart = null; travelled = 0; completed += 1; }
+          cmd = P.corner;
         } else {
           label = 'FOLLOW';
           const bias = !isFinite(inner) || open ? 0 : clamp(sign * LATERAL_GAIN * (inner - P.gap), -LATERAL_MAX, LATERAL_MAX);
-          steer = clamp(KP * wrap(goal + bias - myYaw) - DAMPING * gyro, -STEER_LIMIT, STEER_LIMIT);
-          cmd = P.cruise;
-          if (last && isFinite(scene.front)) cmd = Math.min(cmd, cs + BRAKE_GAIN * Math.max(0, scene.front - P.turnFront - BRAKE_MARGIN));
+          steer = damped(goal + bias, gyro);
+          // slow down to the corner speed before every corner
+          cmd = Math.min(P.cruise, P.corner + BRAKE_GAIN * Math.max(0, scene.front - P.turnFront - BRAKE_MARGIN));
         }
       }
     }
     out.push({
-      t, x, y, yaw, steer, speed: v, gyro, myYaw, state, label, completed, arc, goal, ref, scene, hits, armed,
+      t, x, y, yaw, steer, speed: v, gyro, myYaw, state, label, completed, arc, goal, scene, hits,
       travelled, frontOk, islandDone, started, direction,
     });
     // plant: servo delay + lag, motor with acceleration limit, bicycle step
@@ -204,7 +211,6 @@ export const simulate = (o: RunOptions = {}): Sample[] => {
     yaw = wrap(yaw + w * DT);
     x += v * Math.cos(yaw) * DT;
     y += v * Math.sin(yaw) * DT;
-    travelled += Math.abs(v) * DT;
   }
   return out;
 };

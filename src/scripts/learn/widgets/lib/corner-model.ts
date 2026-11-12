@@ -1,5 +1,6 @@
-// Port of arc_steer / ramp (learn: src/my_open/my_open/arc.py), of the MiniCar servo model (robotek_course/minisim.py)
-// and of the bench run_arc (course/tests/helpers.py). One 90 degree corner at cruising speed. No DOM here.
+// Port of arc_steer / damped_steer (learn: src/my_open/my_open/arc.py), of the MiniCar servo model (robotek_course/minisim.py)
+// and of the bench run_arc (course/tests/helpers.py). One 90 degree corner at the corner speed. No DOM here, so it can be
+// checked from the shell against the Python (see the notes at the end of the file).
 
 import { PyRandom } from './pyrandom';
 
@@ -11,10 +12,10 @@ export const SERVO_DELAY = 0.06; // s
 export const SERVO_TAU = 0.05; // s
 const SPEED_TABLE: [number, number][] = [[0, 0], [0.15, 0.18], [0.3, 0.27], [0.4, 0.3], [0.6, 0.42], [1.28, 0.6]];
 export const KP = 0.8;
-export const CORNER_SPEED = 1.28; // m/s commanded (the car really reaches 0.6)
-export const DAMPING = 0.1; // steering (rad) per rad/s of yaw-rate error
-export const EXIT_ANGLE = 0.25; // rad: the feed-forward fades out over the last quarter radian
-export const CLOSE_TOLERANCE = 0.12; // rad
+export const CORNER_SPEED = 1.0; // m/s commanded in a corner (the car really reaches 0.53)
+export const TURN_TOLERANCE = 0.3; // rad (17 deg): the full-lock part ends this short of the goal heading
+export const DAMPING = 0.1; // steering (rad) taken off per rad/s the car is turning
+export const CLOSE_TOLERANCE = 0.05; // rad (3 deg): run_arc's t_close is when the heading is this near the goal for good
 
 export const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 export const wrap = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
@@ -41,41 +42,17 @@ export function fullLockRate(speedCommand = CORNER_SPEED): number {
   return (realSpeed(speedCommand) * Math.tan(STEER_LIMIT)) / WHEELBASE;
 }
 
-/** Move the reference heading `ref` towards `goal` by at most rate * dt (the short way round). */
-export function ramp(ref: number, goal: number, rate: number, dt: number): number {
-  const gap = wrap(goal - ref);
-  if (Math.abs(gap) <= rate * dt) return goal;
-  return wrap(ref + Math.sign(gap) * rate * dt);
+/** The heading law of step 2 with a brake on the turning speed: the faster the car turns, the less it steers. */
+export function dampedSteer(goal: number, yaw: number, gyro: number, damping = DAMPING): number {
+  return clamp(KP * wrap(goal - yaw) - damping * gyro, -STEER_LIMIT, STEER_LIMIT);
 }
 
-export interface ArcOptions {
-  sign?: number;
-  feed?: boolean;
-  fade?: boolean;
-  damping?: number;
+/** One tick of a corner: [steering angle, whether the corner is done]. Full lock until `turnTolerance` from the goal. */
+export function arcSteer(goal: number, yaw: number, gyro: number, turnTolerance = TURN_TOLERANCE, damping = DAMPING): [number, boolean] {
+  const error = wrap(goal - yaw);
+  if (Math.abs(error) > turnTolerance) return [Math.sign(error) * STEER_LIMIT, false];
+  return [dampedSteer(goal, yaw, gyro, damping), true];
 }
-
-/** One tick of a corner: the ramp plus feed-forward (with fade) and damping. Returns [steer, ref]. */
-export function arcSteer(
-  goal: number, ref: number, yaw: number, gyro: number, rate: number, dt: number,
-  { sign = 1, feed = true, fade = true, damping = DAMPING }: ArcOptions = {},
-): [number, number] {
-  const ramping = ref !== goal;
-  ref = ramp(ref, goal, rate, dt);
-  const scale = fade ? Math.min(1, Math.max(0, sign * wrap(goal - yaw)) / EXIT_ANGLE) : 1;
-  const [steerFf, rateFf] = ramping && feed ? [sign * STEER_LIMIT * scale, sign * rate * scale] : [0, 0];
-  const steer = KP * wrap(ref - yaw) + steerFf - damping * (gyro - rateFf);
-  return [clamp(steer, -STEER_LIMIT, STEER_LIMIT), ref];
-}
-
-/** For comparison: NO ramp (the goal is the reference at once), damping against a yaw rate of 0. */
-export function jumpWithDamping(goal: number, ref: number, yaw: number, gyro: number, _rate: number, _dt: number, damping = 0.1): [number, number] {
-  void ref;
-  const steer = KP * wrap(goal - yaw) - damping * gyro;
-  return [clamp(steer, -STEER_LIMIT, STEER_LIMIT), goal];
-}
-
-export type ArcFn = (goal: number, ref: number, yaw: number, gyro: number, rate: number, dt: number) => [number, number];
 
 /** MiniCar(realistic=True): bicycle model with the real servo (dead time, lag, rate limit) and motor. */
 export class ArcCar {
@@ -115,10 +92,11 @@ export class ArcCar {
 }
 
 export interface ArcRunOptions {
+  turnTolerance?: number;
+  damping?: number;
   sign?: number;
   servoDelay?: number;
   servoTau?: number;
-  rateFactor?: number;
   seconds?: number;
   dt?: number;
   seed?: number;
@@ -127,102 +105,76 @@ export interface ArcRunOptions {
 
 export interface ArcRun {
   overshoot: number; // rad past the goal heading
-  tClose: number | null; // s until within 0.12 rad of it
+  tClose: number | null; // s until within 0.05 rad of it and staying there
+  tLock: number | null; // s at full lock
   t: number[];
   yaw: number[];
   steer: number[]; // the wheel angle the servo really reaches (helpers.run_arc's `steer`)
   cmd: number[]; // the wheel angle the controller asks for
-  ref: number[];
   x: number[];
   y: number[];
   goal: number;
   dt: number;
 }
 
-/** run_arc(): one 90 degree corner starting straight at cruising speed. `rateFactor` is what the strategy believes. */
-export function runArc(arcFn: ArcFn, o: ArcRunOptions = {}): ArcRun {
-  const { sign = 1, servoDelay = SERVO_DELAY, servoTau = SERVO_TAU, rateFactor = 1, seconds = 4, dt = 0.02, seed = 0, noise = GYRO_NOISE } = o;
+/**
+ * run_arc(partial(arc_steer, turn_tolerance=..., damping=...)): one 90 degree corner starting straight at the corner speed.
+ * Once arc_steer says done the corner does not start again: only the damped law from there on, as in the mission.
+ * The arrays start with the state at t = 0 (index i is time i * dt); Python's lists start one tick later.
+ */
+export function runArc(o: ArcRunOptions = {}): ArcRun {
+  const { turnTolerance = TURN_TOLERANCE, damping = DAMPING, sign = 1, servoDelay = SERVO_DELAY, servoTau = SERVO_TAU, seconds = 4, dt = 0.02, seed = 0, noise = GYRO_NOISE } = o;
   const car = new ArcCar(servoDelay, servoTau, seed, noise);
-  for (let i = 0; i < 100; i++) car.step(CORNER_SPEED, 0, dt); // reach cruising speed on the straight
+  for (let i = 0; i < 100; i++) car.step(CORNER_SPEED, 0, dt); // reach the corner speed on the straight
   car.x = car.y = car.yaw = car.time = 0;
   const goal = (sign * Math.PI) / 2;
-  let ref = 0;
-  const rate = fullLockRate() * rateFactor;
   let overshoot = 0;
-  let tClose: number | null = null;
-  const run: ArcRun = { overshoot: 0, tClose: null, t: [], yaw: [], steer: [], cmd: [], ref: [], x: [], y: [], goal, dt };
-  run.t.push(0);
-  run.yaw.push(0);
-  run.steer.push(0);
-  run.cmd.push(0);
-  run.ref.push(0);
-  run.x.push(0);
-  run.y.push(0);
+  let tLock: number | null = null;
+  let lastOutside: number | null = null;
+  const run: ArcRun = { overshoot: 0, tClose: null, tLock: null, t: [0], yaw: [0], steer: [car.steer], cmd: [0], x: [0], y: [0], goal, dt };
   const n = Math.trunc(seconds / dt);
   for (let i = 0; i < n; i++) {
     let steer: number;
-    [steer, ref] = arcFn(goal, ref, car.yaw, car.gyro(), rate, dt);
+    if (tLock === null) {
+      let done: boolean;
+      [steer, done] = arcSteer(goal, car.yaw, car.gyro(), turnTolerance, damping);
+      if (done) tLock = car.time;
+    } else {
+      [steer] = arcSteer(goal, car.yaw, car.gyro(), Math.PI, damping); // the corner is over: only the damped law
+    }
     car.step(CORNER_SPEED, steer, dt);
     overshoot = Math.max(overshoot, sign * (car.yaw - goal));
-    if (tClose === null && Math.abs(goal - car.yaw) <= CLOSE_TOLERANCE) tClose = car.time;
+    if (Math.abs(goal - car.yaw) > CLOSE_TOLERANCE) lastOutside = car.time;
     run.t.push(car.time);
     run.yaw.push(car.yaw);
     run.steer.push(car.steer);
     run.cmd.push(steer);
-    run.ref.push(ref);
     run.x.push(car.x);
     run.y.push(car.y);
   }
   run.overshoot = overshoot;
-  run.tClose = tClose;
+  run.tLock = tLock;
+  run.tClose = lastOutside !== null && lastOutside < car.time ? lastOutside + dt : null;
   return run;
 }
 
-export interface CornerConfig {
-  ramp: boolean;
-  feed: boolean;
-  fade: boolean;
-  damping: boolean;
-}
-
-/** The controller the four checkboxes describe. Without the ramp it is jump_with_damping(). */
-export function controllerFor(c: CornerConfig): ArcFn {
-  const damping = c.damping ? DAMPING : 0;
-  if (!c.ramp) return (goal, ref, yaw, gyro, rate, dt) => jumpWithDamping(goal, ref, yaw, gyro, rate, dt, damping);
-  return (goal, ref, yaw, gyro, rate, dt) => arcSteer(goal, ref, yaw, gyro, rate, dt, { feed: c.feed, fade: c.fade, damping });
-}
-
-/** The six rows of the table in the lesson: the controllers it compares. */
-export const VARIANTS: { key: string; label: string; cfg: CornerConfig }[] = [
-  { key: 'ramp', label: 'solo rampa', cfg: { ramp: true, feed: false, fade: true, damping: false } },
-  { key: 'ff', label: '+ feed-forward', cfg: { ramp: true, feed: true, fade: false, damping: false } },
-  { key: 'ff+fade', label: '+ feed-forward + aflojado', cfg: { ramp: true, feed: true, fade: true, damping: false } },
-  { key: 'ff+damp', label: '+ amortiguamiento (sin aflojado)', cfg: { ramp: true, feed: true, fade: false, damping: true } },
-  { key: 'ff+fade+damp', label: 'final: aflojado + amortiguamiento', cfg: { ramp: true, feed: true, fade: true, damping: true } },
-  { key: 'jump', label: 'sin rampa, solo amortiguar', cfg: { ramp: false, feed: false, fade: false, damping: true } },
-];
-
-/** Which row of the table a configuration is (feed-forward off makes `fade` irrelevant; with no ramp only damping counts). */
-export function variantKey(c: CornerConfig): string {
-  if (!c.ramp) return c.damping ? 'jump' : 'jump0';
-  if (!c.feed) return c.damping ? 'ramp+damp' : 'ramp';
-  return `ff${c.fade ? '+fade' : ''}${c.damping ? '+damp' : ''}`;
-}
+/** The release angles the lesson measures (rad): 3, 7, 17, 29 and 46 degrees before the goal. */
+export const TOLERANCES = [0.05, 0.12, 0.3, 0.5, 0.8];
 
 /** The Python that reproduces a run in the course's bench (`course/tests/helpers.py`). */
-export function pythonCall(c: CornerConfig, servoDelay: number, servoTau: number, fast: boolean): string {
-  let fn: string;
-  if (!c.ramp) fn = c.damping ? 'jump_with_damping' : 'partial(jump_with_damping, damping=0.0)';
-  else {
-    const args: string[] = [];
-    if (!c.feed) args.push('feed=False');
-    else if (!c.fade) args.push('fade=False');
-    if (!c.damping) args.push('damping=0.0');
-    fn = args.length ? `partial(arc_steer, ${args.join(', ')})` : 'arc_steer';
-  }
+export function pythonCall(turnTolerance: number, damping: boolean, servoDelay: number, servoTau: number): string {
+  const args: string[] = [];
+  if (Math.abs(turnTolerance - TURN_TOLERANCE) > 1e-9) args.push(`turn_tolerance=${turnTolerance.toFixed(2)}`);
+  if (!damping) args.push('damping=0.0');
+  const fn = args.length ? `partial(arc_steer, ${args.join(', ')})` : 'arc_steer';
   const kw: string[] = [];
   if (Math.abs(servoDelay - SERVO_DELAY) > 1e-9) kw.push(`servo_delay=${servoDelay.toFixed(2)}`);
   if (Math.abs(servoTau - SERVO_TAU) > 1e-9) kw.push(`servo_tau=${servoTau.toFixed(2)}`);
-  if (fast) kw.push('rate_factor=0.7');
   return `run_arc(${[fn, ...kw].join(', ')})`;
 }
+
+// How this file was checked against the Python (my_open/arc.py and course/tests/helpers.py, 12 Nov 2026):
+// * bundle it for node: `npx esbuild src/scripts/learn/widgets/lib/corner-model.ts --bundle --format=esm --outfile=/tmp/corner.mjs`;
+// * runArc() for both servos (0.06 / 0.05 s and 0.15 / 0.10 s), the five TOLERANCES and damping 0 / 0.1 gave the overshoot,
+//   t_lock and t_close of run_arc(partial(arc_steer, turn_tolerance=..., damping=...)) to the printed digit (0.1 deg, 0.01 s);
+//   PyRandom gives the same gyroscope noise as random.Random(0).

@@ -1,32 +1,25 @@
-"""Step 5 - The corner: turn 90 degrees by moving the reference heading in a ramp, with a feed-forward and damping."""
+"""Step 5 - The corner: full lock until the heading is close to the new goal, then a damped heading law finishes it."""
 import math
 
 from robotek_course.minisim import STEER_LIMIT, clamp, wrap
 from .heading import KP
 
-
-def ramp(ref, goal, rate, dt):
-    """Move the reference heading ``ref`` towards ``goal`` by at most ``rate * dt`` radians (the short way round)."""
-    gap = wrap(goal - ref)
-    if abs(gap) <= rate * dt:
-        return goal
-    return wrap(ref + math.copysign(rate * dt, gap))
+TURN_TOLERANCE = 0.3     # rad (17 deg): the full-lock part ends this short of the goal heading
+DAMPING = 0.1            # steering (rad) taken off per rad/s the car is turning
 
 
-DAMPING = 0.1        # steering (rad) per rad/s of yaw-rate error
-EXIT_ANGLE = 0.25    # rad: the feed-forward fades out over the last quarter radian
+def damped_steer(goal, yaw, gyro, damping=DAMPING):
+    """The heading law of step 2 with a brake on the turning speed: the faster the car turns, the less it steers."""
+    return clamp(KP * wrap(goal - yaw) - damping * gyro, -STEER_LIMIT, STEER_LIMIT)
 
 
-def arc_steer(goal, ref, yaw, gyro, rate, dt, sign=1, feed=True, fade=True, damping=DAMPING):
-    """One tick of a corner: the ramp plus two terms. ``sign`` is +1 for a left turn, -1 for a right one.
+def arc_steer(goal, yaw, gyro, turn_tolerance=TURN_TOLERANCE, damping=DAMPING):
+    """One tick of a corner: returns (steering angle, whether the corner is done).
 
-    * feed-forward: while the reference is still climbing, add full lock (``sign * STEER_LIMIT``) and expect the yaw
-      rate ``sign * rate``; with ``fade`` both shrink to zero over the last ``EXIT_ANGLE`` before the goal;
-    * damping: subtract ``damping`` times how far the measured yaw rate is from the expected one.
+    Farther than ``turn_tolerance`` from the goal heading: the wheels at full lock towards it. Closer: the corner is done
+    and the damped heading law takes the car the rest of the way.
     """
-    ramping = ref != goal
-    ref = ramp(ref, goal, rate, dt)
-    scale = min(1.0, max(0.0, sign * wrap(goal - yaw)) / EXIT_ANGLE) if fade else 1.0
-    steer_ff, rate_ff = (sign * STEER_LIMIT * scale, sign * rate * scale) if (ramping and feed) else (0.0, 0.0)
-    steer = KP * wrap(ref - yaw) + steer_ff - damping * (gyro - rate_ff)
-    return clamp(steer, -STEER_LIMIT, STEER_LIMIT), ref
+    error = wrap(goal - yaw)
+    if abs(error) > turn_tolerance:
+        return math.copysign(STEER_LIMIT, error), False
+    return damped_steer(goal, yaw, gyro, damping), True

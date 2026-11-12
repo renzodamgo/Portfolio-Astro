@@ -4,23 +4,25 @@ import { C, MONO, num } from '../theme';
 
 export const PASO12_SECONDS = 42;
 
-const BASE = 40.75;
-// Mean of the 12 standard-suite rounds in the Open lab, from the guide's chapter 12 [lab].
-const IDEAS: { label: string; time: number; note: string; risk: 'ok' | 'warn' | 'bad' }[] = [
-  { label: 'pedir 2,0 m/s en vez de 1,28', time: 40.33, note: 'casi nada', risk: 'ok' },
-  { label: 'batería cargada (115 %)', time: 35.99, note: 'la velocidad real manda', risk: 'warn' },
-  { label: 'batería baja (85 %)', time: 47.03, note: '+6,3 s', risk: 'bad' },
-  { label: 'cámara: sentido 3 s tarde', time: 43.45, note: 'cada segundo cuenta', risk: 'bad' },
-  { label: 'calibrar 2 s', time: 42.48, note: 'no bajes de 0,3 s', risk: 'bad' },
-  { label: 'FINISH_SPEED 0,15 → 0,6', time: 39.54, note: 'cuidado con la parada', risk: 'warn' },
-  { label: 'LAST_CORNER_SPEED 0,6 → 0,9', time: 39.72, note: 'cuidado con la parada', risk: 'warn' },
-  { label: 'las dos juntas', time: 38.93, note: 'batería cargada: 7/12 válidas', risk: 'bad' },
+const BASE = 41.82;
+// Mean of the 12 standard-suite rounds in the Open lab (seed 0), from the guide's chapter 12 [lab]. `time: null`: the
+// guide gives no mean because the rounds are not valid; `shown` is the number as the guide writes it.
+const IDEAS: { label: string; time: number | null; shown?: string; note: string; risk: 'ok' | 'warn' | 'bad' }[] = [
+  { label: 'CRUISE_SPEED 1,28 → 2,0', time: 41.34, note: 'casi nada (1,6: 41,54)', risk: 'ok' },
+  { label: 'CRUISE_SPEED 1,28 → 1,0', time: 43.53, note: '+1,7 s', risk: 'bad' },
+  { label: 'cámara: sentido 1 s tarde', time: 42.51, note: 'cada segundo cuenta', risk: 'bad' },
+  { label: 'FINISH_SPEED 0,15 → 0,6', time: 41.51, note: 'cuidado con la parada', risk: 'warn' },
+  { label: 'CORNER_SPEED 1,0 → 0,8', time: 44.84, note: '+3,0 s (0,6: 48,87)', risk: 'bad' },
+  { label: 'CORNER_SPEED 1,0 → 1,15', time: null, shown: 'solo 7 de 12 válidas', note: 'para fuera de la salida', risk: 'bad' },
+  { label: 'motor al 85 % (batería baja)', time: 48.37, note: '+6,5 s, 12 de 12 válidas', risk: 'bad' },
+  { label: 'motor al 115 % (cargada)', time: 38.6, shown: '38,6', note: 'solo 29 de 36 válidas', risk: 'bad' },
+  { label: '115 % y CORNER_SPEED 0,9', time: 38.27, note: '36 de 36 válidas', risk: 'ok' },
 ];
 const RISK = { ok: C.accent, warn: C.yellow, bad: C.red };
 
 export const Paso12: React.FC = () => {
   const t = useT();
-  const x = (v: number) => ((v - 34) / (48 - 34)) * 900;
+  const x = (v: number) => ((v - 36) / (50 - 36)) * 900;
   return (
     <Frame id="Paso12" subtitle="Pequeños ajustes, de uno en uno: puntos primero, tiempo después">
       <div style={{ position: 'absolute', left: 0, top: 0, width: 1800, display: 'flex', gap: 16, opacity: fadeIn(t, 0.5) }}>
@@ -30,28 +32,29 @@ export const Paso12: React.FC = () => {
       </div>
       <svg width={1240} height={640} style={{ position: 'absolute', left: 0, top: 110 }}>
         <text x={420} y={26} fill={C.dim} fontSize={22}>tiempo medio de las 12 rondas del lab (s)</text>
-        {[36, 38, 40, 42, 44, 46].map((v) => (
+        {[38, 40, 42, 44, 46, 48].map((v) => (
           <g key={v}>
             <line x1={320 + x(v)} x2={320 + x(v)} y1={40} y2={600} stroke={C.line} />
             <text x={320 + x(v)} y={626} fill={C.dim} fontSize={20} textAnchor="middle">{v}</text>
           </g>
         ))}
         <line x1={320 + x(BASE)} x2={320 + x(BASE)} y1={40} y2={600} stroke={C.text} strokeWidth={3} strokeDasharray="8 6" />
-        <text x={320 + x(BASE) + 8} y={58} fill={C.text} fontSize={22} fontWeight={800}>v5 base {num(BASE)} s</text>
+        <text x={320 + x(BASE) + 8} y={58} fill={C.text} fontSize={22} fontWeight={800}>base {num(BASE)} s</text>
         {IDEAS.map((idea, i) => {
-          const from = 4 + i * 2.6;
+          const from = 4 + i * 2.3;
           const a = fadeIn(t, from, 0.8);
-          const y = 80 + i * 64;
-          const x0 = 320 + x(Math.min(BASE, idea.time)), x1 = 320 + x(Math.max(BASE, idea.time));
-          const xe = 320 + x(BASE + (idea.time - BASE) * a);
+          const y = 74 + i * 58;
+          const time = idea.time ?? BASE;
+          const x0 = 320 + x(Math.min(BASE, time)), x1 = 320 + x(Math.max(BASE, time));
+          const xe = 320 + x(BASE + (time - BASE) * a);
           return (
             <g key={idea.label} opacity={a > 0 ? 1 : 0.15}>
               <text x={0} y={y + 22} fill={C.text} fontSize={22}>{idea.label}</text>
               <text x={0} y={y + 48} fill={RISK[idea.risk]} fontSize={19} opacity={a > 0.9 ? 1 : 0}>{idea.note}</text>
-              <rect x={Math.min(xe, 320 + x(BASE))} y={y + 8} width={Math.abs(xe - (320 + x(BASE)))} height={34} rx={6} fill={idea.time < BASE ? C.accent : C.red} opacity={0.85} />
+              <rect x={Math.min(xe, 320 + x(BASE))} y={y + 8} width={Math.abs(xe - (320 + x(BASE)))} height={34} rx={6} fill={time < BASE ? C.accent : C.red} opacity={0.85} />
               {a > 0.9 && (
-                <text x={idea.time < BASE ? x0 - 10 : x1 + 10} y={y + 33} fill={RISK[idea.risk]} fontSize={22} fontWeight={800} textAnchor={idea.time < BASE ? 'end' : 'start'} fontFamily={MONO}>
-                  {num(idea.time)}
+                <text x={time < BASE ? x0 - 10 : x1 + 10} y={y + 33} fill={RISK[idea.risk]} fontSize={22} fontWeight={800} textAnchor={time < BASE ? 'end' : 'start'} fontFamily={MONO}>
+                  {idea.shown ?? num(time)}
                 </text>
               )}
             </g>
@@ -63,10 +66,10 @@ export const Paso12: React.FC = () => {
           Verde gana tiempo; rojo lo pierde. El color del número es el <B>riesgo</B>: lo que gana una ronda puede costar la parada.
         </Card>
         <Card t={t} from={25.3} x={0} y={0} w={520} accent={C.red}>
-          <B c={C.red}>Un ajuste afinado para una batería no sirve para otra.</B> Las dos juntas ganan 1,8 s… y con la batería cargada solo 7 de 12 rondas son válidas.
+          <B c={C.red}>La parada es la parte frágil.</B> Con un coche más rápido, lo primero que se pierde son los 3 puntos del final. Baja CORNER_SPEED.
         </Card>
         <Card t={t} from={31} x={0} y={300} w={520} accent={C.accent}>
-          Casi no cambian nada: GAP, GAIN, LIMIT, EXIT_ANGLE, TURN_FRONT (1,1–1,6 m), ARM_DISTANCE.
+          Casi no cambian nada: GAP, GAIN, LIMIT, DAMPING, TURN_TOLERANCE (0,3 a 0,8), TURN_FRONT (1,1 a 1,3 m), ARM_DISTANCE.
           Los puntos van primero: ganar 1 s y perder un punto no vale.
         </Card>
       </div>

@@ -10,14 +10,14 @@ import random
 import sys
 import traceback
 
-from robotek_course.minisim import Field, MiniCar, real_speed
+from robotek_course.minisim import Field, MiniCar
 
 
 class Sensors:
-    """What ``drive(s)`` receives every tick: ``s.time``, ``s.dt``, ``s.gyro``, ``s.scan``, ``s.camera`` and ``s.moved``.
+    """What ``drive(s)`` receives every tick: ``s.time``, ``s.dt``, ``s.gyro``, ``s.scan`` and ``s.camera``.
 
-    ``s.moved`` is the distance driven in the last tick, estimated from the speed command with the car's speed table
-    (the car has no wheel encoder): what the strategy uses to count metres since a corner.
+    Only what the real car has. There is no distance driven (the car has no wheel encoder): the strategy gets the
+    metres of a straight from the wall ahead (``StraightDistance`` in step 6).
     """
 
     def __init__(self):
@@ -26,7 +26,6 @@ class Sensors:
         self.gyro = 0.0
         self.scan = None        # a NEW object for every LiDAR scan (sensor_msgs/LaserScan fields)
         self.camera = (0.0, 0.0)  # (blue, orange) line lengths in pixels
-        self.moved = 0.0
 
 
 def _camera_frame(rng, direction, time):
@@ -93,7 +92,6 @@ class Run:
             s.scan = self.field.scan(c.x, c.y, c.yaw)
             self.next_scan += self.scan_period
         s.camera = _camera_frame(self.rng, self.camera, c.time)
-        s.moved = real_speed(self.command[0]) * self.dt if c.realistic else abs(self.command[0]) * self.dt
         try:
             out = self.module.drive(s)
             speed, steer = (float(v) for v in out)

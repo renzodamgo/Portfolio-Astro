@@ -79,8 +79,9 @@ def drive(s):         # cada 0,02 s de simulación
 ```
 
 `s` trae solo lo que tiene el coche real (simulación honesta): `s.time`, `s.dt`, `s.gyro` (con sesgo y ruido),
-`s.scan` (un objeto `LaserScan` nuevo cada 0,1 s), `s.camera` (largos de línea azul y naranja, sintéticos, para el
-paso 8) y `s.moved` (metros del último tick, estimados con la tabla de velocidades: no hay encoder). Si el módulo
+`s.scan` (un objeto `LaserScan` nuevo cada 0,1 s) y `s.camera` (largos de línea azul y naranja, sintéticos, para el
+paso 8). No hay distancia recorrida (el coche no tiene encoder): los metros de una recta salen de la pared de
+enfrente, con `StraightDistance` (paso 6). Si el módulo
 define `status`, la página lo muestra y el juez lo puede leer (p. ej. `'DONE'`).
 
 `lesson_runtime.Run(world)` borra los módulos `my_open.*` antes de importar, así cada intento usa el código
@@ -206,7 +207,7 @@ que pide la tarea. Ejemplos del Open:
 | El camino corto (paso 2) | con `wrap` | sin `wrap` choca a los 0,6 s |
 | Frena a tiempo (paso 3) | `STOP_AT` de 0,30 a 0,45 m | 0 choca; 0,2 para muy cerca; 0,5 o más para lejos |
 | La recta sur (paso 4) | la solución (≈0,18 m de la isla) | `GAIN = 0` (0,45 m), signo al revés (0,75 m), sin `LIMIT` choca |
-| La ronda (pasos 7 a 9) | 30 puntos en ≈32 s en los dos sentidos | |
+| La ronda (pasos 7 a 9) | 30 puntos en ≈34 s en los dos sentidos | |
 
 Las tareas de código se revisaron igual: con el archivo inicial la prueba **falla** y con la solución del curso
 **pasa**. En el Open, dos que pasaban con el archivo inicial se cambiaron por una pregunta y por un `assert` propio;

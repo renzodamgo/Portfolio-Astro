@@ -47,7 +47,7 @@ const PRESETS: Record<number, Preset> = {
     lidar: true, camera: false, readouts: ['front', 'heading'] },
   6: { text: 'Gira cuando tú creas: mira el número de frente. ¿A qué distancia de la pared empiezas a girar? El código usa 1,19 m.',
     lidar: true, camera: false, readouts: ['front', 'turn'] },
-  7: { text: 'Tres vueltas y parar donde empezaste. Tu tiempo contra el código: 34,8 s.',
+  7: { text: 'Tres vueltas y parar donde empezaste. Tu tiempo contra el código: 35,6 s.',
     lidar: false, camera: false, readouts: [], compare: 'round' },
   8: { text: 'Ahora la dirección es sorpresa (aleatoria). El código no sabe hacia dónde mira el coche: solo ve las líneas de colores. Mira la cámara (tecla C), adivina el sentido y elígelo antes de arrancar.',
     lidar: false, camera: true, readouts: [], surprise: true },

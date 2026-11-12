@@ -94,7 +94,7 @@ La misión ya lo espera desde el paso 7. En `_setup`, con el giroscopio calibrad
 if not self.direction and camera:
     self.direction = 'ccw' if camera > 0 else 'cw'
 if self.direction:
-    self.state, self.travelled = 'RUN', 0.0
+    self.state = 'RUN'
 elif self._time >= DIRECTION_TIMEOUT:
     self._stop('direction_fault')
 ```
@@ -261,10 +261,10 @@ El argumento `direction` de `round.launch.py` solo hace que el coche **aparezca*
 
 | Sentido | Puntos | Tiempo desde Start | Vueltas (s) | Margen mínimo | Válida |
 |---|---:|---:|---|---:|:---:|
-| `ccw` | 30 de 30 | 34,80 s | 10,9 / 10,6 / 11,0 | 11,9 cm | sí |
-| `cw` | 30 de 30 | 34,90 s | 10,9 / 10,6 / 11,0 | 11,1 cm | sí |
+| `ccw` | 30 de 30 | 35,56 s | 11,4 / 11,0 / 11,0 | 17,7 cm | sí |
+| `cw` | 30 de 30 | 35,53 s | 11,4 / 11,0 / 11,0 | 18,0 cm | sí |
 
-Son estimaciones de simulación, no puntuación oficial. Entre sentidos solo cambian 0,1 s en Gazebo; en el Open lab, 0 s en `square100` (32,58 s los dos).
+Son estimaciones de simulación, no puntuación oficial. Entre sentidos solo cambian 0,03 s en Gazebo; en el Open lab, 0 s en `square100` (33,78 s los dos).
 
 ### Rómpelo
 

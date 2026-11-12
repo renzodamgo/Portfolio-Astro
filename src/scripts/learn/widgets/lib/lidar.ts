@@ -1,5 +1,5 @@
 // The Open Challenge field (square100), a simulated LD19 scan and a port of perceive() from
-// learn/04-build-open/solution/step_07_perception.py. No DOM here, so it can be tested from the shell.
+// robotek-learn src/my_open/my_open/perception.py (step 3 of the Open course). No DOM here, so it can be tested from the shell.
 
 import { gaussian, hash01 } from './common';
 
@@ -28,6 +28,7 @@ export interface Scene {
   right: number;
   frontAxis: number;
   islandEnd: number;
+  wallHeading: number; // rad, + = the car is turned left of the island wall; Infinity when there is no island wall
 }
 
 // ------------------------------------------------------------------------------- the field
@@ -79,8 +80,8 @@ const AXIS_HALF = (3.0 * Math.PI) / 180; // rad around the track axis for the wa
 const FIT_HALF = (20.0 * Math.PI) / 180; // the island wall is fitted to beams within this of the side bearing
 const END_FROM = (20.0 * Math.PI) / 180; // the island wall is followed from 90 deg down to this bearing
 const WALL_TOLERANCE = 0.03; // m
-const MAX_GAP_BEAMS = 2; // lost beams that do not end the wall
-const MAX_SLOPE = Math.tan(0.3);
+const MAX_GAP_BEAMS = 2; // beams that see past the wall without ending it
+const MAX_SLOPE = Math.tan((30.0 * Math.PI) / 180); // a line steeper than this is not a wall beside the car
 const LATERAL_RANGE: [number, number] = [0.15, 0.9];
 
 const relAngle = (a: number, c: number) => Math.atan2(Math.sin(a - c), Math.cos(a - c));
@@ -114,9 +115,10 @@ export function frontAxis(angles: number[], ranges: number[], ok: boolean[], for
   return vals.length ? median(vals) : Infinity;
 }
 
-/** What island_end() found, kept for drawing: the fit, the beams used and the last beam on the wall. */
+/** What island_wall() found, kept for drawing: the fit, the beams used and the last beam on the wall. */
 export interface IslandFit {
   end: number;
+  heading: number; // -sign * atan(slope); Infinity when the line is not an island wall
   valid: boolean; // the line passed the slope and lateral-range checks
   slope: number | null;
   offset: number | null;
@@ -130,11 +132,12 @@ export interface IslandFit {
 
 export function islandFit(angles: number[], ranges: number[], ok: boolean[], sign: number): IslandFit {
   const n = ranges.length;
-  const bearing = angles.map((a) => sign * a);
+  // each beam's angle, positive towards the island and within +-pi (a LiDAR that counts 0..2 pi would put the right side at -270 deg)
+  const bearing = angles.map((a) => Math.atan2(Math.sin(sign * a), Math.cos(sign * a)));
   const x = ranges.map((r, i) => (ok[i] ? r * Math.cos(bearing[i]) : NaN));
   const y = ranges.map((r, i) => (ok[i] ? r * Math.sin(bearing[i]) : NaN));
   const none = (slope: number | null = null, offset: number | null = null, side = new Array<boolean>(n).fill(false)): IslandFit => ({
-    end: Infinity, valid: false, slope, offset, side, onWall: new Array<boolean>(n).fill(false), last: null, x, y, bearing,
+    end: Infinity, heading: Infinity, valid: false, slope, offset, side, onWall: new Array<boolean>(n).fill(false), last: null, x, y, bearing,
   });
 
   let side = bearing.map((b, i) => ok[i] && Math.abs(b - Math.PI / 2) <= FIT_HALF);
@@ -160,18 +163,19 @@ export function islandFit(angles: number[], ranges: number[], ok: boolean[], sig
 
   const onWall = ranges.map((_, i) => ok[i] && Math.abs(y[i] - (slope * x[i] + offset)) <= WALL_TOLERANCE);
   const order = ranges.map((_, i) => i).sort((a, b) => bearing[b] - bearing[a]); // from the side beams towards the front
-  let last: number | null = null, missing = 0;
+  const heading = -sign * Math.atan(slope);
+  let last: number | null = null, beyond = 0;
   for (const i of order) {
     if (!(END_FROM <= bearing[i] && bearing[i] <= Math.PI / 2)) continue;
     if (onWall[i]) {
       last = i;
-      missing = 0;
-    } else {
-      missing += 1;
-      if (missing > MAX_GAP_BEAMS && last !== null) break;
+      beyond = 0;
+    } else if (ok[i]) { // a beam with no return is a hole in the data, not the end
+      beyond += 1;
+      if (beyond > MAX_GAP_BEAMS && last !== null) break;
     }
   }
-  const out: IslandFit = { end: Infinity, valid: true, slope, offset, side, onWall, last, x, y, bearing };
+  const out: IslandFit = { end: Infinity, heading, valid: true, slope, offset, side, onWall, last, x, y, bearing };
   if (last === null || bearing[last] <= END_FROM + 0.05) return out; // still on the wall at the limit of the view
   out.end = x[last] + LIDAR_X;
   return out;
@@ -185,13 +189,7 @@ function prepare(scan: Scan) {
 }
 
 export function perceive(scan: Scan, forwardYaw = 0, sign = 1): Scene {
-  const { ranges, angles, ok } = prepare(scan);
-  return {
-    left: medianRange(angles, ranges, ok, Math.PI / 2),
-    right: medianRange(angles, ranges, ok, -Math.PI / 2),
-    frontAxis: frontAxis(angles, ranges, ok, forwardYaw),
-    islandEnd: islandFit(angles, ranges, ok, sign).end,
-  };
+  return perceiveDetailed(scan, forwardYaw, sign).scene;
 }
 
 /** Scene plus the details of the island fit, for drawing. */
@@ -204,6 +202,7 @@ export function perceiveDetailed(scan: Scan, forwardYaw = 0, sign = 1): { scene:
       right: medianRange(angles, ranges, ok, -Math.PI / 2),
       frontAxis: frontAxis(angles, ranges, ok, forwardYaw),
       islandEnd: fit.end,
+      wallHeading: fit.heading,
     },
     fit,
     angles,

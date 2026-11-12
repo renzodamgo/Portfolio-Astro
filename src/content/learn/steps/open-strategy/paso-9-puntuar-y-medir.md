@@ -97,8 +97,8 @@ Al terminar la ronda el árbitro imprime un resumen como este (es el de la soluc
 ```text
 Ronda: ~/robotek_runs/20261025T143012-my_open-ccw
 Puntos: 30 de 30   (secciones 24 + vueltas 3 + parada 3)
-Tiempo desde Start: 34.80 s simulados   (vueltas: 10.9 / 10.6 / 11.0 s)
-Válida: sí   margen mínimo 11.9 cm
+Tiempo desde Start: 35.56 s simulados   (vueltas: 11.4 / 11.0 / 11.0 s)
+Válida: sí   margen mínimo 17.7 cm
 Son estimaciones de simulación, no puntuación oficial.
 ```
 
@@ -127,7 +127,7 @@ Lo que el propio código del lab dice que **no modela**: el deslizamiento de las
 
 - Una ronda que **falla** en el lab es una mala señal.
 - Una que **pasa** no demuestra que pase en Gazebo.
-- Los tiempos no son los mismos: `square100` ccw da 32,58 s en el lab y 34,80 s en Gazebo. No se ha investigado de dónde sale esa diferencia; una parte podría ser la definición del final de la ronda (arriba), pero no se ha medido cuánto.
+- Los tiempos no son los mismos: `square100` ccw da 33,78 s en el lab y 35,56 s en Gazebo. No se ha investigado de dónde sale esa diferencia; una parte podría ser la definición del final de la ronda (arriba), pero no se ha medido cuánto.
 
 Regla de trabajo: el lab filtra ideas; **Gazebo decide**.
 
@@ -141,14 +141,14 @@ Para comparar con tu ejecución del lab, las 12 rondas con sus tiempos, todas v�
 
 | Campo | ccw | cw |
 |---|---:|---:|
-| `square100` | 30 · 32,58 s | 30 · 32,58 s |
-| `square180` | 30 · 50,18 s | 30 · 50,28 s |
-| `rect100x180` | 30 · 40,58 s | 30 · 40,58 s |
-| `rect180x100` | 30 · 42,28 s | 30 · 42,28 s |
-| `shift140` | 30 · 40,58 s | 30 · 42,08 s |
-| `east140x100` | 30 · 36,78 s | 30 · 38,28 s |
+| `square100` | 30 · 33,78 s | 30 · 33,78 s |
+| `square180` | 30 · 51,38 s | 30 · 51,28 s |
+| `rect100x180` | 30 · 41,98 s | 30 · 41,98 s |
+| `rect180x100` | 30 · 43,18 s | 30 · 43,18 s |
+| `shift140` | 30 · 42,08 s | 30 · 42,78 s |
+| `east140x100` | 30 · 37,78 s | 30 · 38,68 s |
 
-12 de 12 válidas, tiempo medio 40,75 s (Open lab, semilla 0). Las dos rondas de Gazebo (`ccw` 34,80 s y `cw` 34,90 s, ambas 30 puntos y válidas) están en la tabla de arriba.
+12 de 12 válidas, tiempo medio 41,82 s (Open lab, semilla 0). Las dos rondas de Gazebo (`ccw` 35,56 s y `cw` 35,53 s, ambas 30 puntos y válidas) están en la tabla de arriba.
 
 > **Antes de empezar, juega un rato.** Haz tu mejor ronda y compárala con la del código: cuentan primero los puntos y después el tiempo. ¿Qué cambiarías para ganar tiempo sin perder puntos?
 >
@@ -193,7 +193,7 @@ source install/setup.bash
 ros2 launch robotek_course round.launch.py strategy:=my_open gui:=true direction:=ccw
 ```
 
-Debes ver el resumen de «Cómo leer lo que imprime `score`»: `Puntos: 30 de 30` y `Válida: sí`, con un tiempo cerca de 34,80 s. Si ves otra cosa, busca tu línea en esa lista. Para volver a leer la última ronda sin repetirla, usa `ros2 run robotek_course score`. Repite con `direction:=cw` (la solución dio 34,90 s).
+Debes ver el resumen de «Cómo leer lo que imprime `score`»: `Puntos: 30 de 30` y `Válida: sí`, con un tiempo cerca de 35,56 s. Si ves otra cosa, busca tu línea en esa lista. Para volver a leer la última ronda sin repetirla, usa `ros2 run robotek_course score`. Repite con `direction:=cw` (la solución dio 34,90 s).
 
 ### Paso 9.3: anotar
 
@@ -203,7 +203,7 @@ Te recomiendo dos columnas más que la plantilla: **Dónde** (`lab` o `Gazebo`),
 
 | Fecha | Cambio | Dónde | Sentido | Puntos | Tiempo | Válida | Nota |
 |---|---|---|---|---:|---:|:---:|---|
-| AAAA-MM-DD | ninguno (línea base de la solución) | Gazebo | ccw | 30 | 34,80 s | sí | vueltas 10,9 / 10,6 / 11,0 |
+| AAAA-MM-DD | ninguno (línea base de la solución) | Gazebo | ccw | 30 | 35,56 s | sí | vueltas 11,4 / 11,0 / 11,0 |
 | AAAA-MM-DD | (lo único que cambiaste) | | | | | | |
 
 Reglas para que la tabla sirva: **un cambio por fila**, con el valor anterior y el nuevo (`TURN_FRONT 1.19 a 1.10`); compara dentro del mismo «Dónde» y sentido; repite tres rondas antes de concluir (en esta guía no se midió cuánto varía el tiempo entre repeticiones en Gazebo); y descarta un cambio que baje puntos o validez, aunque sea más rápido.
@@ -245,12 +245,13 @@ La regla es **puntos primero, tiempo después**: un cambio debe mantener los 30 
 
 | Cambio | Tiempo de la ronda |
 |---|---:|
-| Línea base de la solución | 32,58 s |
-| `CRUISE_SPEED` 1,28 a 1,00 (`mission.py`) | 35,78 s |
-| `TURN_FRONT` 1,19 a 0,90 (`turn_gate.py`) | 38,68 s |
-| `FINISH_SPEED` 0,15 a 0,50 (`mission.py`) | 32,08 s |
+| Línea base de la solución | 33,78 s |
+| `CRUISE_SPEED` 1,28 a 1,00 (`mission.py`) | 34,78 s |
+| `CORNER_SPEED` 1,00 a 0,80 (`mission.py`) | 35,88 s |
+| `TURN_FRONT` 1,19 a 0,90 (`turn_gate.py`) | 38,38 s |
+| `BRAKE_MARGIN` 0,15 a 0,00 (`mission.py`) | 33,28 s |
 
-Girar tarde o ir más lento cuesta tiempo, no puntos. Subir `CRUISE_SPEED` por encima de 1,28 no cambia nada (el coche solo entrega lo que dice su tabla medida). Lo único que bajó el tiempo fue el final, y es lo que el lab modela peor: si lo pruebas en Gazebo, mira que la parada siga dando los 3 puntos. El lab puede engañar: según los registros del equipo, el amortiguamiento de la esquina (`DAMPING` en `arc.py`) y la confirmación de la puerta (`CONFIRMATIONS` en `turn_gate.py`) hicieron falta en Gazebo aunque quitarlos no rompa nada en el lab. Y esta estrategia no tiene recuperación de atascos.
+Girar tarde o ir más lento cuesta tiempo, no puntos. Subir `CRUISE_SPEED` por encima de 1,28 no cambia nada (el coche solo entrega lo que dice su tabla medida). Lo único que bajó el tiempo fue frenar más tarde antes de cada esquina, y deja menos margen: subir la velocidad de esquina (`CORNER_SPEED`) hace que el coche no pare dentro de la sección de salida (paso 12). Si pruebas algo así en Gazebo, mira que la parada siga dando los 3 puntos. El lab puede engañar: según los registros del equipo, la confirmación de la puerta (`CONFIRMATIONS` en `turn_gate.py`) hizo falta en Gazebo aunque quitarla no rompa nada en el lab, y la corrección del rumbo con la pared de la isla (`WALL_HEADING_GAIN`) no cambia nada en el lab y es imprescindible en el coche real, cuyo giroscopio lee un 6 % de menos. Y esta estrategia no tiene recuperación de atascos.
 
 ## El coche real
 
@@ -270,4 +271,4 @@ Repite y anota (una cosa a la vez, tres rondas por cambio). Escribe una recupera
 
 - [ ] `python -m pytest course/tests/test_step_9.py -q` da `3 passed`.
 - [ ] Corriste una ronda `ccw` y una `cw` en Gazebo y anotaste la línea base en `RESULTADOS.md`.
-- [ ] Sabes explicar por qué 32,58 s (lab) y 34,80 s (Gazebo) no se comparan.
+- [ ] Sabes explicar por qué 33,78 s (lab) y 35,56 s (Gazebo) no se comparan.

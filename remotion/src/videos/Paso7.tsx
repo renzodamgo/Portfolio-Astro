@@ -16,7 +16,7 @@ export const Paso7: React.FC = () => {
   const t = useT();
   const lane = run({ direction: 'ccw' });
   const end = doneTime(lane);
-  const simT = timeMap(t, [[0, 0], [2, 0.5], [7, 1.4], [27, 28.6], [35, end + 0.1]]);
+  const simT = timeMap(t, [[0, 0], [2, 0.5], [7, 1.4], [27, 29.7], [35, end + 0.1]]);
   const q = at(lane, simT);
   const fromStart = Math.max(0, simT - 0.5);
   const lap = Math.min(3, Math.floor(q.completed / 4) + 1);
@@ -62,22 +62,31 @@ export const Paso7: React.FC = () => {
           <Stat label="label" value={<span style={{ fontFamily: MONO }}>{q.started ? q.label : 'WAIT'}</span>} color={C.yellow} />
           <Stat label="esquinas" value={`${q.completed} / 12`} />
           <Stat label="vuelta" value={q.state === 'RUN' || q.state === 'STOP' ? `${lap} / 3` : '—'} />
+          <Stat label="velocidad" value={`${num(q.speed)} m/s`} color={(q.label === 'FOLLOW' || q.label === 'TURN') && q.speed < 0.585 ? C.orange : C.text} />
           <Stat label="desde Start" value={`${num(fromStart, 1)} s`} />
         </div>
         <Card t={t} from={1} to={8} x={0} y={380} w={960}>
           Dentro de <B>RUN</B> no hay más estados: solo dos datos, <B>completed</B> (esquinas hechas) y <B>arc</B> (si hay una en curso).
           Menos estados, menos casos que probar.
         </Card>
-        <Card t={t} from={8.3} to={26.5} x={0} y={380} w={960} accent={C.yellow}>
+        <Card t={t} from={8.3} to={14.2} x={0} y={380} w={960} accent={C.yellow}>
           Una vuelta son 4 esquinas; la ronda, 3 vueltas: <B>12 esquinas</B>.
           <div style={{ marginTop: 8, color: C.dim }}>La lógica es Python puro (mission.py): se prueba con pytest, sin Gazebo.</div>
         </Card>
+        <Card t={t} from={14.5} to={20.6} x={0} y={380} w={960} accent={C.orange}>
+          Antes de <B c={C.orange}>cada</B> esquina el coche frena: de 1,28 a 1,0 m/s pedidos (0,60 a 0,53 reales).
+          La misma velocidad en las 12 esquinas.
+        </Card>
+        <Card t={t} from={20.9} to={26.5} x={0} y={380} w={960} accent={C.violet}>
+          El giroscopio deriva. En cada recta, la <B c={C.violet}>pared de la isla</B> corrige el rumbo:
+          una parte de la diferencia con cada escaneo.
+        </Card>
         <Card t={t} from={26.8} x={0} y={380} w={960} accent={C.orange}>
-          El final: la última esquina más lenta (0,6), luego a 0,15 hasta que la pared de enfrente está como en la salida.
+          El final: a 0,15 hasta que la pared de enfrente está como en la salida. No frena torcido: <B>espera a ir recto</B>.
           El freno <B c={C.orange}>se enclava</B>: un rayo con ruido no reinicia el motor.
         </Card>
         <div style={{ position: 'absolute', top: 640, left: 0, fontSize: 24, color: C.dim, opacity: fadeIn(t, 35) }}>
-          Animación: la v5 portada a TypeScript con sensores ideales. Gazebo: 34,80 s.
+          Animación: la estrategia portada a TypeScript con sensores ideales. Lab: 33,78 s · Gazebo: 35,56 s.
         </div>
       </div>
     </Frame>

@@ -9,31 +9,36 @@ barra de abajo muestra lo que ya tiene la estrategia, capítulo a capítulo.
 | `paso-0-instalar-y-preparar` | la terminal (clonar, compilar, lanzar), las seis palabras, conducir con el teclado |
 | `paso-1-el-coche` | modelo de bicicleta: δ, centro del círculo, R = L / tan δ, el tope de 17,6° |
 | `paso-2-el-rumbo` | rumbo = suma del giroscopio, ley P, el sesgo y la calibración, `wrap` |
-| `paso-3-ver-el-campo` | el escaneo del LiDAR y los cuatro números (`left`, `right`, `front_axis`, `island_end`) |
+| `paso-3-ver-el-campo` | el escaneo del LiDAR y los cinco números (`left`, `right`, `front_axis`, `island_end`, `wall_heading`) |
 | `paso-4-seguir-la-isla` | la ley de carril a 25 cm (el banco de la guía) y el alto a 1,19 m |
-| `paso-5-la-esquina` | meta +90°, la referencia en rampa a 1,62 rad/s, anticipar y amortiguar |
-| `paso-6-cuando-girar` | la puerta de giro, condición a condición, en vivo |
-| `paso-7-la-mision` | SETUP → RUN → STOP en una ronda completa de 12 esquinas |
+| `paso-5-la-esquina` | meta +90°, volante a tope hasta 17° (0,3 rad) de la meta, soltar a tiempo y amortiguar |
+| `paso-6-cuando-girar` | la puerta de giro (tres condiciones) en vivo y la distancia recorrida sin encoder |
+| `paso-7-la-mision` | SETUP → RUN → STOP en una ronda completa de 12 esquinas: frenar antes de cada una, la pared corrige el rumbo |
 | `paso-8-la-direccion` | los votos de la cámara (la secuencia de la guía) y las dos vueltas, ccw y cw |
 | `paso-9-puntuar-y-medir` | secciones, vueltas y parada (30 puntos), ronda válida, puntos antes que tiempo |
 | `armar-y-conectar-el-coche` | los dibujos de montaje de la guía (`public/learn/assembly`), paso a paso |
 | `paso-10-el-coche-real` | las comprobaciones 3.1–3.6, la primera ronda y lo que el simulador no modela |
 | `coche-del-equipo-v5` | el orden, los ejes de la IMU, el servo, la tabla del motor y el lanzamiento del v5 |
 | `paso-11-solucion-de-problemas` | tres reglas, el giroscopio invertido (caso 4), los intentos del equipo, los síntomas |
-| `paso-12-afinar` | los ajustes medidos en el lab frente a la base de 40,75 s y su riesgo |
+| `paso-12-afinar` | los ajustes medidos en el lab frente a la base de 41,82 s y su riesgo |
 
 ## De dónde salen los movimientos
 
-Las trayectorias no están dibujadas a mano: `src/sim.ts` es una copia en TypeScript de la Open v5
-(`WRO-Strategies/src/robotek_open/robotek_open/v5/mission.py` y `scene.py`) sobre un modelo de bicicleta con el
-servo (0,06 s de retardo) y la tabla del motor del coche real, en el campo Open de 3 × 3 m con la isla de 1 × 1 m.
-Hace las 12 esquinas y para en la sección de salida a 32,4 s desde Start (el Open lab da 32,58 s en
-`square100`; Gazebo, 34,80 s). La primera esquina la decide el lado abierto en x ≈ 0,41 m, como dice el paso 6.
+Las trayectorias no están dibujadas a mano: `src/sim.ts` es una copia en TypeScript de la estrategia del curso
+(`robotek-learn/src/my_open/my_open/`: `perception.py`, `arc.py`, `turn_gate.py` y `mission.py`, versión del
+12 nov 2026) sobre un modelo de bicicleta con el servo (0,06 s de retardo) y la tabla del motor del coche real, en
+el campo Open de 3 × 3 m con la isla de 1 × 1 m. Hace las 12 esquinas y para en la sección de salida a 33,9 s
+desde Start (el Open lab da 33,78 s en `square100`; Gazebo, 35,56 s). La esquina es volante a tope hasta 0,3 rad de la meta y
+después `KP * error - 0,1 * gyro`; el coche frena a 1,0 m/s pedidos antes de cada esquina; la distancia recorrida
+es cuánto se acercó la pared de enfrente. La primera esquina la decide el lado abierto, como dice el paso 6.
 
-Lo que simplifica: sensores sin ruido ni rayos perdidos, la distancia recorrida es la real (el coche usa
-odometría con LiDAR), la cámara decide el sentido a los 0,75 s de Start y `island_end` sale de la geometría
-(el rayo que deja de caer en la pared de la isla), sin el ajuste de la recta. Las cifras de los textos salen de la
-guía, no de esta simulación. Si cambia la v5, hay que copiar el cambio a `src/sim.ts`.
+Lo que simplifica: sensores sin ruido ni rayos perdidos, giroscopio perfecto (la corrección del rumbo con la
+pared de la isla está, pero no tiene nada que corregir), la cámara decide el sentido a los 0,75 s de Start, e
+`island_end` y `wall_heading` salen de la geometría (el rayo que deja de caer en la pared de la isla y el ángulo
+real con ella), sin el ajuste de la recta. Las cifras de los textos salen de la guía, no de esta simulación. Si
+cambia la estrategia, hay que copiar el cambio a `src/sim.ts`.
+
+Los 15 videos se volvieron a renderizar el 12 nov 2026 con esta versión.
 
 ## Volver a renderizar
 

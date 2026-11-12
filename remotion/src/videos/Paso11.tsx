@@ -79,8 +79,8 @@ export const Paso11: React.FC = () => {
       )}
       <div style={{ position: 'absolute', left: t > 25.5 ? 900 : 810, top: 0, width: t > 25.5 ? 900 : 990 }}>
         <Card t={t} from={9.2} to={25.5} x={0} y={0} w={960} accent={C.red}>
-          <B c={C.red}>Caso 4 · el giroscopio está invertido.</B> Esta es la v5 con el signo del giroscopio al revés:
-          la esquina empieza (la anticipación manda el volante), pero el rumbo que cree el coche va al revés.
+          <B c={C.red}>Caso 4 · el giroscopio está invertido.</B> Esta es la estrategia con el signo del giroscopio al revés:
+          la esquina empieza (el volante va a tope), pero el rumbo que cree el coche va al revés.
           La esquina <B c={C.red}>nunca acaba</B> y el coche sigue hasta el muro.
         </Card>
         <Card t={t} from={14} to={25.5} x={0} y={250} w={960}>

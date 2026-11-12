@@ -7,7 +7,7 @@ import { createSectionJudge, footprintSection, MAX_SECTION_POINTS, type Directio
 export const SECTIONS_PER_LAP = 8;
 export const LAPS = 3;
 /** What the course code scores on this field (reference run in Gazebo and in the lab). */
-export const COURSE = { points: 30, gazeboTime: 34.8, labTime: 32.6 };
+export const COURSE = { points: 30, gazeboTime: 35.6, labTime: 33.8 };
 /** Stopped for this long inside the start section ends the round; so does this long after the 24th exit. */
 export const REST_SPEED = 0.02; // m/s
 export const REST_TIME = 2; // s

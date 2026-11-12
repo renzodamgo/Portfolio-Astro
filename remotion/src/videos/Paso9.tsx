@@ -77,10 +77,10 @@ export const Paso9: React.FC = () => {
         </Card>
         <div style={{ position: 'absolute', top: 560, left: 0, width: 960, opacity: fadeIn(t, 21) }}>
           <div style={{ fontFamily: MONO, fontSize: 23, background: '#0b111b', borderRadius: 12, padding: '14px 18px', lineHeight: 1.45, whiteSpace: 'pre' }}>
-            {`Puntos: 30 de 30   (secciones 24 + vueltas 3 + parada 3)\nTiempo desde Start: 34.80 s simulados\nVálida: sí   margen mínimo 11.9 cm`}
+            {`Puntos: 30 de 30   (secciones 24 + vueltas 3 + parada 3)\nTiempo desde Start: 35.56 s simulados\nVálida: sí   margen mínimo 17.7 cm`}
           </div>
           <div style={{ fontSize: 22, color: C.dim, marginTop: 8 }}>
-            La solución en Gazebo (ccw). Open lab: 32,58 s; animación: {num(end - 0.5, 1)} s. No se mezclan tiempos de contextos distintos.
+            La solución en Gazebo (ccw). Open lab: 33,78 s; animación: {num(end - 0.5, 1)} s. No se mezclan tiempos de contextos distintos.
           </div>
         </div>
       </div>

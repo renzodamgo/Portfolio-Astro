@@ -8,7 +8,7 @@ tag: "step-3"
 compareFrom: "step-2"
 ---
 
-Hasta ahora el coche conduce a ciegas: sabe hacia dónde apunta (el giroscopio), pero no sabe dónde están las paredes. El **LiDAR** es un sensor láser que gira y mide la distancia al primer obstáculo en cada dirección; una vuelta de rayos es un **escaneo**. En este paso escribes `perceive`, que convierte un escaneo en cuatro números (la `Scene`) que usará el resto de la estrategia: a qué distancia están las paredes de los lados, la pared de enfrente y dónde termina la isla.
+Hasta ahora el coche conduce a ciegas: sabe hacia dónde apunta (el giroscopio), pero no sabe dónde están las paredes. El **LiDAR** es un sensor láser que gira y mide la distancia al primer obstáculo en cada dirección; una vuelta de rayos es un **escaneo**. En este paso escribes `perceive`, que convierte un escaneo en cinco números (la `Scene`) que usará el resto de la estrategia: a qué distancia están las paredes de los lados, la pared de enfrente, dónde termina la isla y cuánto está girado el coche respecto a su pared.
 
 <!-- step-video:start -->
 <figure class="learn-step-video">
@@ -36,7 +36,7 @@ Si el tema es nuevo para ti, mira esto antes de empezar (no hace falta para segu
 
 ## Lo que vas a ver
 
-El coche espera Start, se queda quieto 0,6 s calibrando el giroscopio y avanza recto a 0,42 m/s (el comando 0,6). Mientras tanto publica en `/scene` los cuatro números de cada escaneo; los lees con `ros2 topic echo /scene`.
+El coche espera Start, se queda quieto 0,6 s calibrando el giroscopio y avanza recto a 0,42 m/s (el comando 0,6). Mientras tanto publica en `/scene` los cinco números de cada escaneo; los lees con `ros2 topic echo /scene`.
 
 - **Al salir**, en el centro del pasillo sur, deben ser más o menos `left` 0,51 m, `right` 0,51 m, `front_axis` 1,37 m e `island_end` 0,49 m. Son los valores del mini simulador, que corre el mismo código; Gazebo da los mismos con unos centímetros de diferencia.
 - **Al llegar a la esquina de la isla**, `island_end` baja hacia 0,2 m y enseguida `left` salta de 0,5 a unos 2,5 m: ya no hay isla al lado.
@@ -60,9 +60,9 @@ Cada escaneo del LD19 simulado trae 306 distancias en un abanico de ±110°, de 
 | Posición | 0,128 m delante de `base_link` | las distancias de pared se miden desde el LiDAR, no desde el centro del coche |
 | Repeticiones | el mismo escaneo llega varias veces con la misma marca de tiempo | percibe una sola vez por marca: así no gastas CPU ni publicas copias |
 
-### Cuatro números
+### Cinco números
 
-`perceive` devuelve una `Scene` (la clase ya está en `robotek_course.minisim`) con cuatro números, todos en metros:
+`perceive` devuelve una `Scene` (la clase ya está en `robotek_course.minisim`) con cinco números: cuatro distancias en metros y un ángulo en radianes.
 
 | Número | Qué es | Cómo se calcula |
 |---|---|---|
@@ -70,6 +70,7 @@ Cada escaneo del LD19 simulado trae 306 distancias en un abanico de ±110°, de 
 | `right` | distancia a la pared de la derecha | mediana de los rayos alrededor de -90° |
 | `front_axis` | pared de enfrente, a lo largo de la pista | rayos hacia donde debería ir el coche, proyectados |
 | `island_end` | dónde termina la isla (m, en el eje x del coche) | recta ajustada a la pared de la isla; último rayo sobre ella |
+| `wall_heading` | cuánto está girado el coche respecto a la pared de la isla (rad, positivo a la izquierda) | la pendiente de esa misma recta |
 
 Un número que no se ve vale `inf`. Todo el código que los use (pasos 4 a 7) debe tratar `inf` como «no hay pared».
 
@@ -85,34 +86,40 @@ Tras una esquina el coche sigue un poco torcido, y una pared vista en diagonal p
 
 Con el coche torcido 0,3 rad (17°) en (0, -0,75), la referencia da 1,378 m midiendo a lo largo de la pista y 1,442 m si mides hacia donde apunta el coche. El valor correcto es `1,5 - 0,128 * cos(0,3) = 1,378`: la pared está a 1,5 m y el LiDAR ya recorrió `0,128 * cos(0,3)` de esa distancia. En este paso `forward_yaw` vale 0 (el coche va recto); desde el paso 4 lo calcula el nodo a partir del giroscopio. En el widget, botón «Coche torcido 17°».
 
-### El final de la isla
+### El final de la isla y el rumbo respecto a su pared
 
-`island_end` es el número difícil. La pared de la isla junto al coche es una recta, y su final es donde los rayos dejan de caer sobre ella. La idea: ajusta una recta a la pared que tienes al lado, recórrela hacia delante y quédate con el último rayo que sigue sobre ella. El método, en cinco pasos:
+`island_end` es el número difícil. La pared de la isla junto al coche es una recta, y su final es donde los rayos dejan de caer sobre ella. La idea: ajusta una recta a la pared que tienes al lado, recórrela hacia delante y quédate con el último rayo que sigue sobre ella. De la misma recta sale gratis el quinto número: su pendiente dice cuánto está girado el coche respecto a la pared. El método, en seis pasos:
 
-1. Con `bearing = sign * angles` (positivo hacia el lado de la isla; `sign` es +1 con la isla a la izquierda), toma los rayos válidos a ±20° de +90° y descarta los más lejanos que 1,5 veces su mediana (ya pasaron el final de la pared). Con menos de 10 rayos, devuelve `inf`.
-2. Pasa cada rayo a un punto, `x = r cos(bearing)` e `y = r sin(bearing)`, y ajusta `y = pendiente * x + desfase` con `np.polyfit`. Una recta y no una distancia fija porque el coche casi nunca va paralelo a la pared: con 0,07 rad de inclinación, una distancia fija se equivocaría 5 cm a 0,7 m. Si la pendiente es demasiado grande (más de 0,30 rad) o el desfase queda fuera de 0,15 a 0,90 m, eso no es una pared de isla a un lado: `inf`.
-3. `on_wall` son los rayos válidos a menos de 3 cm de la recta.
-4. Recorre los rayos desde el lado hacia el frente (de +90° a +20°) y recuerda el último que está sobre la pared. Se detiene cuando hay **más de 2** rayos seguidos fuera de ella: los rayos perdidos por azar no deben terminar la pared.
-5. Si no hay ninguno, o el último está a menos de 0,05 rad del límite de +20° (la pared sigue hasta el borde de la vista), devuelve `inf`. Si no, `x[último] + LIDAR_X`: el LiDAR está 0,128 m delante del centro del coche y `island_end` se da en el sistema del coche.
+1. Calcula `bearing`, el ángulo de cada rayo **positivo hacia el lado de la isla** y entre -π y π: `arctan2(sin(sign * angles), cos(sign * angles))`, con `sign` +1 si la isla está a la izquierda. Toma los rayos válidos a ±20° de +90° y descarta los más lejanos que 1,5 veces su mediana (ya pasaron el final de la pared). Con menos de 10 rayos, no hay pared: los dos números valen `inf`.
+2. Pasa cada rayo a un punto, `x = r cos(bearing)` e `y = r sin(bearing)`, y ajusta `y = pendiente * x + desfase` con `np.polyfit`. Una recta y no una distancia fija porque el coche casi nunca va paralelo a la pared: con 0,07 rad de inclinación, una distancia fija se equivocaría 5 cm a 0,7 m. Si la pendiente es demasiado grande (más de 30°) o el desfase queda fuera de 0,15 a 0,90 m, eso no es una pared de isla a un lado: `inf` los dos.
+3. `wall_heading = -sign * atan(pendiente)`. Si el coche está girado a la izquierda de la pared, vale lo mismo en los dos sentidos de la vuelta: positivo.
+4. `on_wall` son los rayos válidos a menos de 3 cm de la recta.
+5. Recorre los rayos desde el lado hacia el frente (de +90° a +20°) y recuerda el último que está sobre la pared. Se detiene cuando hay **más de 2** rayos seguidos que **ven más allá** de ella. Solo cuentan los rayos con retorno: un rayo perdido no ha visto nada, ni la pared ni lo de detrás.
+6. Si no hay ninguno, o el último está a menos de 0,05 rad del límite de +20° (la pared sigue hasta el borde de la vista), `island_end` es `inf`. Si no, `x[último] + LIDAR_X`: el LiDAR está 0,128 m delante del centro del coche y `island_end` se da en el sistema del coche.
 
-Con la isla de 1 × 1 m y el coche en (0, -0,75), la pared termina en x = 0,5 y el número sale 0,48 con ruido y pérdidas, y 0,495 sin ellos. Cuando el coche pasa de x ≈ 0,37 m, `left` salta de 0,27 a 2,25 m (ahora ve la pared exterior del otro lado) e `island_end` vuelve a `inf`.
+Con la isla de 1 × 1 m y el coche en (0, -0,75), la pared termina en x = 0,5 y el número sale 0,48 con ruido y pérdidas, y 0,495 sin ellos. Cuando el coche pasa de x ≈ 0,37 m, `left` salta de 0,27 a 2,25 m (ahora ve la pared exterior del otro lado) e `island_end` y `wall_heading` vuelven a `inf`. Con el coche girado 0,1 rad, `wall_heading` da 0,100; con el ruido normal se mueve ±3° de un escaneo a otro, y por eso el paso 7 solo corrige una parte con cada escaneo.
+
+Dos detalles de este método vienen de choques del coche del equipo (11 nov 2026):
+
+- **El ángulo entre -π y π.** El LD19 real numera sus rayos de 0 a 2π, no de -π a π. Con `sign * angles` a secas, en sentido horario el lado de la isla quedaba en -270° en vez de +90°, ningún rayo caía «al lado» y el coche no veía la isla.
+- **Un hueco no es el final.** Cuando el LiDAR perdía un tramo de datos, la versión anterior contaba los rayos sin retorno como «fuera de la pared», creía que la isla terminaba allí y giraba contra ella.
 
 ### El nodo
 
-En `drive.py` cambian tres cosas. `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los números en `/scene` (un `Float32MultiArray` con `left, right, front_axis, island_end`) y en `/scene_markers` (un `MarkerArray` que dibuja `robotek_course.viz.scene_markers`; ya te lo dan). Y `control` se detiene cuando `front_axis` baja de `STOP_FRONT`, con enclavamiento: un rayo con ruido no puede reiniciar el motor. La referencia también quita el parámetro `calibrate` del paso 2 (ya cumplió su función); tú puedes conservarlo.
+En `drive.py` cambian tres cosas. `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los números en `/scene` (un `Float32MultiArray` con `left, right, front_axis, island_end, wall_heading`) y en `/scene_markers` (un `MarkerArray` que dibuja `robotek_course.viz.scene_markers`; ya te lo dan). Y `control` se detiene cuando `front_axis` baja de `STOP_FRONT`, con enclavamiento: un rayo con ruido no puede reiniciar el motor. La referencia también quita el parámetro `calibrate` del paso 2 (ya cumplió su función); tú puedes conservarlo.
 
 ## Explora el escaneo
 
-Este widget corre el mismo `perceive` (portado a JavaScript, da los mismos números que la versión de Python) sobre un escaneo simulado del campo. Los cuatro números aparecen escritos en la isla y, en la lista, cada uno con su valor «sin ruido» al lado.
+Este widget corre el mismo `perceive` (portado a JavaScript, da los mismos números que la versión de Python) sobre un escaneo simulado del campo. Los números aparecen escritos en la isla y, en la lista, cada uno con su valor «sin ruido» al lado.
 
 <div data-widget="scan-explorer"></div>
 
 Prueba, en este orden:
 
 1. **Antes de la esquina**: `island_end` debe quedar cerca de 0,5 m.
-2. Pulsa **Repetir 20 veces** y mira la tira de abajo. Con el ruido normal, `left` y `front_axis` son una línea casi plana y `island_end` también, salvo algún escaneo suelto: en 500 escaneos del mini simulador de Python, 2 se equivocaron más de 10 cm (uno dio 0,22 m en vez de 0,5).
-3. **Perder 15 % de rayos**: ahora `island_end` falla más: 70 de 500 escaneos (14 %), porque a veces caen tres rayos perdidos seguidos sobre la pared y el recorrido cree que terminó.
-4. **Ruido de 30 mm**: el ajuste admite 3 cm de distancia a la recta (`WALL_TOLERANCE`); con ese ruido muchos rayos se salen de la pared sin que la pared cambie, y `island_end` sale casi siempre muy por debajo de 0,5 m (386 de 500 escaneos con más de 10 cm de error; con 15 mm fueron 11 y con 20 mm, 107). Aun así `left` queda entre 0,24 y 0,27 m y `front_axis` entre 1,34 y 1,42 m (lo ideal es 0,25 y 1,37).
+2. Pulsa **Repetir 20 veces** y mira la tira de abajo. Con el ruido normal, `left` y `front_axis` son una línea casi plana y `island_end` también: en 500 escaneos del mini simulador de Python, ninguno se equivocó más de 10 cm.
+3. **Perder 15 % de rayos**: `island_end` aguanta: 0 de 500 escaneos con más de 10 cm de error, y lo mismo con el 25 %. Los rayos perdidos no cuentan como final de la pared. (Contándolos, como hacía la versión anterior, fallaban 70 de 500.)
+4. **Ruido de 30 mm**: el ajuste admite 3 cm de distancia a la recta (`WALL_TOLERANCE`); con ese ruido muchos rayos se salen de la pared sin que la pared cambie, y `island_end` sale casi siempre muy por debajo de 0,5 m (346 de 500 escaneos con más de 10 cm de error; con 15 mm fueron 6 y con 20 mm, 70). Aun así `left` queda entre 0,24 y 0,27 m y `front_axis` entre 1,34 y 1,41 m (lo ideal es 0,25 y 1,37).
 5. **Un rayo salvaje** y **Coche torcido 17°**: la mediana contra el promedio, y `front_axis` con y sin `forward_yaw`.
 
 Por eso `island_end` es el número frágil, y por eso en el paso 6 la puerta de giro no se fía de un solo escaneo: exige ver el final cerca en dos escaneos distintos seguidos. El LD19 simulado mide con 8 mm de ruido, muy por debajo de esos 3 cm, y falla pocas veces; pero una sola lectura mala bastaría para girar antes de tiempo.
@@ -141,7 +148,7 @@ export PYTHONPATH=src/my_open:src/robotek_course      # una vez por terminal
 Crea `src/my_open/my_open/perception.py` y pega esto (imports y marcadores, ya hechos):
 
 ```python
-"""Step 3 - Perception: from one LiDAR scan to the four numbers of a Scene."""
+"""Step 3 - Perception: from one LiDAR scan to the five numbers of a Scene."""
 import math
 
 import numpy as np
@@ -151,7 +158,7 @@ from robotek_course.minisim import LIDAR_X, Scene
 
 def median_range(angles, ranges, ok, centre): return math.inf  # marcador
 def front_axis(angles, ranges, ok, forward_yaw): return math.inf  # marcador
-def island_end(angles, ranges, ok, sign): return math.inf  # marcador
+def island_wall(angles, ranges, ok, sign): return math.inf, math.inf  # marcador
 ```
 
 Y debajo, este esqueleto:
@@ -162,10 +169,11 @@ def perceive(scan, forward_yaw=0.0, sign=1):
     ranges = ...   # la distancia de cada rayo
     angles = ...   # el ángulo de cada rayo
     ok = ...       # verdadero en los rayos con una distancia válida
-    return Scene(left=..., right=..., front_axis=..., island_end=...)
+    end, heading = island_wall(angles, ranges, ok, sign)
+    return Scene(left=..., right=..., front_axis=..., island_end=end, wall_heading=heading)
 ```
 
-**Qué va dentro:** `ranges` es `scan.ranges` como array de NumPy (`np.asarray`, decimales). El ángulo del rayo `i` es `scan.angle_min + i * scan.angle_increment`. Un rayo es válido si es finito y está entre `scan.range_min` y `scan.range_max`. `left` y `right` llaman a `median_range` con `math.pi / 2` y `-math.pi / 2`; los otros dos reciben `forward_yaw` y `sign`.
+**Qué va dentro:** `ranges` es `scan.ranges` como array de NumPy (`np.asarray`, decimales). El ángulo del rayo `i` es `scan.angle_min + i * scan.angle_increment`. Un rayo es válido si es finito y está entre `scan.range_min` y `scan.range_max`. `left` y `right` llaman a `median_range` con `math.pi / 2` y `-math.pi / 2`; `front_axis` recibe `forward_yaw`. `island_wall` devuelve dos números a la vez: el final de la isla y el rumbo respecto a su pared.
 
 ```bash
 python -m pytest course/tests/test_step_3.py -q -k an_empty_scan
@@ -186,10 +194,11 @@ def perceive(scan, forward_yaw=0.0, sign=1):
     ranges = np.asarray(scan.ranges, dtype=float)
     angles = scan.angle_min + np.arange(ranges.size) * scan.angle_increment
     ok = np.isfinite(ranges) & (ranges >= scan.range_min) & (ranges <= scan.range_max)
+    end, heading = island_wall(angles, ranges, ok, sign)
     return Scene(left=median_range(angles, ranges, ok, math.pi / 2),
                  right=median_range(angles, ranges, ok, -math.pi / 2),
                  front_axis=front_axis(angles, ranges, ok, forward_yaw),
-                 island_end=island_end(angles, ranges, ok, sign))
+                 island_end=end, wall_heading=heading)
 ```
 
 </details>
@@ -277,21 +286,21 @@ def front_axis(angles, ranges, ok, forward_yaw):
 
 ### Paso 3.4: los rayos de la pared de la isla
 
-`island_end` es la parte difícil: dónde termina la pared de la isla. La haremos en cinco pasitos (3.4 a 3.8); hasta el último devuelve un número provisional, para poder comprobar cada uno. Primero, qué rayos caen en la pared que tienes al lado. Reemplaza el marcador `island_end` por:
+`island_wall` es la parte difícil: dónde termina la pared de la isla y cuánto está girado el coche respecto a ella. La haremos en seis pasitos (3.4 a 3.9); hasta el último, el primer número que devuelve es provisional, para poder comprobar cada uno. Primero, qué rayos caen en la pared que tienes al lado. Reemplaza el marcador `island_wall` por:
 
 ```python
 FIT_HALF = math.radians(20.0)     # solo los rayos a 20° o menos del lado
 
 
-def island_end(angles, ranges, ok, sign):
-    """x (m) where the island wall beside the car ends."""
+def island_wall(angles, ranges, ok, sign):
+    """(x (m) where the island wall beside the car ends, the car's heading relative to it (rad))."""
     bearing = ...
     side = ...
     ...
-    return float(side.sum())  # provisional
+    return float(side.sum()), math.inf  # provisional
 ```
 
-**Qué va dentro:** `bearing` es `sign * angles` (así el lado de la isla queda siempre en +90°; `sign` es +1 con la isla a la izquierda). `side` son los rayos válidos a `FIT_HALF` o menos de `math.pi / 2`. Si hay alguno, quita los que midan más de 1,5 veces la mediana de `ranges[side]` (ya pasaron el final de la pared). Si quedan menos de 10 rayos, devuelve `math.inf`.
+**Qué va dentro:** `bearing` es el ángulo de cada rayo con el lado de la isla siempre en +90° (`sign` es +1 con la isla a la izquierda) y entre -π y π: `np.arctan2(np.sin(sign * angles), np.cos(sign * angles))`. Con `sign * angles` a secas fallaría con un LiDAR que cuenta de 0 a 2π. `side` son los rayos válidos a `FIT_HALF` o menos de `math.pi / 2`. Si hay alguno, quita los que midan más de 1,5 veces la mediana de `ranges[side]` (ya pasaron el final de la pared). Si quedan menos de 10 rayos, devuelve `math.inf, math.inf`.
 
 ```bash
 python -c "
@@ -301,7 +310,7 @@ for x in (0.0, 0.9):
     print(x, round(perceive(Field().scan(x, -0.75, 0.0, noise=False, dropouts=False)).island_end, 2))"
 ```
 
-Pone el coche en x = 0 y en x = 0,9; lo reutilizas hasta el 3.8. Debes ver `0.0 56.0` y `0.9 56.0`: los rayos con los que se ajustará la recta.
+Pone el coche en x = 0 y en x = 0,9; lo reutilizas hasta el 3.9. Debes ver `0.0 56.0` y `0.9 56.0`: los rayos con los que se ajustará la recta.
 
 <details>
 <summary>Ver la solución de este paso</summary>
@@ -313,18 +322,16 @@ FIT_HALF = math.radians(20.0)     # the island wall is fitted to the beams withi
 Debajo de estas líneas sigue tu `return` provisional.
 
 ```python
-def island_end(angles, ranges, ok, sign):
-    """x (m, in the car's frame) where the island wall beside the car ends, or inf when it does not end in view.
-
-    Fit a straight line to the wall beside the car, follow it towards the front, and stop at the last beam on the
-    line before the range jumps (a run of more than MAX_GAP_BEAMS beams off the line).
-    """
-    bearing = sign * angles                                  # positive towards the island side
+def island_wall(angles, ranges, ok, sign):
+    """The island wall beside the car: (x where it ends, the car's heading relative to it)."""
+    # Each beam's angle, positive towards the island and within +-pi (a LiDAR that counts 0..2 pi would otherwise
+    # put the right-hand side at -270 deg, and on a clockwise lap no beam would be "beside the car").
+    bearing = np.arctan2(np.sin(sign * angles), np.cos(sign * angles))
     side = ok & (np.abs(bearing - math.pi / 2) <= FIT_HALF)
     if side.any():
         side &= ranges <= 1.5 * np.median(ranges[side])      # not the beams that already passed the wall's end
     if side.sum() < 10:
-        return math.inf
+        return math.inf, math.inf
 ```
 
 </details>
@@ -336,7 +343,7 @@ Cada rayo es un punto: `x` hacia delante e `y` hacia el lado de la isla. Por los
 ```python
     x, y = ...
     slope, offset = ...
-    return float(offset)  # provisional
+    return float(offset), math.inf  # provisional
 ```
 
 **Qué va dentro:** `x` es la distancia por el coseno de `bearing` e `y` por el seno. Los rayos perdidos valen `inf`: envuelve esa cuenta en `with np.errstate(invalid='ignore'):` para que NumPy no avise. La recta `y = slope * x + offset` sale de `np.polyfit(x[side], y[side], 1)`; `offset` es lo lejos que está la pared en x = 0.
@@ -356,14 +363,14 @@ Corre otra vez el comando del 3.4. Debes ver `0.0 0.25` (la pared está a 0,25 m
 
 ### Paso 3.6: ¿de verdad es una pared de la isla?
 
-A veces la recta no es una pared a tu lado (como en x = 0,9). Si está muy inclinada o muy lejos, devolvemos `inf`. Pega las constantes arriba de `island_end` y el `if` antes del `return` provisional:
+A veces la recta no es una pared a tu lado (como en x = 0,9). Si está muy inclinada o muy lejos, devolvemos `inf` en los dos números. Pega las constantes arriba de `island_wall` y el `if` antes del `return` provisional:
 
 ```python
-MAX_SLOPE = math.tan(0.30)        # más inclinada que 0,30 rad (17°) no es una pared a un lado
+MAX_SLOPE = math.tan(math.radians(30.0))   # más inclinada que 30° no es una pared a un lado
 LATERAL_RANGE = (0.15, 0.90)      # m: entre estas distancias puede estar la pared de la isla
 
     if ...:
-        return math.inf
+        return math.inf, math.inf
 ```
 
 **Qué va dentro:** la condición es verdadera si `abs(slope)` pasa de `MAX_SLOPE`, o si `offset` no está entre `LATERAL_RANGE[0]` y `LATERAL_RANGE[1]`.
@@ -374,26 +381,54 @@ Corre otra vez el comando del 3.4. Debes ver `0.0 0.25` y `0.9 inf`.
 <summary>Ver la solución de este paso</summary>
 
 ```python
-MAX_SLOPE = math.tan(0.30)        # a line steeper than this (rad) is not a wall beside the car
+MAX_SLOPE = math.tan(math.radians(30.0))   # a line steeper than this is not a wall beside the car
 LATERAL_RANGE = (0.15, 0.90)      # m: plausible distance from the car to the island wall
 ```
 
 ```python
     if abs(slope) > MAX_SLOPE or not LATERAL_RANGE[0] < offset < LATERAL_RANGE[1]:
-        return math.inf                                      # that is not an island wall beside the car
+        return math.inf, math.inf                            # that is not an island wall beside the car
 ```
 
 </details>
 
-### Paso 3.7: qué rayos caen sobre la recta
+### Paso 3.7: el rumbo respecto a la pared
 
-Marcamos los rayos que están sobre la recta; los que quedan a más de 3 cm no son pared. Pega la constante arriba de `island_end` y cambia el `return` provisional por:
+La recta ya dice algo útil: si el coche fuera paralelo a la pared, la pendiente sería 0. Si está girado, la pared se le acerca o se le aleja hacia delante, y la pendiente dice cuánto. Es el quinto número de la escena, y en el paso 7 corregirá al giroscopio.
+
+Cambia el `return` provisional por:
+
+```python
+    heading = ...
+    return float(offset), heading  # provisional
+```
+
+**Qué va dentro:** `heading` es `-sign * math.atan(slope)`. Con el coche girado a la izquierda de la pared sale positivo, esté la isla a la izquierda o a la derecha.
+
+```bash
+python -m pytest course/tests/test_step_3.py -q -k heading
+```
+
+Debes ver `4 passed`: con el coche girado 0,15 rad a un lado y a otro, `wall_heading` da ese mismo ángulo con 0,02 rad de margen, en los dos sentidos de la vuelta.
+
+<details>
+<summary>Ver la solución de este paso</summary>
+
+```python
+    heading = -sign * math.atan(slope)
+```
+
+</details>
+
+### Paso 3.8: qué rayos caen sobre la recta
+
+Marcamos los rayos que están sobre la recta; los que quedan a más de 3 cm no son pared. Pega la constante arriba de `island_wall` y cambia el `return` provisional por:
 
 ```python
 WALL_TOLERANCE = 0.03             # m: hasta esta distancia a la recta, el rayo cuenta como pared
 
     on_wall = ...
-    return float(on_wall.sum())  # provisional
+    return float(on_wall.sum()), heading  # provisional
 ```
 
 **Qué va dentro:** un rayo está en `on_wall` si es válido (`ok`) y la distancia entre su `y` y la recta (`slope * x + offset`) es de `WALL_TOLERANCE` o menos. Envuélvelo otra vez en `np.errstate(invalid='ignore')`.
@@ -414,57 +449,57 @@ WALL_TOLERANCE = 0.03             # m: a beam is on the wall within this of the 
 
 </details>
 
-### Paso 3.8: seguir la pared hasta que se acaba
+### Paso 3.9: seguir la pared hasta que se acaba
 
-Recorre los rayos desde el lado hacia el frente. Recuerda el último que sigue sobre la pared y para cuando fallan más de 2 seguidos (uno o dos rayos perdidos al azar no deben pararte). Pega las constantes arriba de `island_end` y cambia el `return` provisional por:
+Recorre los rayos desde el lado hacia el frente. Recuerda el último que sigue sobre la pared y para cuando más de 2 seguidos **ven más allá** de ella. Un rayo sin retorno no cuenta: no vio la pared, pero tampoco lo que hay detrás. Pega las constantes arriba de `island_wall` y cambia el `return` provisional por:
 
 ```python
 END_FROM = math.radians(20.0)     # recorremos de 90° hasta este ángulo
-MAX_GAP_BEAMS = 2                 # rayos seguidos fuera de la pared que aguantamos
+MAX_GAP_BEAMS = 2                 # rayos seguidos más allá de la pared que aguantamos
 
-    last, missing = None, 0       # el último rayo sobre la pared; cuántos fallan seguidos
+    last, beyond = None, 0        # el último rayo sobre la pared; cuántos seguidos ven más allá
     for i in ...:
         ...
     return ...
 ```
 
-**Qué va dentro:** recorre los índices con `np.argsort(-bearing)` (de mayor a menor ángulo) y salta los que no estén entre `END_FROM` y `math.pi / 2`. Si el rayo está en `on_wall`, guárdalo en `last` y pon `missing` en 0. Si no, suma 1 a `missing` y, si pasa de `MAX_GAP_BEAMS` y ya hay un `last`, sal con `break`. Al final, si no hay `last` o `bearing[last]` está a 0,05 rad o menos de `END_FROM` (la pared sigue hasta el borde de la vista), devuelve `math.inf`. Si no, devuelve `x[last] + LIDAR_X` como `float` (el LiDAR va 0,128 m delante del centro del coche).
+**Qué va dentro:** recorre los índices con `np.argsort(-bearing)` (de mayor a menor ángulo) y salta los que no estén entre `END_FROM` y `math.pi / 2`. Si el rayo está en `on_wall`, guárdalo en `last` y pon `beyond` en 0. Si no está en la pared **pero es válido** (`ok[i]`), suma 1 a `beyond` y, si pasa de `MAX_GAP_BEAMS` y ya hay un `last`, sal con `break`. Con un rayo sin retorno no hagas nada. Al final, si no hay `last` o `bearing[last]` está a 0,05 rad o menos de `END_FROM` (la pared sigue hasta el borde de la vista), devuelve `math.inf, heading`. Si no, devuelve `float(x[last]) + LIDAR_X, heading` (el LiDAR va 0,128 m delante del centro del coche).
 
 ```bash
 python -m pytest course/tests/test_step_3.py -q
 ```
 
-Debes ver `9 passed`. En x = 0 el comando del 3.4 ahora da `0.0 0.5`: el final de la isla está a 0,5 m menos lo que avanzó el coche.
+Debes ver `15 passed`. En x = 0 el comando del 3.4 ahora da `0.0 0.5`: el final de la isla está a 0,5 m menos lo que avanzó el coche.
 
 <details>
 <summary>Ver la solución de este paso</summary>
 
 ```python
 END_FROM = math.radians(20.0)     # the island wall is followed from 90 deg down to this bearing
-MAX_GAP_BEAMS = 2                 # lost beams that do not end the wall
+MAX_GAP_BEAMS = 2                 # beams that see past the wall without ending it
 ```
 
 ```python
-    last, missing = None, 0
+    last, beyond = None, 0
     for i in np.argsort(-bearing):                           # from the side beams towards the front
         if not (END_FROM <= bearing[i] <= math.pi / 2):
             continue
         if on_wall[i]:
-            last, missing = i, 0
-        else:
-            missing += 1
-            if missing > MAX_GAP_BEAMS and last is not None:
+            last, beyond = i, 0
+        elif ok[i]:                                          # a beam with no return is a hole in the data, not the end
+            beyond += 1
+            if beyond > MAX_GAP_BEAMS and last is not None:
                 break
     if last is None or bearing[last] <= END_FROM + 0.05:
-        return math.inf                                      # still on the wall at the limit of the view
-    return float(x[last]) + LIDAR_X
+        return math.inf, heading                             # still on the wall at the limit of the view
+    return float(x[last]) + LIDAR_X, heading
 ```
 
 </details>
 
 ## Pruébalo en el simulador
 
-Ya tienes `9 passed` sin ROS. Ahora con Gazebo, sin ventana (en macOS mira el paso 0 para el prefijo de `colcon` y el `source`):
+Ya tienes `15 passed` sin ROS. Ahora con Gazebo, sin ventana (en macOS mira el paso 0 para el prefijo de `colcon` y el `source`):
 
 ```bash
 colcon build --symlink-install --packages-select my_open && source install/setup.bash
@@ -482,6 +517,8 @@ Debe terminar con `PASS`: compara cada `/scene` con los números ideales (sin ru
 
 1. En `median_range`, cambia `np.median` por `np.mean` y corre las pruebas. Solo falla `test_a_median_ignores_a_beam_that_goes_through_a_gap`: `left` da 0,396 en vez de 0,25.
 2. Deshaz el cambio. En `front_axis`, usa `0.0` en lugar de `forward_yaw` en la línea del coseno. Falla `test_the_wall_ahead_is_measured_along_the_track_when_the_car_is_crooked`: con el coche torcido da 1,315 m en vez de 1,378 m.
+3. Deshaz el cambio. En `island_wall`, cambia `elif ok[i]:` por `else:`. Falla `test_a_hole_in_the_data_is_not_the_end_of_the_island`: 20° de rayos perdidos pasan por el final de la isla.
+4. Deshaz el cambio. Deja `bearing = sign * angles`. Falla `test_a_lidar_that_counts_from_0_to_2_pi_gives_the_same_scene`.
 
 ## Si algo falla
 
@@ -491,13 +528,13 @@ Debe terminar con `PASS`: compara cada `/scene` con los números ideales (sin ru
 
 ## Resumen
 
-- `perceive` convierte un escaneo de 306 rayos en cuatro números: `left`, `right`, `front_axis` e `island_end`. Lo que no se ve vale `inf`.
-- Usa la mediana y no el promedio, porque un rayo salvaje arruina el promedio. `island_end` es el número frágil: depende de una recta ajustada a pocos rayos.
+- `perceive` convierte un escaneo de 306 rayos en cinco números: `left`, `right`, `front_axis`, `island_end` y `wall_heading`. Lo que no se ve vale `inf`.
+- Usa la mediana y no el promedio, porque un rayo salvaje arruina el promedio. `island_end` es el número frágil: depende de una recta ajustada a pocos rayos. De esa misma recta sale `wall_heading`, el rumbo respecto a la pared de la isla.
 - Para comparar tu `perception.py` con la referencia: `bash tools/compare-step.sh 3`.
 
 ## Antes de seguir
 
-- [ ] `pytest` marca `9 passed` y `verify_step.py 3` termina en `PASS`.
+- [ ] `pytest` marca `15 passed` y `verify_step.py 3` termina en `PASS`.
 - [ ] Sabes decir por qué `left` resiste un rayo salvaje y un promedio no.
 - [ ] Viste en el widget que `island_end` baila más que `left` cuando subes el ruido o los rayos perdidos.
 
@@ -506,7 +543,7 @@ Debe terminar con `PASS`: compara cada `/scene` con los números ideales (sin ru
 
 `drive.py` es el nodo de ROS (se llama `strategy`). Lo del paso 2 sigue igual: calibrar el giroscopio y avanzar recto. Lo nuevo es esto, y lo explica la sección «El nodo» de arriba:
 
-- Se suscribe a `/scan`. En `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los cuatro números en `/scene` (y las marcas de RViz en `/scene_markers`).
+- Se suscribe a `/scan`. En `on_scan` ignora una marca de tiempo ya usada, llama a `perceive` y publica los cinco números en `/scene` (y las marcas de RViz en `/scene_markers`).
 - En `control`, que corre 50 veces por segundo, se detiene cuando `front_axis` baja de `STOP_FRONT` (0,5 m). Con enclavamiento: una vez parado, un rayo con ruido no lo arranca otra vez.
 - Publica la orden de marcha en `/cmd_vel_raw`.
 

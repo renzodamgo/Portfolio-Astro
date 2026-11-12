@@ -14,11 +14,9 @@ const SIDE_LIMIT = 0.5; // m: x of the end of the island
 
 interface State {
   gap: number;
-  startClosed: boolean;
   lost: Set<number>;
   everyTick: boolean;
   oneConfirmation: boolean;
-  noArmed: boolean;
   k: number;
 }
 
@@ -28,7 +26,7 @@ interface Preset {
   look: string;
 }
 
-const DEFAULTS = (): State => ({ gap: 0.25, startClosed: true, lost: new Set<number>(), everyTick: false, oneConfirmation: false, noArmed: false, k: 0 });
+const DEFAULTS = (): State => ({ gap: 0.25, lost: new Set<number>(), everyTick: false, oneConfirmation: false, k: 0 });
 
 const PRESETS: Preset[] = [
   {
@@ -156,20 +154,19 @@ export default function mount(el: HTMLElement): void {
       const li = h('li', { class: 'lw-tg-row' }, badge, h('span', { class: 'lw-tg-body' }, h('code', { class: 'lw-tg-code' }, code), text));
       return { li, badge, text, set(ok: boolean, msg: string) { li.dataset.ok = String(ok); badge.textContent = ok ? 'sí' : 'no'; text.textContent = msg; } };
     };
-    const rArmed = rowEl('armed');
-    const rDist = rowEl('travelled >= ARM_DISTANCE');
+    const rDist = rowEl('not arc and travelled >= ARM_DISTANCE');
     const rFront = rowEl('front_axis <= TURN_FRONT');
     const rOpen = rowEl('inner > ISLAND_OPEN');
     const rHits = rowEl('hits >= CONFIRMATIONS');
     const sub = h('ul', { class: 'lw-tg-sub' }, rOpen.li, rHits.li);
-    const orRow = h('li', { class: 'lw-tg-row lw-tg-group' }, h('span', { class: 'lw-tg-badge', 'aria-hidden': 'true' }, '4'), h('span', { class: 'lw-tg-body' }, h('span', { class: 'lw-tg-text' }, 'La isla terminó (una de las dos):'), sub));
+    const orRow = h('li', { class: 'lw-tg-row lw-tg-group' }, h('span', { class: 'lw-tg-badge', 'aria-hidden': 'true' }, '3'), h('span', { class: 'lw-tg-body' }, h('span', { class: 'lw-tg-text' }, 'La isla terminó (una de las dos):'), sub));
     const pill = (name: string) => {
       const b = h('b', {});
       const e = h('span', { class: 'lw-tg-pill' }, b, ` ${name}`);
       return { e, set(ok: boolean) { e.dataset.ok = String(ok); b.textContent = ok ? 'sí' : 'no'; } };
     };
-    const pArmed = pill('armed'), pDist = pill('recorrido'), pFront = pill('pared cerca'), pEnded = pill('isla terminada');
-    const pills = h('div', { class: 'lw-tg-pills', role: 'group', 'aria-label': 'Las cuatro condiciones de la puerta' }, pArmed.e, pDist.e, pFront.e, pEnded.e);
+    const pDist = pill('recorrido'), pFront = pill('pared cerca'), pEnded = pill('isla terminada');
+    const pills = h('div', { class: 'lw-tg-pills', role: 'group', 'aria-label': 'Las tres condiciones de la puerta' }, pDist.e, pFront.e, pEnded.e);
     const verdict = h('p', { class: 'lw-tg-verdict lw-decision' });
     const meter = h('div', { class: 'lw-meter-row' });
     const meterTitle = h('span', { class: 'lw-meter-title' }, 'hits');
@@ -187,8 +184,7 @@ export default function mount(el: HTMLElement): void {
       const r = rows[s.k];
       const c = r.conditions;
       const conf = s.oneConfirmation ? 1 : CONFIRMATIONS;
-      rArmed.set(c.armed || s.noArmed, s.noArmed ? 'ignorada (la puerta no mira armed)' : c.armed ? 'armada' : 'cerrada: se arma al ver la isla otra vez (inner < 1,0 m) con 0,25 m recorridos');
-      rDist.set(c.travelledOk, `${m2(c.travelled)} m recorridos desde la esquina anterior (hacen falta ${m2(ARM_DISTANCE)})`);
+      rDist.set(c.travelledOk, `no hay esquina en curso; ${m2(c.travelled)} m recorridos desde la esquina anterior (hacen falta ${m2(ARM_DISTANCE)})`);
       rFront.set(c.frontOk, `pared de enfrente a ${m2(c.frontAxis)} m (debe ser ${m2(TURN_FRONT)} o menos)`);
       rOpen.set(c.islandOpen, `inner = ${m2(c.inner)} m (debe pasar de ${m2(ISLAND_OPEN)})`);
       const endText = s.lost.has(r.k) ? 'final perdido en este escaneo' : Number.isFinite(c.islandEnd) ? `island_end = ${m2(c.islandEnd)} m, límite = min(${m2(LOOKAHEAD)}; inner − 0,08) = ${m2(c.limit)} m` : 'el final no se ve';
@@ -198,17 +194,16 @@ export default function mount(el: HTMLElement): void {
       tickCells.replaceChildren(...r.answers.concat(Array(TICKS_PER_SCAN - r.answers.length).fill(null)).map((a) => h('span', { class: a === true ? 'lw-cell lw-cell-on' : 'lw-cell' })));
       tickText.textContent = r.fired ? `la puerta dijo que gire en el tick ${r.answers.length}` : `la puerta dijo que no en los ${TICKS_PER_SCAN}`;
       const ended = c.ended;
-      pArmed.set(c.armed || s.noArmed);
       pDist.set(c.travelledOk);
       pFront.set(c.frontOk);
       pEnded.set(ended);
       verdict.dataset.fire = String(r.fired);
       verdict.textContent = r.fired
-        ? `La puerta responde: gira (escaneo ${r.k}, x = ${m2(r.x)} m). Aquí el nodo suma 90° a la meta y llama a corner_started().`
-        : `La puerta responde: no gira. ${!(c.armed || s.noArmed) ? 'Sigue cerrada.' : !c.travelledOk ? 'Falta recorrido.' : !c.frontOk ? 'La pared de enfrente aún está lejos.' : !ended ? 'La isla no terminó.' : ''}`;
+        ? `La puerta responde: gira (escaneo ${r.k}, x = ${m2(r.x)} m). Aquí la misión suma 90° a la meta y empieza la esquina.`
+        : `La puerta responde: no gira. ${!c.travelledOk ? 'Falta recorrido.' : !c.frontOk ? 'La pared de enfrente aún está lejos.' : !ended ? 'La isla no terminó.' : ''}`;
       window.clearTimeout(liveTimer);
       liveTimer = window.setTimeout(() => {
-        live.textContent = `Escaneo ${r.k}, x = ${m2(r.x)} metros. Puerta armada: ${c.armed || s.noArmed ? 'sí' : 'no'}. Recorrido suficiente: ${c.travelledOk ? 'sí' : 'no'}. Pared de enfrente cerca: ${c.frontOk ? 'sí' : 'no'}. Lado abierto: ${c.islandOpen ? 'sí' : 'no'}. Confirmaciones: ${c.hits} de ${conf}. ${r.fired ? 'La puerta gira.' : 'La puerta no gira.'}`;
+        live.textContent = `Escaneo ${r.k}, x = ${m2(r.x)} metros. Recorrido suficiente: ${c.travelledOk ? 'sí' : 'no'}. Pared de enfrente cerca: ${c.frontOk ? 'sí' : 'no'}. Lado abierto: ${c.islandOpen ? 'sí' : 'no'}. Confirmaciones: ${c.hits} de ${conf}. ${r.fired ? 'La puerta gira.' : 'La puerta no gira.'}`;
       }, 500);
     }
 
@@ -252,20 +247,12 @@ export default function mount(el: HTMLElement): void {
       else s.lost.add(s.k);
       rerun();
     });
-    const tClosed = toggle('La puerta empieza cerrada (acaba de pasar una esquina)', s.startClosed, (v) => {
-      s.startClosed = v;
-      rerun();
-    });
     const tEvery = toggle('Contar en cada tick, no por escaneo', s.everyTick, (v) => {
       s.everyTick = v;
       rerun();
     });
     const tOne = toggle('CONFIRMATIONS = 1', s.oneConfirmation, (v) => {
       s.oneConfirmation = v;
-      rerun();
-    });
-    const tArmed = toggle('Quitar la condición armed', s.noArmed, (v) => {
-      s.noArmed = v;
       rerun();
     });
     const lookEl = h('p', { class: 'lw-caption lw-tg-look' }, look);
@@ -286,17 +273,15 @@ export default function mount(el: HTMLElement): void {
     }
 
     function syncControls(): void {
-      tClosed.input.checked = s.startClosed;
       tEvery.input.checked = s.everyTick;
       tOne.input.checked = s.oneConfirmation;
-      tArmed.input.checked = s.noArmed;
     }
 
     function options(): GateOptions {
-      return { countEveryTick: s.everyTick, confirmations: s.oneConfirmation ? 1 : CONFIRMATIONS, ignoreArmed: s.noArmed };
+      return { countEveryTick: s.everyTick, confirmations: s.oneConfirmation ? 1 : CONFIRMATIONS };
     }
     function build(): Row[] {
-      return trace({ gap: s.gap, startClosed: s.startClosed, lost: s.lost, gate: options() });
+      return trace({ gap: s.gap, lost: s.lost, gate: options() });
     }
     function rerun(): void {
       rows = build();
@@ -361,12 +346,12 @@ export default function mount(el: HTMLElement): void {
       h('div', { class: 'lw-controls' }, pos.root),
       h('div', { class: 'lw-actions' }, prev, next, jump),
       gapRow,
-      h('ul', { class: 'lw-tg-rows' }, rArmed.li, rDist.li, rFront.li, orRow),
+      h('ul', { class: 'lw-tg-rows' }, rDist.li, rFront.li, orRow),
       meter,
       tickRow,
       h('div', { class: 'lw-actions' }, h('span', { class: 'lw-meter-title lw-tg-label' }, 'Prueba esto'), ...presetButtons),
       lookEl,
-      h('fieldset', { class: 'lw-group lw-radios' }, h('legend', {}, 'Cambia la puerta'), tClosed.root, lostButton, tEvery.root, tOne.root, tArmed.root),
+      h('fieldset', { class: 'lw-group lw-radios' }, h('legend', {}, 'Cambia la puerta'), lostButton, tEvery.root, tOne.root),
       h('div', { class: 'lw-actions' }, reset),
       h(
         'p',

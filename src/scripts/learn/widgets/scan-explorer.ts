@@ -1,5 +1,5 @@
 // Widget "scan-explorer": a simulated LD19 scan of the Open Challenge field and perceive() from
-// step_07_perception.py (ported exactly, see lib/lidar.ts). Drag the car, break the scan, watch the four numbers,
+// my_open/perception.py (ported exactly, see lib/lidar.ts). Drag the car, break the scan, watch the five numbers,
 // repeat the scan and see how much each one moves, put a wild beam in and see why the median is used.
 import { button, fmt, guarded, h, legend, nextId, readout, slider, svgEl, toggle } from './lib/common';
 import { LIDAR_X, WALLS, castScan, frontAxis, meanRange, perceiveDetailed } from './lib/lidar';
@@ -13,14 +13,20 @@ const KEEP = 20; // scans kept in the history strip
 const WILD = 9; // m: the reading of the wild beam
 
 interface Pose { x: number; y: number; yaw: number }
-type Metric = 'end' | 'left' | 'front';
-interface Roll { left: number; front: number; end: number }
+type Metric = 'end' | 'left' | 'front' | 'heading';
+interface Roll { left: number; front: number; end: number; heading: number } // heading in degrees, the rest in metres
 
 const METRICS: [Metric, string][] = [
   ['end', 'island_end'],
   ['left', 'left'],
   ['front', 'front_axis'],
+  ['heading', 'wall_heading'],
 ];
+/** How the history strip shows each kind of number: its unit, half the height of the window and what counts as far off. */
+const STRIP = {
+  m: { unit: 'm', digits: 2, half: 0.3, far: 0.1, farText: '10 cm' },
+  deg: { unit: '°', digits: 1, half: 15, far: 10, farText: '10°' },
+};
 
 /** Keep the car in the corridors: inside the field, outside the island. */
 function constrain(p: Pose): Pose {
@@ -94,7 +100,7 @@ export default function mount(el: HTMLElement): void {
         mean: meanRange(d.angles, scan.ranges, d.ok, Math.PI / 2), // the same beams, averaged
       };
     }
-    const toRoll = (e: ReturnType<typeof evaluate>): Roll => ({ left: e.scene.left, front: e.scene.frontAxis, end: e.scene.islandEnd });
+    const toRoll = (e: ReturnType<typeof evaluate>): Roll => ({ left: e.scene.left, front: e.scene.frontAxis, end: e.scene.islandEnd, heading: deg(e.scene.wallHeading) });
 
     /** Start the history over with the scan on screen (anything that changes the setting makes older scans not comparable). */
     function restartHistory(): void {
@@ -164,7 +170,7 @@ export default function mount(el: HTMLElement): void {
         out += label(`rayo salvaje: ${fmt(WILD, 0)} m`, wx, wy, 'red', side(wx), -9);
       }
 
-      // the four numbers: an arrow for each one here, and the values written on the island below
+      // the five numbers: an arrow for each distance here, and the values written on the island below
       function arrow(cls: string, ang: number, len: number, dashed: boolean): string {
         if (!Number.isFinite(len)) return '';
         const [ax, ay] = P(ox + len * Math.cos(ang), oy + len * Math.sin(ang));
@@ -177,14 +183,15 @@ export default function mount(el: HTMLElement): void {
       out += arrow('blue', yaw - Math.PI / 2, scene.right, false);
       out += arrow('violet', yaw + fy, scene.frontAxis, false);
       const [hx0, hy0] = P(-0.45, 0.33);
-      const hud: [string, string, number][] = [
+      const hud: [string, string, number, string?][] = [
         ['left', 'blue', scene.left], ['right', 'blue', scene.right], ['front_axis', 'violet', scene.frontAxis], ['island_end', 'green', scene.islandEnd],
+        ['heading', 'green', deg(scene.wallHeading), '°'],
       ];
       if (crooked) hud.push(['según coche', 'muted', e.alongCar]);
-      hud.forEach(([name, cls, v], i) => {
+      hud.forEach(([name, cls, v, unit], i) => {
         const y0 = hy0 + i * 15;
         out += `<text class="lw-scan-hud lw-c-${cls}" x="${hx0.toFixed(1)}" y="${y0.toFixed(1)}" fill="currentColor">${name}</text>`;
-        out += `<text class="lw-scan-hud lw-c-${cls}" x="${(hx0 + 90).toFixed(1)}" y="${y0.toFixed(1)}" text-anchor="end" fill="currentColor">${fmt(v, 2)}</text>`;
+        out += `<text class="lw-scan-hud lw-c-${cls}" x="${(hx0 + 90).toFixed(1)}" y="${y0.toFixed(1)}" text-anchor="end" fill="currentColor">${unit ? (Number.isFinite(v) ? `${fmt(v, 1)}${unit}` : '∞') : fmt(v, 2)}</text>`;
       });
 
       // the fitted island line and where the wall ends
@@ -216,6 +223,7 @@ export default function mount(el: HTMLElement): void {
 
       // numbers
       const m = (v: number) => (Number.isFinite(v) ? `${fmt(v, 2)} m` : 'no se ve');
+      const headingText = (v: number) => (Number.isFinite(v) ? `${fmt(deg(v), 1)}° (${fmt(v, 3)} rad)` : 'no hay pared de la isla al lado');
       const withIdeal = (v: number, i: number) => `${m(v)} (sin ruido: ${m(i)})`;
       const rows: [string, string, string?][] = [
         ['left (izquierda)', withIdeal(scene.left, ideal.scene.left), 'blue'],
@@ -231,6 +239,11 @@ export default function mount(el: HTMLElement): void {
           'green',
         ],
         ['island_end sin ruido ni pérdidas', Number.isFinite(ideal.scene.islandEnd) ? `x = ${fmt(ideal.scene.islandEnd, 2)} m` : 'no termina a la vista'],
+        [
+          'wall_heading (rumbo del coche respecto a la pared de la isla)',
+          `${headingText(scene.wallHeading)} (sin ruido: ${headingText(ideal.scene.wallHeading)})`,
+          'green',
+        ],
         ['left con el promedio, para comparar', `${m(e.mean)}${wild ? ' (el rayo salvaje lo estropea)' : ''}`],
         ['Rayos perdidos', `${lost} de ${scan.ranges.length}`],
       );
@@ -239,7 +252,7 @@ export default function mount(el: HTMLElement): void {
       } else rows.push(['Ajuste de la pared', 'faltan rayos (menos de 10)']);
       rd.set(
         rows,
-        `Izquierda ${m(scene.left)}, derecha ${m(scene.right)}, delante ${m(scene.frontAxis)}, ${Number.isFinite(scene.islandEnd) ? `la isla termina en x igual a ${fmt(scene.islandEnd, 2)} metros` : 'el fin de la isla no se ve'}. ${lost} rayos perdidos.`,
+        `Izquierda ${m(scene.left)}, derecha ${m(scene.right)}, delante ${m(scene.frontAxis)}, ${Number.isFinite(scene.islandEnd) ? `la isla termina en x igual a ${fmt(scene.islandEnd, 2)} metros` : 'el fin de la isla no se ve'}, ${Number.isFinite(scene.wallHeading) ? `rumbo respecto a la pared ${fmt(deg(scene.wallHeading), 1)} grados` : 'sin pared de la isla al lado'}. ${lost} rayos perdidos.`,
       );
       drawStrip(ideal.scene);
     }
@@ -262,21 +275,22 @@ export default function mount(el: HTMLElement): void {
     const stripLive = h('p', { class: 'lw-sr', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' });
     let liveTimer = 0;
 
-    function drawStrip(ideal: { left: number; frontAxis: number; islandEnd: number }): void {
+    function drawStrip(ideal: { left: number; frontAxis: number; islandEnd: number; wallHeading: number }): void {
       const key: keyof Roll = metric;
-      const idealV = metric === 'end' ? ideal.islandEnd : metric === 'left' ? ideal.left : ideal.frontAxis;
+      const u = metric === 'heading' ? STRIP.deg : STRIP.m;
+      const idealV = metric === 'end' ? ideal.islandEnd : metric === 'left' ? ideal.left : metric === 'front' ? ideal.frontAxis : deg(ideal.wallHeading);
       const vals = history.map((r) => r[key]);
       const finite = vals.filter(Number.isFinite);
-      // the same window (0,6 m tall) for every number, so a steady number looks flat and a jumpy one does not
-      const centre = Number.isFinite(idealV) ? idealV : finite.length ? median(finite) : 0.5;
-      const lo = centre - 0.3, hi = centre + 0.3;
+      // the same window (0,6 m tall) for every distance, so a steady number looks flat and a jumpy one does not
+      const centre = Number.isFinite(idealV) ? idealV : finite.length ? median(finite) : metric === 'heading' ? 0 : 0.5;
+      const lo = centre - u.half, hi = centre + u.half;
       const top = ST + 26, bottom = SH - SB; // the band above `top` is for "no se ve"
       const sy = (v: number) => top + ((hi - v) / (hi - lo)) * (bottom - top);
       const sx = (i: number) => SL + ((i + 0.5) / KEEP) * (SW - SL - SR);
       let o = '';
       for (const v of [lo, centre, hi]) {
         o += `<line class="lw-grid" x1="${SL}" y1="${sy(v)}" x2="${SW - SR}" y2="${sy(v)}"/>`;
-        o += `<text class="lw-tick" x="${SL - 5}" y="${sy(v) + 4}" text-anchor="end">${fmt(v, 2)}</text>`;
+        o += `<text class="lw-tick" x="${SL - 5}" y="${sy(v) + 4}" text-anchor="end">${fmt(v, u.digits)}</text>`;
       }
       o += `<rect class="lw-frame" x="${SL}" y="${ST}" width="${SW - SL - SR}" height="${bottom - ST}"/>`;
       o += `<line class="lw-grid" x1="${SL}" y1="${top - 4}" x2="${SW - SR}" y2="${top - 4}" stroke-dasharray="2 3"/>`;
@@ -298,7 +312,7 @@ export default function mount(el: HTMLElement): void {
           o += `<g class="lw-c-red"><path d="M${px - 4} ${ST + 5}l8 8m0 -8l-8 8" stroke="currentColor" stroke-width="2" fill="none"/></g>`;
           return;
         }
-        const bad = !Number.isFinite(idealV) || Math.abs(v - idealV) > 0.1;
+        const bad = !Number.isFinite(idealV) || Math.abs(v - idealV) > u.far;
         if (bad) far++;
         const inside = v >= lo && v <= hi;
         const py = sy(clamp(v, lo, hi));
@@ -311,8 +325,9 @@ export default function mount(el: HTMLElement): void {
       strip.innerHTML = o;
       const name = METRICS.find(([k]) => k === metric)![1];
       strip.setAttribute('aria-label', `Gráfico de los últimos ${vals.length} valores de ${name}`);
-      const spread = finite.length ? `mediana ${fmt(median(finite), 2)} m, de ${fmt(Math.min(...finite), 2)} a ${fmt(Math.max(...finite), 2)} m` : 'en ninguno se ve este número';
-      const text = `${vals.length} ${vals.length === 1 ? 'escaneo' : 'escaneos'} de ${name}: ${spread}. ${far} con más de 10 cm de error${gone ? `, ${gone} sin verse` : ''}.`;
+      const val = (v: number) => `${fmt(v, u.digits)}${u.unit === 'm' ? ' m' : u.unit}`;
+      const spread = finite.length ? `mediana ${val(median(finite))}, de ${val(Math.min(...finite))} a ${val(Math.max(...finite))}` : 'en ninguno se ve este número';
+      const text = `${vals.length} ${vals.length === 1 ? 'escaneo' : 'escaneos'} de ${name}: ${spread}. ${far} con más de ${u.farText} de error${gone ? `, ${gone} sin verse` : ''}.`;
       stripSummary.textContent = text;
       clearTimeout(liveTimer);
       liveTimer = window.setTimeout(() => { stripLive.textContent = text; }, 700);
@@ -331,7 +346,7 @@ export default function mount(el: HTMLElement): void {
     const sx = slider({ label: 'Posición x', min: -1.4, max: 1.4, step: 0.01, value: pose.x, format: (v) => `${fmt(v, 2)} m`, onInput: (v) => setPose({ ...pose, x: v }, 'x') });
     const sy = slider({ label: 'Posición y', min: -1.4, max: 1.4, step: 0.01, value: pose.y, format: (v) => `${fmt(v, 2)} m`, onInput: (v) => setPose({ ...pose, y: v }, 'y') });
     const syaw = slider({ label: 'Rumbo del coche', min: -180, max: 180, step: 1, value: 0, format: (v) => `${fmt(v, 0)}°`, onInput: (v) => setPose({ ...pose, yaw: (v * Math.PI) / 180 }) });
-    const sdrop = slider({ label: 'Perder rayos', min: 0, max: 15, step: 0.1, value: dropout, format: (v) => `${fmt(v, 1)} %`, onInput: (v) => { dropout = v; changed(); } });
+    const sdrop = slider({ label: 'Perder rayos', min: 0, max: 25, step: 0.1, value: dropout, format: (v) => `${fmt(v, 1)} %`, onInput: (v) => { dropout = v; changed(); } });
     const snoise = slider({ label: 'Ruido de la distancia', min: 0, max: 30, step: 1, value: noiseMm, format: (v) => `${fmt(v, 0)} mm`, onInput: (v) => { noiseMm = v; changed(); } });
 
     function setPose(p: Pose, keep?: 'x' | 'y'): void {
@@ -385,17 +400,17 @@ export default function mount(el: HTMLElement): void {
     };
     const presets = h('div', { class: 'lw-actions' },
       scenario('Recta', 'El coche aún está lejos del final de la isla: la esquina no entra en el abanico y island_end dice «no termina a la vista».', () => { normal(); place(-0.4); }),
-      scenario('Antes de la esquina', 'island_end debe quedar cerca de 0,5 m: la isla termina medio metro más adelante. Pulsa «Repetir 20 veces» para ver cuánto se mueve.', () => { normal(); place(0); }),
+      scenario('Antes de la esquina', 'island_end debe quedar cerca de 0,5 m: la isla termina medio metro más adelante. Pulsa «Repetir 20 veces» para ver cuánto se mueve. Luego sigue wall_heading en la tira: con el ruido normal se mueve unos ±3° de un escaneo a otro.', () => { normal(); place(0); }),
       scenario('En la esquina', 'La esquina está casi al lado: island_end baja a unos 0,2 m, y front_axis también ha bajado.', () => { normal(); place(0.3); }),
       scenario('Pasada la esquina', 'Ya no hay isla al lado: left salta a más de 2 m (ahora ve la pared de fuera del otro lado) e island_end vuelve a «no termina a la vista».', () => { normal(); place(0.8); }),
-      scenario('Coche torcido 17°', 'El coche apunta 17° a un lado de la pista. front_axis a lo largo de la pista da 1,38 m; midiendo hacia donde apunta el coche (la flecha de rayas, forward_yaw = 0) da 1,44 m.', () => { normal(); place(0, -0.75, 0.3); }),
+      scenario('Coche torcido 17°', 'El coche apunta 17° a un lado de la pista y wall_heading lo dice: unos 17°. front_axis a lo largo de la pista da 1,38 m; midiendo hacia donde apunta el coche (la flecha de rayas, forward_yaw = 0) da 1,44 m.', () => { normal(); place(0, -0.75, 0.3); }),
       scenario('Un rayo salvaje', 'Un rayo del lado izquierdo se cuela por una abertura y vuelve con 9 m. La mediana de left casi no se entera; el promedio (fila «left con el promedio») sube a unos 0,40 m.', () => { normal(); wild = true; wildT.input.checked = true; place(0); }),
-      scenario('Perder 15 % de rayos', 'Con 15 % de rayos perdidos, a veces caen tres seguidos sobre la pared, el recorrido cree que ya terminó e island_end sale muy por debajo de 0,5 m. En 500 escaneos del simulador de Python, 70 (14 %) se equivocaron más de 10 cm. Mira la tira de abajo.', () => {
+      scenario('Perder 15 % de rayos', 'Con 15 % de rayos perdidos island_end aguanta: un rayo sin retorno es un hueco en los datos, no el final de la pared, y el recorrido lo salta. En 500 escaneos del simulador de Python, ninguno se equivocó más de 10 cm (cuando los rayos perdidos contaban como final, fallaban 70). Mira la tira de abajo y sube la pérdida hasta 25 %.', () => {
         normal(); dropout = 15; sdrop.set(dropout);
         place(0);
         rollMany();
       }),
-      scenario('Ruido de 30 mm', 'El ajuste admite 3 cm de distancia a la recta (WALL_TOLERANCE). Con 30 mm de ruido muchos rayos se salen de la pared sin que la pared cambie, y island_end sale casi siempre muy por debajo de 0,5 m (386 de 500 escaneos de Python se equivocaron más de 10 cm). left y front_axis casi no se mueven: cambia «Número que se sigue» a left o front_axis y compara.', () => {
+      scenario('Ruido de 30 mm', 'El ajuste admite 3 cm de distancia a la recta (WALL_TOLERANCE). Con 30 mm de ruido muchos rayos se salen de la pared sin que la pared cambie, y island_end sale casi siempre muy por debajo de 0,5 m (346 de 500 escaneos de Python se equivocaron más de 10 cm; con 15 mm, 6 y con 20 mm, 70). left y front_axis casi no se mueven: cambia «Número que se sigue en la tira» a left o front_axis y compara.', () => {
         normal(); noiseMm = 30; snoise.set(noiseMm);
         place(0);
         rollMany();
@@ -478,7 +493,7 @@ export default function mount(el: HTMLElement): void {
         h('div', { class: 'lw-figure' }, strip),
         legend([
           ['cream', 'un escaneo'],
-          ['red', 'a más de 10 cm del valor sin ruido'],
+          ['red', 'a más de 10 cm (o 10°) del valor sin ruido'],
           ['green', 'valor sin ruido ni pérdidas'],
           ['amber', 'mediana de los escaneos'],
         ]),

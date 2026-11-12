@@ -1,4 +1,4 @@
-// Port of TurnGate (learn: src/my_open/my_open/turn_gate.py, tag step-6) and the scenes of the south corridor for the "turn-gate" widget.
+// Port of TurnGate (learn: src/my_open/my_open/turn_gate.py) and the scenes of the south corridor for the "turn-gate" widget.
 // No DOM here, so it can be checked from the shell against the Python (see the notes at the end of the file).
 
 export const TURN_FRONT = 1.19; // m: the wall ahead (along the track) must be this near
@@ -8,7 +8,7 @@ export const CONFIRMATIONS = 2; // consecutive scans that must see the island's 
 export const ARM_DISTANCE = 0.25; // m driven after a corner before the next one may start
 export const ISLAND_OPEN = 1.0; // m: an island wall farther than this beside the car means the island has ended
 
-/** What perceive() returns for one scan (the four numbers of the course's Scene, without `right`). Compared by identity, like in Python. */
+/** What perceive() returns for one scan (the numbers of the course's Scene the gate reads). Compared by identity, like in Python. */
 export interface Scene {
   left: number;
   frontAxis: number;
@@ -21,25 +21,21 @@ export interface GateOptions {
   lookahead?: number;
   confirmations?: number;
   countEveryTick?: boolean; // `if True:` instead of `scene is not self._scene`
-  ignoreArmed?: boolean; // the return without `self.armed and`
 }
 
 export class TurnGate {
-  armed = true;
   hits = 0;
   private scene: Scene | null = null;
   private readonly turnFront: number;
   private readonly lookahead: number;
   private readonly confirmations: number;
   private readonly countEveryTick: boolean;
-  private readonly ignoreArmed: boolean;
 
   constructor(o: GateOptions = {}) {
     this.turnFront = o.turnFront ?? TURN_FRONT;
     this.lookahead = o.lookahead ?? LOOKAHEAD;
     this.confirmations = o.confirmations ?? CONFIRMATIONS;
     this.countEveryTick = o.countEveryTick ?? false;
-    this.ignoreArmed = o.ignoreArmed ?? false;
   }
 
   /** Returns true when the corner should start now. */
@@ -50,25 +46,15 @@ export class TurnGate {
       const limit = Number.isFinite(inner) ? Math.min(this.lookahead, Math.max(0, inner - END_CLEARANCE)) : this.lookahead;
       this.hits = scene.islandEnd >= 0 && scene.islandEnd <= limit ? this.hits + 1 : 0;
     }
-    const seenAgain = Number.isFinite(inner) && inner < ISLAND_OPEN && travelled >= ARM_DISTANCE;
-    this.armed = this.armed || (seenAgain && !arc);
     const islandOpen = Number.isFinite(inner) && inner > ISLAND_OPEN;
-    return (
-      (this.ignoreArmed || this.armed) && !arc && travelled >= ARM_DISTANCE && scene.frontAxis <= this.turnFront && (islandOpen || this.hits >= this.confirmations)
-    );
-  }
-
-  /** Call it when the corner starts: the gate stays shut until the island is seen again. */
-  cornerStarted(): void {
-    this.armed = false;
+    return !arc && travelled >= ARM_DISTANCE && scene.frontAxis <= this.turnFront && (islandOpen || this.hits >= this.confirmations);
   }
 }
 
 /** Every condition of the gate, computed from the current state (call it after update()). */
 export interface Conditions {
-  armed: boolean;
   travelled: number;
-  travelledOk: boolean;
+  travelledOk: boolean; // no corner in progress and enough metres driven since the last one
   frontAxis: number;
   frontOk: boolean;
   inner: number;
@@ -84,12 +70,11 @@ export interface Conditions {
 export function conditions(gate: TurnGate, o: Required<Pick<GateOptions, 'turnFront' | 'lookahead' | 'confirmations'>>, scene: Scene, inner: number, travelled: number, arc: boolean): Conditions {
   const limit = Number.isFinite(inner) ? Math.min(o.lookahead, Math.max(0, inner - END_CLEARANCE)) : o.lookahead;
   const islandOpen = Number.isFinite(inner) && inner > ISLAND_OPEN;
-  const travelledOk = travelled >= ARM_DISTANCE;
+  const travelledOk = !arc && travelled >= ARM_DISTANCE;
   const frontOk = scene.frontAxis <= o.turnFront;
   const hitsOk = gate.hits >= o.confirmations;
   const ended = islandOpen || hitsOk;
   return {
-    armed: gate.armed,
     travelled,
     travelledOk,
     frontAxis: scene.frontAxis,
@@ -281,7 +266,6 @@ export const xOf = (k: number): number => Math.round((X_START + k * SCAN_STEP) *
 
 export interface TraceOptions {
   gap: number;
-  startClosed: boolean; // corner_started() was just called (the real situation after a corner)
   lost: ReadonlySet<number>; // scans in which the island's end is not seen (island_end reads inf)
   gate?: GateOptions;
 }
@@ -304,7 +288,6 @@ export function trace(o: TraceOptions): Row[] {
   if (!table) throw new Error(`no scenes for gap ${o.gap}`);
   const opts = { turnFront: o.gate?.turnFront ?? TURN_FRONT, lookahead: o.gate?.lookahead ?? LOOKAHEAD, confirmations: o.gate?.confirmations ?? CONFIRMATIONS };
   const gate = new TurnGate(o.gate);
-  if (o.startClosed) gate.cornerStarted();
   const rows: Row[] = [];
   for (let k = 0; k < table.length; k++) {
     const [left, frontAxis, islandEnd] = table[k];
@@ -328,6 +311,8 @@ export function trace(o: TraceOptions): Row[] {
   return rows;
 }
 
-// How this file was checked against the Python (tag step-6, my_open/turn_gate.py):
-// * random sequences of update() calls (new or repeated scene objects, inf values, arc on and off) gave the same answer, hits and armed;
+// How this file was checked against the Python (my_open/turn_gate.py, 12 Nov 2026: no `armed`, no corner_started()):
+// * bundle it for node (`npx esbuild lib/turn-gate-model.ts --bundle --format=esm --outfile=/tmp/tg.mjs`) and feed the Python gate the
+//   same rows (SCENES dumped as JSON);
+// * random sequences of update() calls (new or repeated scene objects, inf values, arc on and off) gave the same answer and hits;
 // * trace() fires at the same scan as the Python gate for every gap, with the end of the island lost at any scan and with each switch.

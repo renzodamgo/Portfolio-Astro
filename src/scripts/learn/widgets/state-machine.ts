@@ -9,15 +9,18 @@ type Group = 'SETUP' | 'RUN' | 'STOP';
 
 interface Ev { t: number; sub: Sub; corners: number; edge: EdgeId | null; speed: number; caption: string; code?: CodeId }
 
-/** Lines of my_open/mission.py (step 7) that run in each state. Every line is copied from the file ('# ...' marks skipped lines). */
-type CodeId = Sub | 'BRAKE';
+/** Lines of my_open/mission.py (step 7) that run at each event. Every line is copied from the file ('# ...' marks skipped lines). */
+type CodeId = Sub | 'SLOW' | 'HEADING' | 'CORNER_DONE' | 'BRAKE';
 const CODE: Record<CodeId, { fn: string; lines: string[] }> = {
   WAIT_START: { fn: '_setup', lines: ['if not self.started:', '    return 0.0, 0.0'] },
   CALIBRATE: { fn: '_setup', lines: ['self._time += dt', 'if not self._calibrated and self._time < CALIBRATE_SECONDS:', '    self._samples.append(gyro_z)', '    self._fronts.append(scene.front_axis)'] },
-  DETECT_DIRECTION: { fn: '_setup', lines: ['if not self.direction and camera:', "    self.direction = 'ccw' if camera > 0 else 'cw'", 'if self.direction:', "    self.state, self.travelled = 'RUN', 0.0"] },
-  FOLLOW: { fn: '_run', lines: ['steer = lane_steer(self.goal, self.yaw, keep, sign)', 'return self._straight_speed(scene, last, corner_speed), steer'] },
-  TURN: { fn: '_run', lines: ['if self.gate.update(scene, inner, self.travelled, self.arc):', '    self.goal = wrap(self.goal + sign * math.pi / 2)', '    self.arc = True', '# ...', 'if self.arc:', '    return corner_speed, self._corner(dt, gyro, sign, corner_speed)'] },
-  FINISH: { fn: '_finish', lines: ['if math.isfinite(self._start_front) and scene.front_axis > self._start_front + FINISH_LEAD:', '    return FINISH_SPEED, steer', 'self._braking = True'] },
+  DETECT_DIRECTION: { fn: '_setup', lines: ['if not self.direction and camera:', "    self.direction = 'ccw' if camera > 0 else 'cw'", 'if self.direction:', "    self.state = 'RUN'"] },
+  FOLLOW: { fn: '_run', lines: ['keep = GAP if (not math.isfinite(inner) or island_open) else inner', 'steer = damped_steer(self.goal + lateral_bias(keep, sign), self.yaw, gyro)', 'return self._straight_speed(scene), steer'] },
+  SLOW: { fn: '_straight_speed', lines: ['gap = scene.front_axis - self.gate.turn_front - BRAKE_MARGIN', 'return min(CRUISE_SPEED, CORNER_SPEED + BRAKE_GAIN * max(0.0, gap))'] },
+  HEADING: { fn: '_correct_heading', lines: ['difference = wrap(scene.wall_heading - wrap(self.yaw - self.goal))', 'if abs(difference) <= WALL_HEADING_MAX:', '    self.heading.yaw += WALL_HEADING_GAIN * difference'] },
+  TURN: { fn: '_run', lines: ['if self.gate.update(scene, inner, self.straight.travelled, self.arc):', '    self.goal = wrap(self.goal + sign * math.pi / 2)', '    self.arc = True', 'if self.arc:', '    steer, done = arc_steer(self.goal, self.yaw, gyro)', '    # ...', '    return CORNER_SPEED, steer'] },
+  CORNER_DONE: { fn: '_run', lines: ['if self.arc:', '    steer, done = arc_steer(self.goal, self.yaw, gyro)', '    if done:', '        self.arc = False', '        self.straight.reset()', '        self.completed += 1', '    return CORNER_SPEED, steer'] },
+  FINISH: { fn: '_finish', lines: ['steer = damped_steer(self.goal, self.yaw, gyro)', '# ...', 'turned = abs(wrap(self.goal - self.yaw)) > FINISH_STRAIGHT', 'if turned or (math.isfinite(self._start_front) and scene.front_axis > self._start_front + FINISH_LEAD):', '    return FINISH_SPEED, steer', 'self._braking = True'] },
   BRAKE: { fn: '_finish', lines: ['self._rest += dt', 'if self._rest >= STOP_WAIT:', "    self._stop('done')", 'return 0.0, 0.0'] },
   DONE: { fn: '_stop', lines: ['self.state, self.stop_reason = \'STOP\', reason'] },
   DIRECTION_FAULT: { fn: '_setup', lines: ['elif self._time >= DIRECTION_TIMEOUT:', "    self._stop('direction_fault')"] },
@@ -30,7 +33,7 @@ const GROUP: Record<Sub, Group> = {
   FOLLOW: 'RUN', TURN: 'RUN', FINISH: 'RUN',
   DONE: 'STOP', DIRECTION_FAULT: 'STOP', OPERATOR_STOP: 'STOP',
 };
-const CRUISE = 1.28, LAST = 0.6, CREEP = 0.15;
+const CRUISE = 1.28, CORNER = 1.0, CREEP = 0.15; // CRUISE_SPEED, CORNER_SPEED and FINISH_SPEED of mission.py (m/s commanded)
 
 // ------------------------------------------------------------------------------ the scripted rounds
 function setupEvents(): Ev[] {
@@ -43,28 +46,33 @@ function setupEvents(): Ev[] {
 
 function normalRound(): Ev[] {
   const ev = setupEvents();
-  ev.push({ t: 0.44, sub: 'FOLLOW', corners: 0, edge: 'direction', speed: CRUISE, caption: 'Sentido conocido (en este paso va fijo; desde el paso 8 lo decide la cámara): SETUP pasa a RUN. FOLLOW sigue el rumbo meta a lo largo de la pared de la isla, a 1,28 m/s pedidos.' });
+  ev.push({ t: 0.44, sub: 'FOLLOW', corners: 0, edge: 'direction', speed: CRUISE, caption: 'Sentido conocido (en este paso va fijo; desde el paso 8 lo decide la cámara): SETUP pasa a RUN. FOLLOW sigue el rumbo meta a lo largo de la pared de la isla con damped_steer, a 1,28 m/s pedidos.' });
   for (let k = 1; k <= CORNERS; k++) {
     const t0 = 1.1 + 2.6 * (k - 1);
-    if (k === CORNERS) {
-      ev.push({ t: t0 - 0.9, sub: 'FOLLOW', corners: k - 1, edge: null, speed: LAST, caption: 'Falta la última esquina: antes de girar, FOLLOW frena de 1,28 a 0,6 m/s para poder parar luego sobre la sección de Start.' });
-    }
-    ev.push({
-      t: t0, sub: 'TURN', corners: k - 1, edge: 'turn', speed: k === CORNERS ? LAST : CRUISE,
-      caption: k === CORNERS
-        ? 'Esquina 12 (la última): la puerta abre, la meta gira 90° y arc_steer lleva el giro, más lento (0,6 m/s).'
-        : `Esquina ${k}: la puerta abre (pared de enfrente cerca, isla terminada, distancia recorrida). La meta gira 90° y arc_steer lleva el giro.`,
-    });
     const last = k === CORNERS;
     ev.push({
-      t: t0 + 1.1, sub: last ? 'FINISH' : 'FOLLOW', corners: k, edge: last ? 'finish' : 'corner', speed: last ? CREEP : CRUISE,
-      caption: last
-        ? 'Esquina 12 hecha (tolerancia 0,4 rad en la última): con 12 esquinas contadas, RUN pasa a FINISH. Avanza a 0,15 m/s hasta que la pared de enfrente esté a menos de 0,08 m de la distancia que tenía en Start.'
-        : `Esquina ${k} hecha: el rumbo está a menos de 0,12 rad de la meta. El contador sube a ${k} y vuelve FOLLOW.`,
+      t: t0 - 0.5, sub: 'FOLLOW', code: 'SLOW', corners: k - 1, edge: null, speed: CORNER,
+      caption: k === 1
+        ? 'La pared de enfrente se acerca a la distancia de giro: _straight_speed baja la velocidad de 1,28 a 1,0 m/s pedidos. Lo hace antes de cada esquina, y termina de frenar 0,15 m antes de que la puerta pueda abrir.'
+        : `Antes de la esquina ${k}: _straight_speed frena otra vez de 1,28 a 1,0 m/s pedidos.`,
     });
+    ev.push({
+      t: t0, sub: 'TURN', corners: k - 1, edge: 'turn', speed: CORNER,
+      caption: `Esquina ${k}${last ? ' (la última)' : ''}: la puerta abre (distancia recorrida, pared de enfrente cerca, isla terminada). La meta gira 90° y arc_steer pone el volante al tope, a 1,0 m/s pedidos como en todas las esquinas.`,
+    });
+    ev.push({
+      t: t0 + 1.1, sub: last ? 'FINISH' : 'FOLLOW', code: 'CORNER_DONE', corners: k, edge: last ? 'finish' : 'corner', speed: last ? CREEP : CRUISE,
+      caption: last
+        ? 'Esquina 12 hecha: arc_steer devuelve done. Con 12 esquinas contadas, desde el siguiente tick _run llama a _finish y la etiqueta es FINISH.'
+        : `Esquina ${k} hecha: el rumbo está a menos de 0,3 rad (17°) de la meta y arc_steer devuelve done. El contador sube a ${k}, la distancia de la recta vuelve a 0 y FOLLOW termina el giro con damped_steer.`,
+    });
+    if (k === 1) {
+      ev.push({ t: t0 + 1.6, sub: 'FOLLOW', code: 'HEADING', corners: k, edge: null, speed: CRUISE, caption: 'En cada recta, tras 0,25 m recorridos y una vez por escaneo, _correct_heading compara el rumbo del giroscopio con el que muestra la pared de la isla (wall_heading) y corrige el 30 % de la diferencia. Si la diferencia pasa de 25°, no la usa.' });
+    }
   }
-  ev.push({ t: 33.9, sub: 'FINISH', code: 'BRAKE', corners: CORNERS, edge: null, speed: 0, caption: 'La pared de enfrente ya está a la distancia de Start: el freno se engancha (el ruido no puede arrancar el motor otra vez). Cuenta 0,9 s quieto.' });
-  ev.push({ t: 34.8, sub: 'DONE', corners: CORNERS, edge: 'rest', speed: 0, caption: 'Pasaron 0,9 s: STOP con razón done, etiqueta DONE. La ronda de referencia dura unos 34,8 s desde Start en Gazebo (32,58 s en el laboratorio).' });
+  ev.push({ t: 31.2, sub: 'FINISH', corners: CORNERS, edge: null, speed: CREEP, caption: 'FINISH: avanza a 0,15 m/s con damped_steer. Sigue así mientras el coche esté girado más de 0,1 rad (aún sale de la última esquina) o la pared de enfrente esté a más de 0,08 m de la distancia que tenía en Start.' });
+  ev.push({ t: 32.9, sub: 'FINISH', code: 'BRAKE', corners: CORNERS, edge: null, speed: 0, caption: 'El coche va recto y la pared de enfrente ya está a la distancia de Start: el freno se engancha (el ruido no puede arrancar el motor otra vez). Cuenta 0,9 s quieto.' });
+  ev.push({ t: 33.8, sub: 'DONE', corners: CORNERS, edge: 'rest', speed: 0, caption: 'Pasaron 0,9 s: STOP con razón done, etiqueta DONE. La ronda de referencia dura 33,78 s desde Start en el laboratorio.' });
   return ev;
 }
 
@@ -169,7 +177,7 @@ export default function mount(el: HTMLElement): void {
     const lapText = h('p', { class: 'lw-sm-lap' });
     const codeHead = h('p', { class: 'lw-code-head' });
     const codeText = h('code', {});
-    const code = h('pre', { class: 'lw-code', tabindex: '0', 'aria-label': 'Líneas de mission.py que se ejecutan en este estado' }, codeText);
+    const code = h('pre', { class: 'lw-code', tabindex: '0', 'aria-label': 'Líneas de mission.py que se ejecutan en este evento' }, codeText);
     const horizonOf = (list: Ev[]) => Math.max(10, Math.ceil(list[list.length - 1].t / 5) * 5);
     const makePlot = (list: Ev[]) => createPlot({ xmin: 0, xmax: horizonOf(list), xlabel: 's desde Start (orientativo)', ylabel: 'm/s pedidos', aria: 'Velocidad que pide la misión a lo largo de la ronda', digitsY: 1 });
     let plot = makePlot(events);
@@ -259,7 +267,7 @@ export default function mount(el: HTMLElement): void {
         ymin: 0,
         ymax: 1.5,
         series: [{ points: stepLine, color: 'blue' }],
-        hlines: [{ y: CRUISE, label: 'crucero 1,28', color: 'muted' }, { y: LAST, label: 'última esquina 0,6', color: 'muted' }],
+        hlines: [{ y: CRUISE, label: 'crucero 1,28', color: 'muted' }, { y: CORNER, label: 'esquina 1,0', color: 'muted' }],
         marker: { x: ev.t, y: ev.speed, color: 'amber' },
       });
       caption.textContent = ev.caption;
@@ -308,7 +316,7 @@ export default function mount(el: HTMLElement): void {
       h(
         'p',
         { class: 'lw-note' },
-        'Sigue las transiciones de MiniMission. Los tiempos son orientativos (la ronda de referencia dura 34,8 s en Gazebo; el laboratorio da 32,58 s); la lógica es la del código: SETUP calibra y espera el sentido, RUN alterna FOLLOW y TURN y pasa a FINISH con 12 esquinas, y STOP se alcanza con done, direction_fault u operator_stop.',
+        'Sigue las transiciones de MiniMission. Los tiempos son orientativos (la ronda de referencia dura 33,78 s en el laboratorio); la lógica es la del código: SETUP calibra y espera el sentido, RUN alterna FOLLOW y TURN, frena a 1,0 m/s antes de cada esquina y pasa a FINISH con 12 esquinas, y STOP se alcanza con done, direction_fault u operator_stop.',
       ),
     );
     render();

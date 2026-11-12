@@ -8,7 +8,7 @@ tag: "step-6"
 compareFrom: "step-5"
 ---
 
-En el paso 5 la esquina empezaba con una regla fija: la pared de enfrente a 1,19 m. Una sola condición se equivoca con facilidad. En este paso escribes `TurnGate` (la puerta), que decide **cada tick** (cada ejecución del control, 50 veces por segundo) si es el momento de girar. La conexión con `drive.py` y con la distancia recorrida, que sale del LiDAR, te la damos hecha. Al terminar, el coche gira esquina tras esquina alrededor de la isla.
+En el paso 5 la esquina empezaba con una regla fija: la pared de enfrente a 1,19 m. Una sola condición se equivoca con facilidad. En este paso escribes `TurnGate` (la puerta), que decide **cada tick** (cada ejecución del control, 50 veces por segundo) si es el momento de girar. También escribes `StraightDistance`, que mide cuánto avanzó el coche sin encoder: con la pared de enfrente. La conexión con `drive.py` te la damos hecha. Al terminar, el coche gira esquina tras esquina alrededor de la isla.
 
 <!-- step-video:start -->
 <figure class="learn-step-video">
@@ -46,22 +46,20 @@ Si el coche gira demasiado pronto, se come la isla. Si gira demasiado tarde, cho
 
 | # | Condición | Valor | Para qué |
 |---|---|---|---|
-| 1 | La puerta está **armada** (`armed`) | ver abajo | no girar dos veces seguidas |
-| 2 | El coche avanzó desde la esquina anterior (`travelled`) | `ARM_DISTANCE = 0.25` m o más | no girar dos veces seguidas |
-| 3 | La pared de enfrente, medida **a lo largo de la pista** (`scene.front_axis`), está cerca | `TURN_FRONT = 1.19` m o menos | no girar demasiado pronto |
-| 4 | La isla **terminó**, de una de dos maneras: el lado de la isla está abierto (`inner` más lejos que `ISLAND_OPEN = 1.0` m), o se vio su final cerca (`scene.island_end` entre 0 y `LOOKAHEAD = 0.35` m) en `CONFIRMATIONS = 2` escaneos distintos seguidos | ver abajo | no comerse la isla, y no fiarse de un solo escaneo |
-| 5 | No hay una esquina en curso | `arc` es `False` | una esquina a la vez |
+| 1 | No hay una esquina en curso y el coche avanzó desde la anterior (`travelled`) | `arc` es `False` y `ARM_DISTANCE = 0.25` m o más | una esquina a la vez, y no girar dos veces seguidas |
+| 2 | La pared de enfrente, medida **a lo largo de la pista** (`scene.front_axis`), está cerca | `TURN_FRONT = 1.19` m o menos | no girar demasiado pronto |
+| 3 | La isla **terminó**, de una de dos maneras: el lado de la isla está abierto (`inner` más lejos que `ISLAND_OPEN = 1.0` m), o se vio su final cerca (`scene.island_end` entre 0 y `LOOKAHEAD = 0.35` m) en `CONFIRMATIONS = 2` escaneos distintos seguidos | ver abajo | no comerse la isla, y no fiarse de un solo escaneo |
 
 `inner` es la distancia al lado de la isla (`scene.left` cuando la isla está a la izquierda) y `island_end` es dónde termina la pared de la isla, medido hacia delante desde el coche (paso 3).
 
-Dos detalles de la condición 4:
+Dos detalles de la condición 3:
 
 - Si el lado de la isla está abierto, no hace falta ver su final: ya terminó.
 - En un pasillo estrecho el final de la isla tiene que estar más cerca que `LOOKAHEAD`. El límite pasa a ser `min(LOOKAHEAD, inner - END_CLEARANCE)`, con `END_CLEARANCE = 0.08` m. Con la isla a 0,30 m el límite baja a 0,22 m, así que un final visto a 0,30 m no cuenta. Con el coche a 0,25 m de la isla (la distancia normal del carril) el límite es 0,17 m.
 
-### Armar y desarmar la puerta
+### Por qué hay que haber avanzado
 
-Al empezar una esquina, el nodo llama a `corner_started()` y la puerta queda **cerrada** (`armed = False`). Se vuelve a armar cuando el coche ya no está en una esquina, recorrió al menos 0,25 m desde la anterior y ve la isla de nuevo (`inner` es finito y menor que `ISLAND_OPEN`). Es decir: hasta que el coche no está otra vez en una recta junto a la isla, no puede girar. La primera vez la puerta está armada.
+Justo al salir de una esquina se cumplen solas las otras dos condiciones: el lado de la isla sigue abierto (el coche aún no llegó a la pared siguiente de la isla) y, si el pasillo nuevo es corto, la pared de enfrente ya puede estar a menos de 1,19 m. Sin la condición 1 el coche giraría otra vez en el mismo sitio. Con 0,25 m recorridos ya está junto a la isla y la puerta vuelve a decidir con lo que ve.
 
 ### Un escaneo cuenta una vez
 
@@ -88,14 +86,17 @@ Para mirar tú mismo:
 
 </details>
 
-### La distancia recorrida: LiDAR, no encoder
+### La distancia recorrida: la pared de enfrente, no un encoder
 
-La condición 2 necesita saber cuántos metros avanzó el coche, y el coche no tiene encoder. `LidarOdometry` (de `robotek_common`, ya hecha) lo calcula alineando escaneos consecutivos: la rotación sale del giroscopio y la traslación se ajusta contra las paredes, que son rectas. Si un escaneo no se puede alinear, usa la velocidad ordenada con un límite de aceleración (`DISTANCE_MODEL_ACCEL = 2.0`). En el nodo se usa así:
+La condición 1 necesita saber cuántos metros avanzó el coche en esta recta, y el coche no tiene encoder. Tampoco hace falta: en una recta, **lo que avanza el coche es lo que se acerca la pared de enfrente**. Si al empezar la recta la pared estaba a 2,40 m y ahora está a 2,10 m, el coche avanzó 0,30 m.
 
-- en `on_scan`: `self.odometry.scan(msg, self.heading.yaw)`;
-- en cada tick: `moved = self.odometry.read()` (metros desde la lectura anterior) y `self.travelled += max(0.0, moved)`;
-- al final del tick: `self.odometry.command(speed, dt)`;
-- al acabar una esquina, `self.travelled = 0.0`.
+`StraightDistance` guarda la primera lectura de la recta y resta. Tres cuidados:
+
+- Si en un escaneo no se ve la pared (`front_axis` es infinito), no cambia nada: se espera al siguiente.
+- La distancia **nunca baja**: el ruido del LiDAR puede dar una lectura 3 cm más lejos, y el coche no fue marcha atrás.
+- Durante la esquina no se actualiza (la pared de enfrente está cambiando), y al terminarla se llama a `reset()`: la recta siguiente empieza de cero, con su propia pared.
+
+Una versión anterior usaba una odometría con LiDAR que alineaba escaneos consecutivos. Medir con la pared de enfrente dio las mismas rondas en el laboratorio desde nueve posiciones de salida (12 nov 2026) con una fracción del código. Lo que **no** vale es contar la velocidad pedida por el tiempo: desde parado, el coche «creía» haber avanzado 0,25 m cuando llevaba 2 cm, y giraba al instante.
 
 ### Sin offset en la esquina
 
@@ -108,8 +109,8 @@ En el paso 4 la ley de carril empuja al coche hacia la isla si está más lejos 
 ## Escríbelo
 
 > **En este paso**
-> - **Escribes:** un solo archivo, `turn_gate.py`, con una clase `TurnGate` (la puerta) y 2 métodos pequeños, en 6 mini pasos.
-> - **Copias hecho:** `drive.py`, la parte de ROS, que ya conecta la puerta con la distancia recorrida. No hace falta entenderlo todavía.
+> - **Escribes:** un solo archivo, `turn_gate.py`, con dos clases pequeñas: `TurnGate` (la puerta) y `StraightDistance` (la distancia recorrida), en 6 mini pasos.
+> - **Copias hecho:** `drive.py`, la parte de ROS, que ya conecta las dos. No hace falta entenderlo todavía.
 > - **Resultado:** el coche gira esquina tras esquina alrededor de la isla.
 
 Copia `drive.py` desde la raíz del repositorio (si no tienes las etiquetas, antes `git fetch --tags`):
@@ -122,13 +123,17 @@ Cada mini paso termina con una prueba (en macOS con RoboStack pon `PYTEST_DISABL
 
 ### Paso 6.1: las tres preguntas fáciles
 
-Primero lo más simple: tres preguntas de sí o no, como mirar a los dos lados y la distancia antes de cruzar. Son las condiciones 2, 3 y 5 de la tabla.
+Primero lo más simple: tres preguntas de sí o no, como mirar a los dos lados y la distancia antes de cruzar. Son las condiciones 1 y 2 de la tabla.
 
 Crea `src/my_open/my_open/turn_gate.py` y pega esto. La primera constante es la distancia a la pared de enfrente que dispara el giro; la segunda, lo que debe avanzar el coche tras una esquina.
 
 ```python
 TURN_FRONT = 1.19        # m
 ARM_DISTANCE = 0.25      # m
+
+
+class StraightDistance:  # marcador, la escribes en el 6.6
+    ...
 
 
 class TurnGate:
@@ -141,7 +146,7 @@ class TurnGate:
 ```
 
 - **Qué va dentro:** devuelve verdadero si no hay esquina en curso (`not arc`), `travelled` es al menos `ARM_DISTANCE` y `scene.front_axis` (la pared de enfrente) es como mucho `self.turn_front`. Une las tres con `and`.
-- **Compruébalo:** `python -m pytest course/tests/test_step_6.py -q -k "wall_ahead or driven or in_progress or open_side"` debe dar `4 passed`.
+- **Compruébalo:** `python -m pytest course/tests/test_step_6.py -q -k "wall_ahead or must_have_driven or in_progress or open_side"` debe dar `4 passed`.
 
 <details>
 <summary>Ver la solución de este paso</summary>
@@ -157,7 +162,7 @@ Versión parcial: las líneas de la referencia que ya toca escribir (la clase co
 
 ### Paso 6.2: la isla terminó (lado abierto)
 
-Si la pared de la isla queda a más de 1 m, a tu lado ya no hay isla: es como llegar al final de una valla. Es la primera manera de cumplir la condición 4.
+Si la pared de la isla queda a más de 1 m, a tu lado ya no hay isla: es como llegar al final de una valla. Es la primera manera de cumplir la condición 3.
 
 Pon `import math` al principio del archivo, la constante después de `ARM_DISTANCE`, y una línea nueva en `update`:
 
@@ -276,55 +281,79 @@ Versión parcial (la clase completa está en el 6.6):
 
 </details>
 
-### Paso 6.6: armar y desarmar la puerta
+### Paso 6.6: la distancia recorrida sin encoder (`StraightDistance`)
 
-Tras girar, la puerta se cierra para no girar dos veces. Se vuelve a abrir cuando el coche está otra vez en una recta junto a la isla, como un torniquete. Es la condición 1.
+Falta el número que la puerta recibe como `travelled`. Es una resta: cuánto más cerca está la pared de enfrente que al empezar la recta, como contar los pasos que diste mirando lo que te falta para llegar a la puerta.
 
-Cambia el `__init__`, la parte de arriba del `return`, y añade el método `corner_started`:
+Cambia el marcador de `StraightDistance` por esto:
 
 ```python
-        self.armed = True
+class StraightDistance:
+    def __init__(self):
+        self.start = None        # la pared de enfrente al empezar la recta (m)
+        self.travelled = 0.0
 
-        seen_again = False   # TODO (en update, antes del return)
-        self.armed = self.armed  # TODO
+    def update(self, front_axis):
+        if math.isfinite(front_axis):
+            if self.start is None:
+                self.start = front_axis
+            self.travelled = 0.0  # TODO
+        return self.travelled
 
-    def corner_started(self):
-        """Call it when the corner starts."""
-        pass  # TODO
+    def reset(self):
+        self.start, self.travelled = None, 0.0
 ```
 
-- **Qué va dentro:** `seen_again` es verdadero si `inner` es finito, menor que `ISLAND_OPEN` y `travelled >= ARM_DISTANCE`. Entonces `self.armed = self.armed or (seen_again and not arc)`. El `return` empieza ahora con `self.armed and`. `corner_started` pone `armed = False`.
-- **Compruébalo:** `python -m pytest course/tests/test_step_6.py -q -k after_a_corner` debe dar `1 passed`.
+- **Qué va dentro:** lo avanzado es `self.start - front_axis`. Como la distancia no puede bajar, quédate con el mayor entre eso y lo que ya había: `max(self.travelled, self.start - front_axis)`.
+- **Compruébalo:** `python -m pytest course/tests/test_step_6.py -q` debe dar `13 passed`.
 
 <details>
 <summary>Ver la solución de este paso</summary>
 
-Es la clase completa de la referencia (sin su docstring largo).
+Es el archivo completo de la referencia (sin sus docstrings).
 
 ```python
+import math
+
+TURN_FRONT = 1.19        # m: the wall ahead (along the track) must be this near
+LOOKAHEAD = 0.35         # m: the island's end must be this near (when it is visible)
+END_CLEARANCE = 0.08     # m: in a narrow lane the look-ahead shrinks to (distance to the island - this)
+CONFIRMATIONS = 2        # consecutive scans that must see the island's end close
+ARM_DISTANCE = 0.25      # m driven after a corner before the next one may start
+ISLAND_OPEN = 1.0        # m: an island wall farther than this beside the car means the island has ended
+
+
+class StraightDistance:
+    def __init__(self):
+        self.start = None        # the wall ahead when the straight began (m)
+        self.travelled = 0.0
+
+    def update(self, front_axis):
+        if math.isfinite(front_axis):
+            if self.start is None:
+                self.start = front_axis
+            self.travelled = max(self.travelled, self.start - front_axis)
+        return self.travelled
+
+    def reset(self):
+        self.start, self.travelled = None, 0.0
+
+
 class TurnGate:
     def __init__(self, turn_front=TURN_FRONT, lookahead=LOOKAHEAD):
         self.turn_front, self.lookahead = turn_front, lookahead
-        self.armed = True
         self.hits = 0
         self._scene = None
 
     def update(self, scene, inner, travelled, arc):
-        """Returns True when the corner should start now."""
         if scene is not self._scene:                 # one count per scan, however often the tick repeats
             self._scene = scene
             limit = min(self.lookahead, max(0.0, inner - END_CLEARANCE)) if math.isfinite(inner) else self.lookahead
             self.hits = self.hits + 1 if 0.0 <= scene.island_end <= limit else 0
-        seen_again = math.isfinite(inner) and inner < ISLAND_OPEN and travelled >= ARM_DISTANCE
-        self.armed = self.armed or (seen_again and not arc)
         island_open = math.isfinite(inner) and inner > ISLAND_OPEN
-        return (self.armed and not arc and travelled >= ARM_DISTANCE
+        return (not arc and travelled >= ARM_DISTANCE
                 and scene.front_axis <= self.turn_front
                 and (island_open or self.hits >= CONFIRMATIONS))
-
-    def corner_started(self):
-        """Call it when the corner starts: the gate stays shut until the island is seen again."""
-        self.armed = False
 ```
 
 </details>
@@ -336,7 +365,7 @@ python -m pytest course/tests/test_step_6.py -q
 colcon build --symlink-install --packages-select my_open && source install/setup.bash && python3 course/verify_step.py 6
 ```
 
-- **Qué debes ver:** `10 passed` y después `Paso 6: PASS`, con `[OK] da al menos 8 esquinas` y `[OK] no toca ninguna pared`. La referencia dio unas 14 esquinas (3,7 vueltas) en 40 s.
+- **Qué debes ver:** `13 passed` y después `Paso 6: PASS`, con `[OK] da al menos 8 esquinas` y `[OK] no toca ninguna pared`. La referencia dio 14 esquinas (3,5 vueltas) en 40 s.
 - **En macOS** usa `source tools/macos_env.sh ~/robotek-ros/jazzy` en vez de `source install/setup.bash`.
 - **Con ventana:** usa las tres terminales del paso 4 (simulador, tu nodo y Start). En la del nodo sale `Giro a la izquierda (esquina N)` en cada giro.
 
@@ -345,25 +374,26 @@ colcon build --symlink-install --packages-select my_open && source install/setup
 **Predice** qué prueba falla, cambia `turn_gate.py`, corre las pruebas y devuelve el cambio:
 
 1. Cambia `if scene is not self._scene:` por `if True:`. Falla `test_the_same_scan_repeated_counts_once`. En el widget es «Contar en cada tick»: mira cómo gira un escaneo antes de tiempo.
-2. Quita `self.armed and` del `return`. Falla la prueba de después de una esquina. En el widget es «Quitar armed».
+2. Quita `travelled >= ARM_DISTANCE` del `return`. Falla `test_the_car_must_have_driven_since_the_last_corner`: recién salido de una esquina, con el lado abierto y una pared cerca, giraría otra vez.
+3. En `StraightDistance.update`, quita el `max` y deja `self.travelled = self.start - front_axis`. Falla `test_a_lost_or_noisy_reading_does_not_take_distance_back`.
 
 ## Si algo falla
 
-- **Gira una vez y no vuelve a girar.** La puerta no se rearma. Mira que `seen_again` use `inner < ISLAND_OPEN` y que `travelled` vuelva a subir.
-- **Gira dos veces seguidas o a destiempo.** Revisa que la cuenta use `scene is not self._scene` y que `corner_started` ponga `armed = False`.
-- **`ImportError` al correr el nodo.** `drive.py` importa `TurnGate` e `ISLAND_OPEN` de `turn_gate.py`: los dos nombres deben existir.
+- **Gira una vez y no vuelve a girar.** `travelled` no vuelve a subir: mira que `reset()` deje `start` en `None` y que `update` guarde la primera lectura de la recta nueva.
+- **Gira dos veces seguidas o a destiempo.** Revisa que la cuenta use `scene is not self._scene` y que el `return` exija `travelled >= ARM_DISTANCE`.
+- **`ImportError` al correr el nodo.** `drive.py` importa `TurnGate`, `StraightDistance` e `ISLAND_OPEN` de `turn_gate.py`: los tres nombres deben existir.
 
 Para comparar tu `turn_gate.py` con la referencia usa el cuadro «Compara» al final de la página.
 
 ## Resumen
 
-- Una sola medida no basta para girar: la puerta exige armada, recorrido, pared cerca, isla terminada y ninguna esquina en curso, todo a la vez.
+- Una sola medida no basta para girar: la puerta exige tramo recorrido sin esquina en curso, pared cerca e isla terminada, todo a la vez.
 - Cada escaneo cuenta una vez (por objeto `Scene`); la isla terminada necesita lado abierto o 2 escaneos seguidos con el final cerca.
-- Tras cada giro la puerta se cierra hasta ver la isla otra vez; la distancia recorrida sale del LiDAR.
+- Tras cada giro el coche debe avanzar 0,25 m antes de poder girar otra vez; esa distancia es lo que se acercó la pared de enfrente, sin encoder.
 
 ## Antes de seguir
 
-- [ ] `python -m pytest course/tests/test_step_6.py -q` da `10 passed`.
+- [ ] `python -m pytest course/tests/test_step_6.py -q` da `13 passed`.
 - [ ] `python3 course/verify_step.py 6` da `PASS`.
 - [ ] Puedes decir qué prueba falla si cuentas la escena en cada tick, y por qué.
 
@@ -372,8 +402,9 @@ Para comparar tu `turn_gate.py` con la referencia usa el cuadro «Compara» al f
 
 Es el nodo de ROS del paso 5 con tres cambios.
 
-- Crea `TurnGate` y `LidarOdometry` (de `robotek_common`, ya hecha) y suma los metros avanzados en `self.travelled`, que vuelve a 0 al acabar cada esquina.
-- Cada tick pregunta `self.gate.update(self.scene, inner, self.travelled, self.arc)` con `inner = self.scene.left`. Si da `True`, suma π/2 a `goal`, activa `arc` y llama a `corner_started()`.
-- Si `inner` no es finito o es mayor que `ISLAND_OPEN`, la ley de carril usa `GAP` como distancia: así no se desvía hacia donde ya no hay isla. `odometry.command(speed, dt)` es lo último que se llama en `control`.
+- Crea `TurnGate` y `StraightDistance`. Fuera de las esquinas, cada tick llama a `self.straight.update(self.scene.front_axis)`; al acabar una esquina, a `self.straight.reset()`.
+- Cada tick pregunta `self.gate.update(self.scene, inner, self.straight.travelled, self.arc)` con `inner = self.scene.left`. Si da `True`, suma π/2 a `goal` y activa `arc`.
+- En la esquina pide 1,0 m/s y llama a `arc_steer` (paso 5) hasta que devuelve que terminó. En la recta va a 1,28 m/s con `damped_steer(goal + lateral_bias(keep), yaw, gyro)`.
+- Si `inner` no es finito o es mayor que `ISLAND_OPEN`, `keep` es `GAP`: así no se desvía hacia donde ya no hay isla.
 
 </details>
