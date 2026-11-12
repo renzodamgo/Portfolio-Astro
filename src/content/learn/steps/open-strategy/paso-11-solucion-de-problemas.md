@@ -658,6 +658,43 @@ El motor es un **310 con encoder en el puerto M2 de la RRC Lite**, con engranaje
 (`motor_type: -1` en `src/rrc_lite_driver/config/controller_params.yaml`) y controla la velocidad con el encoder
 ([El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 4).
 
+### Mover el motor a mano (la primera prueba)
+
+Antes de buscar el fallo en la estrategia, comprueba si el motor obedece a la placa **sin estrategia**. Con el coche
+**sobre soportes** (ruedas en el aire), en el Pi:
+
+```bash
+cd ~/robotek-learn
+bash tools/car-clean.sh                                      # nada de una prueba anterior
+source /opt/ros/jazzy/setup.bash && source install/setup.bash    # en zsh: setup.zsh las dos
+ros2 launch rrc_lite_driver controller.launch.py             # solo el driver de la placa
+```
+
+En **otra terminal** del Pi (otro `ssh`, con los mismos dos `source`), manda una velocidad fija al puerto M2. En este
+tópico **−rps es hacia delante**:
+
+```bash
+ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 2, rps: -5.0}]}"
+```
+
+- Las ruedas traseras deben girar **hacia delante**, a velocidad constante, mientras el comando siga corriendo. Con
+  los engranajes 1:1, 5 rps son unos 0,6 m/s.
+- `-r 10` repite la orden 10 veces por segundo. Hace falta: el driver para el motor si pasan 0,5 s sin ninguna.
+- **Para parar:** `Ctrl+C` en esa terminal. Al medio segundo el motor se para solo.
+- Marcha atrás: `rps: 5.0`. Más despacio: `rps: -2.0`. Solo unos segundos: añade `-t 30` (30 mensajes, 3 s).
+
+Qué te dice:
+
+| Qué pasa | Qué significa |
+|---|---|
+| Gira hacia delante y para con `Ctrl+C` | El motor, la placa y el cable están bien. El fallo está más arriba: mira `/cmd_vel_raw` y `/rrc/set_motor` con la estrategia en marcha (más abajo, «No se mueve») |
+| No gira | Batería, interruptor de la placa, conector de M2 o la placa colgada: apaga y enciende el coche y repite |
+| Gira hacia atrás | `rrc_motor_sign` en `robot.yaml`, o el motor en otro puerto |
+| Va a tope con cualquier valor o no para | Se le está mandando un tipo de motor a la placa (siguiente apartado) |
+
+El 11 de noviembre de 2026 el coche no se movió en una ronda aunque le llegaban las órdenes, y con este comando sí:
+no era el motor. La causa no quedó clara; después de `car-clean.sh` y de relanzar, la ronda salió bien.
+
 ### Va siempre a tope, no para con 0 o va hacia atrás
 
 Se le está mandando un tipo de motor. Con el **tipo 2** (JGA27), el firmware de la RRC Lite usa ganancias PID negativas,
@@ -1211,7 +1248,7 @@ Cuando algo falla y no sabes por dónde empezar, haz esto en orden y **para en e
 | 5 | `scan_probe.py`: mano delante y a la izquierda | Ángulos 0 y +90 | 9 |
 | 6 | `imu_probe.py`: giro a la izquierda de 90 grados | `z` cerca de +90 | 4, 11 |
 | 7 | Ruedas en el aire: `/steer` +0,30 | Ruedas a la izquierda | 3 |
-| 8 | Ruedas en el aire: `/rrc/set_motor` a −2 rps en el puerto 1 | Giran hacia delante | 8 |
+| 8 | Ruedas en el aire: `/rrc/set_motor` a −2 rps en el puerto 2 | Giran hacia delante | 8 |
 | 9 | Pulsa el botón y mira `/robotek/state` | `CALIBRATE`, `DETECT_DIRECTION`, `FOLLOW` en menos de 3 s | 1, 10 |
 | 10 | En el suelo, a baja velocidad, una recta de 2 m | Sin desviarse y sin tocar | 3, 4, 5 |
 

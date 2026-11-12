@@ -211,6 +211,7 @@ Para ver la cámara durante toda la ronda (normalmente se apaga al elegir el sen
 |---|---|
 | `setup-pi.sh --check` dice `FALTA` | la propia línea dice qué instalar o conectar |
 | No llega al verde | [caso 1](/learn/open-strategy/paso-11-solucion-de-problemas/#caso-1-no-pasa-nada-al-pulsar-el-botón) de Solución de problemas |
+| El motor no gira | pruébalo solo, sin estrategia: [mover el motor a mano](/learn/open-strategy/paso-11-solucion-de-problemas/#mover-el-motor-a-mano-la-primera-prueba) |
 | Va a la mitad de velocidad | falta `motor_rps_per_mps:=8.0` (sección 4) |
 | Gira al revés o da círculos | los ejes de la IMU: [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 2 |
 | El LiDAR da *timeout* o el coche no se mueve | quedó otro programa corriendo: `bash tools/car-clean.sh` y la nota de la sección 9 |
