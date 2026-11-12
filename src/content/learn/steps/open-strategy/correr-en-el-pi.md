@@ -77,10 +77,10 @@ Pon el coche sobre soportes y lanza:
 
 ```bash
 cd ~/robotek-learn
-bash tools/car-run.sh open motor_rps_per_mps:=8.0
+bash tools/car-run.sh open
 ```
 
-`motor_rps_per_mps:=8.0` es para los **engranajes 1:1** que lleva el coche desde el 11 de noviembre de 2026: 8 vueltas del motor por segundo por cada m/s del coche. `robot.yaml` todavía trae 4,4, de los engranajes 54:30 de antes. Sin ese argumento el coche iría a la mitad de la velocidad pedida.
+El coche lleva engranajes 1:1 y `robot.yaml` ya trae su valor: `motor_rps_per_mps: 7.0`, las vueltas del motor por segundo por cada m/s del coche. No hay que pasar nada.
 
 El comando hace todo lo demás solo:
 
@@ -110,7 +110,7 @@ Si el motor gira hacia atrás, la dirección no se centra o no pasa nada al puls
 3. Una pulsación. No toques el coche hasta que pare.
 
 ```bash
-bash tools/car-run.sh open motor_rps_per_mps:=8.0
+bash tools/car-run.sh open
 ```
 
 La terminal escribe un resumen de la ronda: cada cambio de estado con el tiempo desde Start (`CALIBRATE`, `DETECT_DIRECTION`, `FOLLOW`, `TURN`…), el tiempo de cada vuelta (`LAP 1`, `LAP 2`, `LAP 3`), `FINISH`, `DONE` con el tiempo total, y cualquier cosa rara (un nodo caído, la placa reiniciada, batería baja). Con `VERBOSE=1` delante del comando sale el registro entero.
@@ -127,7 +127,7 @@ Para **otra ronda**, vuelve a lanzar el comando.
 Si quieres ir más despacio la primera vez, cualquier valor se cambia al lanzar, sin editar archivos:
 
 ```bash
-bash tools/car-run.sh open motor_rps_per_mps:=8.0 cruise_speed:=0.6 corner_speed:=0.5
+bash tools/car-run.sh open cruise_speed:=0.6 corner_speed:=0.5
 ```
 
 ## 6. Los valores del coche
@@ -183,7 +183,7 @@ Y lanza como en la sección 5. En el Pi **solo se hace `git pull`**: los cambios
 Para competir o para muchas rondas seguidas, el Open puede cargarse solo cada vez que se enciende el Pi y esperar el botón:
 
 ```bash
-bash tools/car-autostart.sh on motor_rps_per_mps:=8.0     # desde ahora, en cada encendido
+bash tools/car-autostart.sh on     # desde ahora, en cada encendido
 bash tools/car-autostart.sh start                         # ahora, sin reiniciar
 bash tools/car-autostart.sh stop                          # pararlo
 bash tools/car-autostart.sh off                           # que no arranque más al encender
@@ -212,7 +212,7 @@ Para ver la cámara durante toda la ronda (normalmente se apaga al elegir el sen
 | `setup-pi.sh --check` dice `FALTA` | la propia línea dice qué instalar o conectar |
 | No llega al verde | [caso 1](/learn/open-strategy/paso-11-solucion-de-problemas/#caso-1-no-pasa-nada-al-pulsar-el-botón) de Solución de problemas |
 | El motor no gira | pruébalo solo, sin estrategia: [mover el motor a mano](/learn/open-strategy/paso-11-solucion-de-problemas/#mover-el-motor-a-mano-la-primera-prueba) |
-| Va a la mitad de velocidad | falta `motor_rps_per_mps:=8.0` (sección 4) |
+| Va más lento o más rápido de lo pedido | `motor_rps_per_mps` en `robot.yaml` (7,0): [caso 8](/learn/open-strategy/paso-11-solucion-de-problemas/#caso-8-el-motor) |
 | Gira al revés o da círculos | los ejes de la IMU: [El coche del equipo](/learn/open-strategy/coche-del-equipo-v5/), sección 2 |
 | El LiDAR da *timeout* o el coche no se mueve | quedó otro programa corriendo: `bash tools/car-clean.sh` y la nota de la sección 9 |
 | Choca en una esquina | [Solución de problemas](/learn/open-strategy/paso-11-solucion-de-problemas/), casos 6 y 14 |
@@ -221,6 +221,6 @@ Para ver la cámara durante toda la ronda (normalmente se apaga al elegir el sen
 
 1. Una vez: `git clone`, `bash tools/setup-pi.sh`, cerrar sesión y `bash tools/setup-pi.sh --check`.
 2. Cada sesión: `git pull` y `colcon build --symlink-install`.
-3. Cada ronda: `bash tools/car-run.sh open motor_rps_per_mps:=8.0`, esperar el verde, una pulsación.
+3. Cada ronda: `bash tools/car-run.sh open`, esperar el verde, una pulsación.
 4. La primera vez, con las ruedas en el aire.
 5. La ronda queda en `~/runs/`.

@@ -295,7 +295,7 @@ Las ruedas traseras deben girar **hacia delante**. Hay que repetir la orden: el 
 Lo que se sabe del motor:
 
 - La "rps" de la placa **no es una vuelta real** del motor: depende del tipo de motor que la placa cree tener. Sin mandarle el tipo, en el coche del equipo, 1 rps son ~0,22 m/s (medido con el LiDAR el 8 nov 2026).
-- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` y nunca pide más de `motor_max_rps`. Con los engranajes 1:1 son **8,0** rps por m/s: pásalo al lanzar (`motor_rps_per_mps:=8.0`), porque `robot.yaml` aún trae 4,4, de los engranajes 54:30 de antes.
+- `base_adapter` convierte los m/s de tu estrategia en rps con `motor_rps_per_mps` (**7,0** en `robot.yaml`, con los engranajes 1:1) y nunca pide más de `motor_max_rps`.
 - El coche sigue la consigna desde ~0,1 rps (~0,02 m/s) en los dos sentidos. Pero con la dirección a tope, desde parado, le falta fuerza por debajo de ~1 rps. Tras un 0 se desliza 8–35 cm.
 
 ## 4. Después de las comprobaciones
@@ -308,10 +308,10 @@ Con las comprobaciones 3.1 a 3.6 bien, y `servo_measured` e `imu_adapter.measure
 ```bash
 cd ~/robotek-learn && bash tools/car-clean.sh
 source /opt/ros/jazzy/setup.bash && source install/setup.bash
-ros2 launch robotek_course open_challenge.launch.py motor_rps_per_mps:=8.0 motor_max_rps:=4.0
+ros2 launch robotek_course open_challenge.launch.py motor_max_rps:=4.0
 ```
 
-`motor_max_rps:=4.0` no deja pasar de 0,5 m/s con los engranajes 1:1. Tu `my_open` trae las constantes del simulador (pide 1,28 m/s en las rectas), y en el coche los m/s son reales: sin ese tope iría mucho más rápido que en Gazebo. Súbelo cuando las esquinas salgan bien, o baja `CRUISE_SPEED` y `CORNER_SPEED` en tu `mission.py`. Los valores con los que corre el equipo están en la [tabla del capítulo del Pi](/learn/open-strategy/correr-en-el-pi/#6-los-valores-del-coche). **Nadie ha corrido `my_open` en el coche todavía.**
+`motor_max_rps:=4.0` no deja pasar de unos 0,55 m/s. Tu `my_open` trae las constantes del simulador (pide 1,28 m/s en las rectas), y en el coche los m/s son reales: sin ese tope iría mucho más rápido que en Gazebo. Súbelo cuando las esquinas salgan bien, o baja `CRUISE_SPEED` y `CORNER_SPEED` en tu `mission.py`. Los valores con los que corre el equipo están en la [tabla del capítulo del Pi](/learn/open-strategy/correr-en-el-pi/#6-los-valores-del-coche). **Nadie ha corrido `my_open` en el coche todavía.**
 
 ## 5. El coche real no es el simulador
 

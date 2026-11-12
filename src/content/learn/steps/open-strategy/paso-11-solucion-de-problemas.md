@@ -678,7 +678,7 @@ ros2 topic pub -r 10 /rrc/set_motor rrc_lite_msgs/msg/MotorsState "{data: [{id: 
 ```
 
 - Las ruedas traseras deben girar **hacia delante**, a velocidad constante, mientras el comando siga corriendo. Con
-  los engranajes 1:1, 5 rps son unos 0,6 m/s.
+  los engranajes 1:1, 5 rps son unos 0,7 m/s.
 - `-r 10` repite la orden 10 veces por segundo. Hace falta: el driver para el motor si pasan 0,5 s sin ninguna.
 - **Para parar:** `Ctrl+C` en esa terminal. Al medio segundo el motor se para solo.
 - Marcha atrás: `rps: 5.0`. Más despacio: `rps: -2.0`. Solo unos segundos: añade `-t 30` (30 mensajes, 3 s).
@@ -757,7 +757,7 @@ Si con la velocidad positiva de tu estrategia el coche va hacia atrás, cambia e
 ### Va a una velocidad que no es la pedida
 
 `base_adapter` pide a la placa `rps = velocidad × motor_rps_per_mps`, recortadas a `motor_max_rps`. Con los engranajes 1:1 el factor
-es **8,0** (se pasa al lanzar: `motor_rps_per_mps:=8.0`; `robot.yaml` aún trae 4,4, de los 54:30). Medido el 8 nov con el LiDAR y 54:30, de 0,1 a 1 rps la velocidad real sigue a la pedida (±20 %) en los dos sentidos.
+es **7,0** (`motor_rps_per_mps` en `robot.yaml`). Medido el 8 nov con el LiDAR y 54:30, de 0,1 a 1 rps la velocidad real sigue a la pedida (±20 %) en los dos sentidos.
 La respuesta tarda ~0,5 s: en 1 s el coche no llega a la velocidad estable `[coche]`. Con 30:54, el factor es 13.
 
 **Mide.** Con el coche en el suelo hacia una pared y 2 m libres, pide 0,15, 0,30 y 0,50 m/s por `/cmd_vel_raw` unos
@@ -1126,7 +1126,7 @@ Esta tabla resume las diferencias que más fallos causaron. La última columna d
 |---|---|---|---|
 | El IMU sale en el marco del coche | La placa va de canto: ejes y signo hay que medirlos | Giroscopio invertido | 4 |
 | `/start` lo publica el árbitro, cuando tu nodo ya está suscrito | `/start` sale del botón, con la durabilidad por defecto | Solo si tu nodo se suscribe con `TRANSIENT_LOCAL`: el botón no arranca | 1 |
-| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (M2, sin tipo, engranajes 1:1) sigue la consigna a 8,0 rps por m/s, con ~0,5 s de retraso, y se desliza 8–35 cm tras un 0 | Más rápido o más lento que el modelo | 5, 8 |
+| El motor sigue una tabla medida con batería baja: 1,28 de comando da 0,60 m/s | Es la del motor anterior. El motor 310 (M2, sin tipo, engranajes 1:1) sigue la consigna a 7,0 rps por m/s, con ~0,5 s de retraso, y se desliza 8–35 cm tras un 0 | Más rápido o más lento que el modelo | 5, 8 |
 | Servo con retardo 0,06 s y 1,2 rad/s | Lo mismo de media, pero con holgura, topes y calor | Esquinas anchas o servo que zumba | 6, 7 |
 | Ángulo de rueda igual al pedido hasta 17,6 grados | Igual al pedido gracias a la tabla medida (±19 grados); sin ella, la rueda da menos y distinto a cada lado | Gira poco o desigual | 6 |
 | Arranque y frenada suaves, sin deslizar | Encabrita y derrapa sin rampas | Vuelco, derrape | 5 |

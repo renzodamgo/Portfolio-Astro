@@ -20,7 +20,7 @@ Si el coche no cambió y solo quieres correr una ronda, no te hace falta nada de
 > - **Corregido en el coche:** el rumbo, con la pared de la isla (el giroscopio lee un 6 % de menos); el sentido, con
 >   el LiDAR si la cámara se equivoca o no decide.
 > - **Medido en el coche:** los ejes de la IMU (`measured: true`), la dirección (centro 1403 µs, ±19°,
->   `servo_measured: true`) y el motor 310 en M2 **sin tipo de motor**, a 8,0 rps por m/s con los engranajes 1:1
+>   `servo_measured: true`) y el motor 310 en M2 **sin tipo de motor**, a 7,0 rps por m/s con los engranajes 1:1
 >   (sección 4).
 > - **Sin aclarar:** a veces una esquina no gira aunque la dirección recibe la orden a tope, y el LiDAR pierde datos
 >   a ratos por el cable USB ([Solución de problemas](/learn/open-strategy/paso-11-solucion-de-problemas/), casos 7 y 9).
@@ -414,10 +414,9 @@ tipo de fábrica, que ya es el bueno. `rrc_driver` solo le reenvía los offsets 
 
 - **Sentido:** `rrc_motor_sign: -1.0` en `robot.yaml`. `rrc_driver` invierte el signo, así que en `/rrc/set_motor`
   **−rps es hacia delante**, y la placa recibe +rps. Si cambias de puerto o de motor, vuelve a comprobarlo.
-- **Velocidad:** `base_adapter` pasa los m/s de la estrategia a rps con `motor_rps_per_mps`. Con los engranajes 1:1 son
-  **8,0** (probado el 11 nov con 6, 7, 8 y 10: con 8 el coche va a lo pedido). `robot.yaml` aún trae 4,4, de los
-  engranajes 54:30 de antes, así que se pasa al lanzar: `motor_rps_per_mps:=8.0`. La tabla es la medida del 8 nov con
-  54:30, en el suelo, con el LiDAR, en la segunda mitad de cada consigna:
+- **Velocidad:** `base_adapter` pasa los m/s de la estrategia a rps con `motor_rps_per_mps`. Con los engranajes 1:1,
+  `robot.yaml` trae **7,0** (elegido el 12 nov tras rondas con 6, 7, 8 y 10; más alto, el coche va más rápido de lo
+  pedido). La tabla es la medida del 8 nov con los engranajes 54:30 de antes, en el suelo, con el LiDAR, en la segunda mitad de cada consigna:
 
   | rps de la placa | 0,1 | 0,2 | 0,3 | 0,5 | 0,6 | 0,8 | 1,0 |
   |---|---|---|---|---|---|---|---|
@@ -426,7 +425,7 @@ tipo de fábrica, que ya es el bueno. `rrc_driver` solo le reenvía los offsets 
   | 4,4 rps por m/s | 0,023 | 0,045 | 0,068 | 0,114 | 0,136 | 0,182 | 0,227 |
 
   - La respuesta tarda: en 1 s no llega a la velocidad estable.
-  - El Open v5 pone solo el tope `motor_max_rps` en 6,7: con 8,0 rps por m/s son 0,84 m/s, su velocidad de crucero.
+  - El Open v5 pone solo el tope `motor_max_rps` en 6,7: con 7,0 rps por m/s son 0,96 m/s, por encima de su velocidad de crucero (0,85).
 - **Fuerza a poca velocidad:** si el coche no arranca desde parado con la dirección a tope (pasa en el Obstacle, no
   en el Open), `base_adapter` tiene `motor_min_rps`, `motor_kick_rps` y `motor_pulse_rps`, apagadas por defecto: están
   en el README de `robotek_hardware`.
@@ -452,8 +451,8 @@ pared, apaga la placa: así se quemó el anterior.
 | Archivo | Qué |
 |---|---|
 | `src/rrc_lite_driver/config/controller_params.yaml` | `motor_type: -1` |
-| `src/robotek_hardware/config/robot.yaml` (`base_adapter`) | `rrc_motor_port: 2`, `rrc_motor_sign: -1.0`, `motor_rps_per_mps: 4.4` (8,0 al lanzar, con los engranajes 1:1), `brake_reset: false`, `brake_rps: 0.0`, `wall_stop_m: 0.0` |
-| argumentos del launch | `motor_rps_per_mps:=8.0` (engranajes 1:1); el Open pone solo el tope `motor_max_rps` en 6,7 |
+| `src/robotek_hardware/config/robot.yaml` (`base_adapter`) | `rrc_motor_port: 2`, `rrc_motor_sign: -1.0`, `motor_rps_per_mps: 7.0`, `brake_reset: false`, `brake_rps: 0.0`, `wall_stop_m: 0.0` |
+| argumentos del launch | ninguno: el Open pone solo el tope `motor_max_rps` en 6,7 |
 
 ### Si quieres ir más rápido
 
@@ -516,7 +515,7 @@ Lanzar el Open es un comando, que también para lo que haya quedado de antes:
 
 ```bash
 cd ~/robotek-learn && git pull && colcon build --symlink-install
-bash tools/car-run.sh open motor_rps_per_mps:=8.0
+bash tools/car-run.sh open
 ```
 
 El paso a paso (las luces, el botón, primero en el aire, dónde queda la ronda, el arranque automático) está en
@@ -544,7 +543,7 @@ Los que más pesan:
 - **`scan_max_age: 1.0`.** Si el LiDAR calla más de 1 s, manda velocidad 0 hasta que vuelva. Entre escaneos, la pared
   de enfrente se estima con la velocidad pedida.
 
-Cualquiera se cambia al lanzar, sin editar el archivo: `bash tools/car-run.sh open motor_rps_per_mps:=8.0 cruise_speed:=0.7`.
+Cualquiera se cambia al lanzar, sin editar el archivo: `bash tools/car-run.sh open cruise_speed:=0.7`.
 
 ### Lo que hace el Open en el coche
 
@@ -574,9 +573,9 @@ Pasa los registros a tu ordenador (`scp -r <usuario>@<ip-del-pi>:runs/<carpeta> 
 1. **Siempre, antes de cada medida,** en el Pi: `car-autostart.sh stop`; `git pull`; `colcon build --symlink-install`; `bash tools/car-clean.sh`; los dos `source`.
 2. **IMU:** `imu_axes` (quieto 3 s, un empujón) o a mano, eje por eje; copiar los ejes a `robot.yaml`, `measured: true`, y comprobar que girar a la izquierda da `z` positivo.
 3. **Servo (hecho el 1 nov):** `steer_calibration.py` en el suelo da el centro real y el ángulo de cada lado; `--check` lo comprueba.
-4. **Motor:** el 310 en M2 **sin tipo** (`motor_type: -1`), `rrc_motor_sign: -1.0`, 8,0 rps por m/s con los engranajes 1:1 (`motor_rps_per_mps:=8.0` al lanzar), parada con un 0.
+4. **Motor:** el 310 en M2 **sin tipo** (`motor_type: -1`), `rrc_motor_sign: -1.0`, 7,0 rps por m/s con los engranajes 1:1 (`motor_rps_per_mps` en `robot.yaml`), parada con un 0.
 5. **Sensores:** `car.launch.py`, el LiDAR contra una regla y la cámara (IMX708, `camera_driver:=picam`) eligiendo bien el sentido con la luz de la sala.
-6. **Ronda:** `bash tools/car-run.sh open motor_rps_per_mps:=8.0`; luces verdes, una pulsación. El 11 de noviembre, rondas de 31 a 38 s en los dos sentidos.
+6. **Ronda:** `bash tools/car-run.sh open`; luces verdes, una pulsación. El 11 de noviembre, rondas de 31 a 38 s en los dos sentidos.
 7. **Registro:** `~/runs/` y tus notas de cada intento.
 
 Si algo falla, busca el síntoma en [Solución de problemas](/learn/open-strategy/paso-11-solucion-de-problemas/).
