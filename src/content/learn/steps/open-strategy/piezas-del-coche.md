@@ -8,7 +8,7 @@ tag: "step-9"
 compareFrom: "step-9"
 ---
 
-Esta es la **lista de piezas** (BOM, *bill of materials*) del coche del equipo Robotek, tal como estaba el 11 de noviembre de 2026. Cada pieza con modelo 3D tiene su render y su STL. Las imágenes y los STL salen del modelo del coche, `Assembly3.stp`, al que se añadieron el soporte trasero del VL53L0X, el soporte del botón y la RRC Lite real (el STEP oficial de Hiwonder). El ensamblaje completo se puede bajar en STEP: [robotek-car-assembly.step.zip](/learn/piezas/robotek-car-assembly.step.zip) (11 MB). Cómo se monta todo está en [el capítulo siguiente](/learn/open-strategy/armar-y-conectar-el-coche/).
+Esta es la **lista de piezas** (BOM, *bill of materials*) del coche del equipo Robotek, tal como estaba el 11 de noviembre de 2026. Cada pieza con modelo 3D tiene su render y su STL. Las imágenes y los STL salen del modelo del coche, `Assembly3.stp`, al que se añadieron el soporte trasero del VL53L0X, el soporte del botón, la RRC Lite real (el STEP oficial de Hiwonder) y la cámara IMX708 Wide (el STEP oficial de Raspberry Pi). El ensamblaje completo se puede bajar en STEP: [robotek-car-assembly.step.zip](/learn/piezas/robotek-car-assembly.step.zip) (15 MB). Cómo se monta todo está en [el capítulo siguiente](/learn/open-strategy/armar-y-conectar-el-coche/).
 
 <figure>
 <img src="/learn/piezas/car-iso.png" alt="Render del coche completo: placa base, caja, Raspberry Pi, cámara, LiDAR y las cuatro ruedas" width="600" loading="lazy">
@@ -53,7 +53,7 @@ Sus STL son los modelos del ensamblaje (el de la RRC Lite, el STEP oficial de Hi
 | <img src="/learn/piezas/raspberry-pi-5.png" alt="Raspberry Pi 5" width="160" loading="lazy"> | **Raspberry Pi 5** | 1 | El cerebro: corre ROS 2 y la estrategia | [raspberry-pi-5.stl](/learn/piezas/raspberry-pi-5.stl) |
 | <img src="/learn/piezas/rrc-lite.png" alt="RRC Lite" width="160" loading="lazy"> | **Placa RRC Lite** (Hiwonder) | 1 | IMU, servo, motor, botón y medida de la batería; da los 5 V del Pi. El modelo es el STEP oficial de Hiwonder, sin sus cuatro torretas de 19 mm. | [rrc-lite.step.zip](/learn/piezas/rrc-lite.step.zip) (STEP, 7 MB) |
 | <img src="/learn/piezas/lidar-ld19.png" alt="LiDAR LD19" width="160" loading="lazy"> | **LiDAR LD19** (STL-19P) con su adaptador USB y 4 tornillos PA2×6 | 1 | Distancias en ±110° hacia delante | [lidar-ld19.stl](/learn/piezas/lidar-ld19.stl) |
-| <img src="/learn/piezas/camera.png" alt="cámara" width="160" loading="lazy"> | **Cámara IMX708 Wide** (Raspberry Pi Camera Module 3 Wide) con su cable plano | 1 | El color de las líneas y de las señales. El modelo es la cámara del ensamblaje de octubre, no la IMX708. | [camera.stl](/learn/piezas/camera.stl) |
+| <img src="/learn/piezas/camera.png" alt="cámara IMX708 en su soporte" width="160" loading="lazy"> | **Cámara IMX708 Wide** (Raspberry Pi Camera Module 3 Wide) con su cable plano | 1 | El color de las líneas y de las señales. En el render, dentro de su soporte con el objetivo hacia delante y abajo. | [STEP oficial](https://pip.raspberrypi.com/categories/1207-design-files) (Raspberry Pi, `camera-module-3-step`) |
 | <img src="/learn/piezas/servo.png" alt="servo" width="160" loading="lazy"> | **Servo digital de 15 kg·cm** (en el modelo, TGY-1501) | 1 | La dirección | [servo.stl](/learn/piezas/servo.stl) |
 | <img src="/learn/assembly/part-motor.png" alt="motor" width="160" loading="lazy"> | **Motor JGA27-310R 20:1** (7,4 V, 450 rpm sin carga) con encoder, y dos engranajes 54:30 | 1 | La tracción trasera, en el puerto **M2** de la RRC Lite. No está en el modelo 3D; el dibujo es aproximado. | — |
 | | **Sensor VL53L0X** | 1 | Distancia hacia atrás; va en su soporte trasero | — |
@@ -70,7 +70,7 @@ Sus STL son los modelos del ensamblaje (el de la RRC Lite, el STEP oficial de Hi
 | Tornillo M2×14 (ISO 7045) | 1 | La Raspberry Pi y la RRC Lite a la caja |
 | Tuerca M2 | 8 | Con los tornillos M2 |
 | Tornillo PA2×6 | 4 | El LiDAR a la placa base |
-| Tornillo M1.6×16 (ISO 7045) y tuerca M1.6 | 2 + 2 | La cámara a su soporte |
+| Tornillo M1.6×16 (ISO 7045) y tuerca M1.6 | 2 + 2 | La cámara a su soporte (eran para la cámara anterior: los agujeros del soporte están a 25 mm y los de la IMX708 a 21 mm) |
 | Cables USB | 2 | Las conexiones al Pi (ver el diagrama de cables) |
 | Cable USB-C | 1 | Ídem |
 | Cables dupont hembra-hembra | 3 | Los LED |
@@ -79,5 +79,5 @@ Sus STL son los modelos del ensamblaje (el de la RRC Lite, el STEP oficial de Hi
 
 - **Fecha:** está al día al 11 de noviembre de 2026. Si el coche cambia, manda el coche real.
 - **Sin modelo 3D:** el motor, sus engranajes, el eje trasero, el VL53L0X, el botón, el anillo de LED y la batería no están en el modelo 3D, así que no tienen STL.
-- **Modelo frente al coche real:** el modelo tiene además una placa de 50 × 40 mm sobre la parte trasera de la placa base que el coche real no lleva; aquí no aparece. La cámara del modelo es la de octubre, no la IMX708.
+- **Modelo frente al coche real:** el modelo tiene además una placa de 50 × 40 mm sobre la parte trasera de la placa base que el coche real no lleva; aquí no aparece. La IMX708 está en el sitio de la cámara anterior, centrada y en el mismo plano, pero sus agujeros (21 mm) no coinciden con los del soporte (25 mm), así que en el modelo no lleva tornillos; cómo va sujeta en el coche real no lo dice el modelo.
 - **Soportes nuevos:** el soporte trasero del VL53L0X y el del botón se diseñaron para este coche; antes de imprimir varios, comprueba uno en el coche.
