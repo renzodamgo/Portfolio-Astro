@@ -119,6 +119,7 @@ Y las del **8 de noviembre de 2026**, con el motor en M2 sin tipo y los engranaj
 | El servo vibra, zumba, se calienta o va lento | [7](#caso-7-el-servo-vibra-zumba-se-calienta-o-va-lento) |
 | El motor no mueve, va a tirones, gira al revés o va más lento de lo pedido | [8](#caso-8-el-motor) |
 | No hay LiDAR, va rotado, espejado o con huecos | [9](#caso-9-lidar) |
+| El coche gira donde no toca o frena solo, y los escaneos llegan con sectores vacíos | [9](#caso-9-lidar) |
 | No hay imagen, los colores salen cambiados o el sentido se decide mal o tarde | [10](#caso-10-cámara-y-sentido-de-la-vuelta) |
 | El rumbo se desvía solo, mucho ruido o unidades raras | [11](#caso-11-giroscopio-sesgo-ruido-y-unidades) |
 | La placa o el Pi se reinicia, o un USB se cae | [12](#caso-12-reinicios-y-usb-que-se-caen) |
@@ -754,6 +755,7 @@ recta de 2 m se cruza en el tiempo esperado.
 3. **`reverse` equivocado.** Si el driver da los ángulos en sentido horario, hay que poner `reverse: true`. El LD19 del equipo no lo necesita `[coche]`.
 4. **Zona ciega.** `fov_deg: 110` y `min_valid_range: 0.12` descartan lo que ve el propio coche. En un montaje nuevo, la zona ciega cambia: vuelve a medirla. En el coche del equipo se hizo con 30 vueltas por grado `[coche]`.
 5. **Huecos de más:** superficies muy oscuras o brillantes, luz solar directa o el tapete. Con el plano de escaneo a 30 mm del suelo, **un pliegue o una junta del tapete de más de 3 cm** aparece como una pared falsa `[código]`. El LD19 no se ha probado con sol directo en las pruebas del equipo.
+6. **Vueltas incompletas: se pierden datos en la línea serie.** El LD19 manda cada vuelta en paquetes de 12 puntos; si se pierden paquetes, la vuelta llega con sectores enteros vacíos y con un número de puntos equivocado. En el coche del equipo, una vuelta buena trae 504 ± 3 puntos; el 11 nov de 2026 dos rondas tuvieron vueltas de 192 a 589 puntos (15 y 36 por ciento de los escaneos) y pausas de 0,2 a 0,3 s, y el coche giró contra la isla en una y se paró solo en la otra `[coche]`. Las demás rondas de esa noche tuvieron cero vueltas malas. Sospecha, sin confirmar: el cable o el conector USB del LiDAR flojo tras varios golpes (el puerto se volvió a crear justo después).
 
 <details>
 <summary>Diagnóstico, arreglo y cómo comprobarlo</summary>
@@ -776,6 +778,24 @@ Con `scan_probe.py`:
 | Mano a 30 cm a la derecha | cerca de -90 |
 | Mano detrás del coche | no cambia nada: está fuera de ±110 grados y se descarta |
 | Coche parado en el campo | `sin dato` cerca de 4 por ciento |
+
+**Vueltas incompletas (causa 6).** Con el coche parado y la pila del coche detenida (el puerto es exclusivo), lee el LiDAR directo del puerto serie, sin el driver, **mientras mueves con la mano el cable y el conector USB del LiDAR**:
+
+```bash
+cd ~/robotek-learn && bash tools/car-clean.sh && python3 tools/lidar-raw-check.py --seconds 30
+```
+
+Imprime una línea por segundo y un total al final:
+
+| Columna | Qué cuenta | Lo sano |
+|---|---|---|
+| `packets` | paquetes buenos por segundo | unos 450 |
+| `crc` | paquetes con el CRC malo (ruido en la línea: motor, cable, alimentación) | 0 |
+| `gap` | paquetes que faltan entre dos buenos | 0 |
+| `junk` | bytes tirados buscando una cabecera | 0 |
+| `hz` | vueltas por segundo del propio LD19 | unos 10 |
+
+Si `crc`, `gap` o `junk` suben al mover el cable, es el cable o el conector. Si suben solo con el motor girando (coche levantado), es ruido eléctrico del motor. Con el coche quieto y el motor girando la línea del equipo salió limpia el 11 nov `[coche]`.
 
 Si la mano de la izquierda sale a -90, **el scan está espejado**: `reverse`. Si la de delante sale a ±180, `angle_offset` está mal. También puedes verlo en RViz con `/robotek/scan`: una pared delante debe verse delante.
 
